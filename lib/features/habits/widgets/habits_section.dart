@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import 'habit_card.dart';
+import 'quick_actions_widget.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../settings/providers/settings_providers.dart';
 
@@ -16,6 +17,7 @@ class HabitsSection extends ConsumerStatefulWidget {
 
 class _HabitsSectionState extends ConsumerState<HabitsSection> {
   bool _showSearch = false;
+  bool _showQuickActions = false;
   final TextEditingController _searchController = TextEditingController();
   
   @override
@@ -108,6 +110,27 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     ? _buildSearchBar(context, ref)
                     : const SizedBox.shrink(key: ValueKey('empty')),
               ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) {
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, -0.3),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOut,
+                    )),
+                    child: FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    ),
+                  );
+                },
+                child: _showQuickActions
+                    ? const QuickActionsWidget(key: ValueKey('quick_actions'))
+                    : const SizedBox.shrink(key: ValueKey('empty_qa')),
+              ),
               const SizedBox(height: 24),
               EmptyStateWidget(
                 icon: Icons.search_off,
@@ -142,6 +165,27 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
               child: _showSearch
                   ? _buildSearchBar(context, ref)
                   : const SizedBox.shrink(key: ValueKey('empty')),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) {
+                return SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.3),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOut,
+                  )),
+                  child: FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  ),
+                );
+              },
+              child: _showQuickActions
+                  ? const QuickActionsWidget(key: ValueKey('quick_actions'))
+                  : const SizedBox.shrink(key: ValueKey('empty_qa')),
             ),
             ListView.builder(
               shrinkWrap: true,
@@ -184,6 +228,8 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildSortButton(context, ref),
+              const SizedBox(width: 8),
+              _buildQuickActionsToggle(context),
               const SizedBox(width: 8),
               IconButton(
                 icon: Icon(_showSearch ? Icons.search_off : Icons.search),
@@ -361,6 +407,18 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildQuickActionsToggle(BuildContext context) {
+    return IconButton(
+      icon: Icon(_showQuickActions ? Icons.flash_off : Icons.flash_on),
+      tooltip: _showQuickActions ? 'hide_quick_actions'.tr() : 'show_quick_actions'.tr(),
+      onPressed: () {
+        setState(() {
+          _showQuickActions = !_showQuickActions;
+        });
+      },
     );
   }
 }
