@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/habit.dart';
-import '../../../tracking/presentation/providers/tracking_providers.dart';
+import '../../../../core/database/app_database.dart' as db;
+import '../providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../providers/habit_providers.dart';
 import '../widgets/habit_timeline.dart';
@@ -9,7 +9,7 @@ import 'habit_management_menu.dart';
 import 'habit_calendar_modal.dart';
 
 class HabitCard extends ConsumerWidget {
-  final Habit habit;
+  final db.Habit habit;
 
   const HabitCard({super.key, required this.habit});
 
@@ -18,12 +18,12 @@ class HabitCard extends ConsumerWidget {
     final today = app_date_utils.DateUtils.getToday();
     
     // Get current status
-    final entry = await repository.getEntry(habit.id!, today);
+    final entry = await repository.getEntry(habit.id, today);
     final isCompleted = entry?.completed ?? false;
     
     // Toggle completion
     await repository.toggleCompletion(
-      habit.id!,
+      habit.id,
       today,
       !isCompleted,
     );
@@ -31,7 +31,7 @@ class HabitCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final todayEntryAsync = ref.watch(todayEntryProvider(habit.id!));
+    final todayEntryAsync = ref.watch(todayEntryProvider(habit.id));
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -40,7 +40,7 @@ class HabitCard extends ConsumerWidget {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            builder: (context) => HabitCalendarModal(habitId: habit.id!),
+            builder: (context) => HabitCalendarModal(habitId: habit.id),
           );
         },
         child: Padding(
@@ -115,7 +115,7 @@ class HabitCard extends ConsumerWidget {
               ),
               // Timeline visualization (disabled clicks)
               const SizedBox(height: 16),
-              HabitTimeline(habitId: habit.id!, compact: true),
+              HabitTimeline(habitId: habit.id, compact: true),
             ],
           ),
         ),

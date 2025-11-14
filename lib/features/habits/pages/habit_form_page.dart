@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:drift/drift.dart' as drift;
+import '../../../../core/database/app_database.dart' as db;
 import '../providers/habit_providers.dart';
-import '../../domain/models/habit.dart';
 
 class HabitFormPage extends ConsumerStatefulWidget {
   final int? habitId;
@@ -55,16 +56,34 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
     final repository = ref.read(habitRepositoryProvider);
     final now = DateTime.now();
 
-    final habit = Habit(
-      id: widget.habitId,
-      name: _nameController.text.trim(),
+    final existingHabit = widget.habitId != null 
+        ? await repository.getHabitById(widget.habitId!)
+        : null;
+    
+    final habitId = widget.habitId;
+    final habit = db.HabitsCompanion(
+      id: habitId == null 
+          ? const drift.Value.absent() 
+          : drift.Value(habitId),
+      name: drift.Value(_nameController.text.trim()),
       description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      color: _selectedColor,
-      categoryId: _selectedCategoryId,
-      createdAt: widget.habitId == null ? now : DateTime.now(),
-      updatedAt: now,
+          ? const drift.Value.absent()
+          : drift.Value(_descriptionController.text.trim()),
+      color: drift.Value(_selectedColor),
+      icon: existingHabit?.icon == null
+          ? const drift.Value.absent()
+          : drift.Value(existingHabit!.icon),
+      categoryId: _selectedCategoryId == null
+          ? const drift.Value.absent()
+          : drift.Value(_selectedCategoryId),
+      reminderEnabled: drift.Value(existingHabit?.reminderEnabled ?? false),
+      reminderTime: existingHabit?.reminderTime == null
+          ? const drift.Value.absent()
+          : drift.Value(existingHabit!.reminderTime!),
+      createdAt: existingHabit?.createdAt == null
+          ? drift.Value(now)
+          : drift.Value(existingHabit!.createdAt),
+      updatedAt: drift.Value(now),
     );
 
     if (widget.habitId == null) {

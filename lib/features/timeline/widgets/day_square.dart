@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../../../settings/presentation/providers/settings_providers.dart';
+import '../../settings/providers/settings_providers.dart';
 
 class DaySquare extends ConsumerWidget {
   final DateTime date;

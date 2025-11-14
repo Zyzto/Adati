@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
-import '../../../tracking/presentation/providers/tracking_providers.dart';
+import '../providers/tracking_providers.dart';
 import '../widgets/habit_timeline.dart';
 
 class HabitDetailPage extends ConsumerWidget {

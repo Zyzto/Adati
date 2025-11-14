@@ -4,10 +4,7 @@ import 'package:adati/core/database/daos/category_dao.dart';
 import 'package:adati/core/database/daos/tracking_entry_dao.dart';
 import 'package:adati/core/database/daos/streak_dao.dart';
 import 'package:adati/core/utils/date_utils.dart' as app_date_utils;
-import '../domain/models/habit.dart' as domain;
-import '../domain/models/category.dart' as domain;
-import '../../tracking/domain/models/tracking_entry.dart' as domain;
-import '../../tracking/domain/models/streak.dart' as domain;
+import 'package:drift/drift.dart' as drift;
 
 class HabitRepository {
   final db.AppDatabase _db;
@@ -33,11 +30,13 @@ class HabitRepository {
 
   Future<db.Habit?> getHabitById(int id) => _habitDao.getHabitById(id);
 
-  Future<int> createHabit(domain.Habit habit) =>
-      _habitDao.insertHabit(habit.toCompanion());
+  Future<int> createHabit(db.HabitsCompanion habit) {
+    return _habitDao.insertHabit(habit);
+  }
 
-  Future<bool> updateHabit(domain.Habit habit) =>
-      _habitDao.updateHabit(habit.toCompanion());
+  Future<bool> updateHabit(db.HabitsCompanion habit) {
+    return _habitDao.updateHabit(habit);
+  }
 
   Future<int> deleteHabit(int id) => _habitDao.deleteHabit(id);
 
@@ -51,11 +50,13 @@ class HabitRepository {
   Future<db.Category?> getCategoryById(int id) =>
       _categoryDao.getCategoryById(id);
 
-  Future<int> createCategory(domain.Category category) =>
-      _categoryDao.insertCategory(category.toCompanion());
+  Future<int> createCategory(db.CategoriesCompanion category) {
+    return _categoryDao.insertCategory(category);
+  }
 
-  Future<bool> updateCategory(domain.Category category) =>
-      _categoryDao.updateCategory(category.toCompanion());
+  Future<bool> updateCategory(db.CategoriesCompanion category) {
+    return _categoryDao.updateCategory(category);
+  }
 
   Future<int> deleteCategory(int id) => _categoryDao.deleteCategory(id);
 
@@ -71,13 +72,15 @@ class HabitRepository {
 
   Future<bool> toggleCompletion(int habitId, DateTime date, bool completed,
       {String? notes}) async {
-      final entry = domain.TrackingEntry(
-      habitId: habitId,
-      date: app_date_utils.DateUtils.getDateOnly(date),
-      completed: completed,
-      notes: notes,
+    final dateOnly = app_date_utils.DateUtils.getDateOnly(date);
+    final companion = db.TrackingEntriesCompanion(
+      id: const drift.Value.absent(),
+      habitId: drift.Value(habitId),
+      date: drift.Value(dateOnly),
+      completed: drift.Value(completed),
+      notes: notes == null ? const drift.Value.absent() : drift.Value(notes),
     );
-    await _trackingEntryDao.insertOrUpdateEntry(entry.toCompanion());
+    await _trackingEntryDao.insertOrUpdateEntry(companion);
     await _updateStreak(habitId);
     return true;
   }
@@ -92,9 +95,14 @@ class HabitRepository {
       ..sort((a, b) => b.date.compareTo(a.date));
 
     if (sortedEntries.isEmpty) {
-      await _streakDao.insertOrUpdateStreak(
-        domain.Streak(habitId: habitId, lastUpdated: DateTime.now()).toCompanion(),
+      final companion = db.StreaksCompanion(
+        id: const drift.Value.absent(),
+        habitId: drift.Value(habitId),
+        currentStreak: drift.Value(0),
+        longestStreak: drift.Value(0),
+        lastUpdated: drift.Value(DateTime.now()),
       );
+      await _streakDao.insertOrUpdateStreak(companion);
       return false;
     }
 
@@ -130,14 +138,14 @@ class HabitRepository {
       longestStreak = tempStreak > longestStreak ? tempStreak : longestStreak;
     }
 
-    await _streakDao.insertOrUpdateStreak(
-      domain.Streak(
-        habitId: habitId,
-        currentStreak: currentStreak,
-        longestStreak: longestStreak,
-        lastUpdated: DateTime.now(),
-      ).toCompanion(),
+    final companion = db.StreaksCompanion(
+      id: const drift.Value.absent(),
+      habitId: drift.Value(habitId),
+      currentStreak: drift.Value(currentStreak),
+      longestStreak: drift.Value(longestStreak),
+      lastUpdated: drift.Value(DateTime.now()),
     );
+    await _streakDao.insertOrUpdateStreak(companion);
 
     return true;
   }

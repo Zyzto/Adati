@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../habits/presentation/providers/habit_providers.dart';
-import '../../../tracking/presentation/providers/tracking_providers.dart';
+import '../../habits/providers/habit_providers.dart';
+import '../../habits/providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 
 class TimelineStats extends ConsumerWidget {

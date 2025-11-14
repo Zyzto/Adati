@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'core/theme/app_theme.dart';
-import 'features/habits/presentation/pages/habit_detail_page.dart';
-import 'features/habits/presentation/pages/habit_form_page.dart';
-import 'features/timeline/presentation/pages/day_detail_page.dart';
-import 'features/settings/presentation/pages/settings_page.dart';
-import 'features/settings/presentation/providers/settings_providers.dart';
-import 'features/main/presentation/pages/main_shell_page.dart';
+import 'features/habits/pages/habit_detail_page.dart';
+import 'features/habits/pages/habit_form_page.dart';
+import 'features/timeline/pages/day_detail_page.dart';
+import 'features/settings/pages/settings_page.dart';
+import 'features/settings/providers/settings_providers.dart';
+import 'features/timeline/pages/main_timeline_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -16,7 +16,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/timeline',
-        builder: (context, state) => const MainShellPage(),
+        builder: (context, state) => const MainTimelinePage(),
       ),
       GoRoute(
         path: '/timeline/day/:date',

@@ -12,7 +12,7 @@ class SettingsPage extends ConsumerWidget {
   static const double defaultCardElevation = 2.0;
   static const double defaultCardBorderRadius = 12.0;
   static const String defaultDaySquareSize = 'large';
-  static const int defaultTimelineDays = 50;
+  static const int defaultTimelineDays = 100;
 
   String _getLanguageName(String? code) {
     switch (code) {

@@ -1,37 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../../../habits/presentation/providers/habit_providers.dart';
-import '../../domain/models/tracking_entry.dart';
-import '../../domain/models/streak.dart';
+import '../../../../core/database/app_database.dart' as db;
+import 'habit_providers.dart';
 
 final trackingEntriesProvider =
-    StreamProvider.family<List<TrackingEntry>, int>((ref, habitId) async* {
+    StreamProvider.family<List<db.TrackingEntry>, int>((ref, habitId) async* {
   final repository = ref.watch(habitRepositoryProvider);
   await for (final entries in repository.watchEntriesByHabit(habitId)) {
-    yield entries.map((e) => TrackingEntry(
-          id: e.id,
-          habitId: e.habitId,
-          date: e.date,
-          completed: e.completed,
-          notes: e.notes,
-        )).toList();
+    yield entries;
   }
 });
 
-final streakProvider = StreamProvider.family<Streak?, int>((ref, habitId) async* {
+final streakProvider = StreamProvider.family<db.Streak?, int>((ref, habitId) async* {
   final repository = ref.watch(habitRepositoryProvider);
   await for (final streak in repository.watchStreakByHabit(habitId)) {
-    if (streak != null) {
-      yield Streak(
-        id: streak.id,
-        habitId: streak.habitId,
-        currentStreak: streak.currentStreak,
-        longestStreak: streak.longestStreak,
-        lastUpdated: streak.lastUpdated,
-      );
-    } else {
-      yield null;
-    }
+    yield streak;
   }
 });
 
@@ -42,8 +25,8 @@ final dayEntriesProvider =
   
   final entries = <int, bool>{};
   for (final habit in habits) {
-    final entry = await repository.getEntry(habit.id!, date);
-    entries[habit.id!] = entry?.completed ?? false;
+    final entry = await repository.getEntry(habit.id, date);
+    entries[habit.id] = entry?.completed ?? false;
   }
   
   yield entries;
@@ -66,21 +49,15 @@ final todayEntryProvider = StreamProvider.family<bool, int>((ref, habitId) async
   }
 });
 
-final allStreaksProvider = StreamProvider<List<Streak>>((ref) async* {
+final allStreaksProvider = StreamProvider<List<db.Streak>>((ref) async* {
   final repository = ref.watch(habitRepositoryProvider);
   final habits = await ref.watch(habitsProvider.future);
   
-  final streaks = <Streak>[];
+  final streaks = <db.Streak>[];
   for (final habit in habits) {
-    final streak = await repository.getStreakByHabit(habit.id!);
+    final streak = await repository.getStreakByHabit(habit.id);
     if (streak != null) {
-      streaks.add(Streak(
-        id: streak.id,
-        habitId: streak.habitId,
-        currentStreak: streak.currentStreak,
-        longestStreak: streak.longestStreak,
-        lastUpdated: streak.lastUpdated,
-      ));
+      streaks.add(streak);
     }
   }
   
@@ -88,17 +65,11 @@ final allStreaksProvider = StreamProvider<List<Streak>>((ref) async* {
   
   // Also watch for changes
   await for (final habits in repository.watchAllHabits()) {
-    final updatedStreaks = <Streak>[];
+    final updatedStreaks = <db.Streak>[];
     for (final habit in habits) {
       final streak = await repository.getStreakByHabit(habit.id);
       if (streak != null) {
-        updatedStreaks.add(Streak(
-          id: streak.id,
-          habitId: streak.habitId,
-          currentStreak: streak.currentStreak,
-          longestStreak: streak.longestStreak,
-          lastUpdated: streak.lastUpdated,
-        ));
+        updatedStreaks.add(streak);
       }
     }
     yield updatedStreaks;

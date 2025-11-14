@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../../../habits/presentation/providers/habit_providers.dart';
-import '../../../settings/presentation/providers/settings_providers.dart';
+import '../../habits/providers/habit_providers.dart';
+import '../../settings/providers/settings_providers.dart';
 import 'day_square.dart';
 
 class CalendarGrid extends ConsumerWidget {
@@ -106,8 +106,8 @@ class CalendarGrid extends ConsumerWidget {
     final entries = <int, bool>{};
 
     for (final habit in habits) {
-      final entry = await repository.getEntry(habit.id!, day);
-      entries[habit.id!] = entry?.completed ?? false;
+      final entry = await repository.getEntry(habit.id, day);
+      entries[habit.id] = entry?.completed ?? false;
     }
 
     return entries;

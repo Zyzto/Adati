@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../../tracking/presentation/providers/tracking_providers.dart';
+import '../providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../../../timeline/presentation/widgets/day_square.dart';
+import '../../timeline/widgets/day_square.dart';
 
 class HabitTimeline extends ConsumerWidget {
   final int habitId;

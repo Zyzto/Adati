@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../domain/models/habit.dart';
+import '../../../../core/database/app_database.dart' as db;
 import '../providers/habit_providers.dart';
 
 class HabitManagementMenu extends ConsumerWidget {
-  final Habit habit;
+  final db.Habit habit;
 
   const HabitManagementMenu({super.key, required this.habit});
 
@@ -32,7 +32,7 @@ class HabitManagementMenu extends ConsumerWidget {
 
     if (confirmed == true && context.mounted) {
       final repository = ref.read(habitRepositoryProvider);
-      await repository.deleteHabit(habit.id!);
+      await repository.deleteHabit(habit.id);
       if (context.mounted) {
         Navigator.pop(context); // Close the bottom sheet
       }
