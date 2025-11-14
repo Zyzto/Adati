@@ -167,7 +167,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                       color: isCompleted
                           ? Colors.green
                           : (isToday
-                              ? Colors.blue.withOpacity(0.2)
+                              ? Colors.blue.withValues(alpha: 0.2)
                               : Colors.grey[200]),
                       shape: BoxShape.circle,
                       border: isToday

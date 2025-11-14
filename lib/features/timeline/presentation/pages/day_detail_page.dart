@@ -18,7 +18,12 @@ class DayDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(app_date_utils.DateUtils.formatDate(dateOnly, format: 'EEEE, MMMM d, yyyy')),
+        title: Text(
+          app_date_utils.DateUtils.formatDate(
+            dateOnly,
+            format: 'EEEE, MMMM d, yyyy',
+          ),
+        ),
       ),
       body: habitsAsync.when(
         data: (habits) {
@@ -49,9 +54,7 @@ class DayDetailPage extends ConsumerWidget {
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
                                 'Completed',
@@ -66,9 +69,7 @@ class DayDetailPage extends ConsumerWidget {
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
                                 'Total Habits',
@@ -85,9 +86,7 @@ class DayDetailPage extends ConsumerWidget {
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
                                 'Completion',
@@ -114,22 +113,14 @@ class DayDetailPage extends ConsumerWidget {
                                 const SizedBox(height: 16),
                                 Text(
                                   'No habits completed',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        color: Colors.grey[600],
-                                      ),
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(color: Colors.grey[600]),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Complete habits to see them here',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Colors.grey[500],
-                                      ),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: Colors.grey[500]),
                                 ),
                               ],
                             ),
@@ -164,10 +155,7 @@ class _HabitEntryCard extends ConsumerStatefulWidget {
   final Habit habit;
   final DateTime date;
 
-  const _HabitEntryCard({
-    required this.habit,
-    required this.date,
-  });
+  const _HabitEntryCard({required this.habit, required this.date});
 
   @override
   ConsumerState<_HabitEntryCard> createState() => _HabitEntryCardState();
@@ -196,6 +184,8 @@ class _HabitEntryCardState extends ConsumerState<_HabitEntryCard> {
     final repository = ref.read(habitRepositoryProvider);
     final entry = await repository.getEntry(widget.habit.id!, widget.date);
     final currentNotes = entry?.notes ?? '';
+
+    if (!mounted) return;
 
     final result = await showDialog<String>(
       context: context,
@@ -237,16 +227,12 @@ class _HabitEntryCardState extends ConsumerState<_HabitEntryCard> {
         ),
         title: Text(
           widget.habit.name,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         subtitle: _notes != null && _notes!.isNotEmpty
-            ? Text(
-                _notes!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              )
+            ? Text(_notes!, maxLines: 2, overflow: TextOverflow.ellipsis)
             : const Text('Tap to add notes'),
         trailing: IconButton(
           icon: Icon(
@@ -312,4 +298,3 @@ class _NotesDialogState extends State<_NotesDialog> {
     );
   }
 }
-

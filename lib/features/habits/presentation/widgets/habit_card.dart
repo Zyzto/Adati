@@ -106,7 +106,7 @@ class HabitCard extends ConsumerWidget {
                       height: 32,
                       child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                     ),
-                    error: (_, __) => IconButton(
+                    error: (_, _) => IconButton(
                       icon: const Icon(Icons.check_circle_outline, size: 32),
                       onPressed: () => _toggleTodayCompletion(context, ref),
                     ),
