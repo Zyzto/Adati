@@ -77,7 +77,6 @@ class CalendarGrid extends ConsumerWidget {
               return DaySquare(
                 date: day,
                 completed: false,
-                size: 16,
               );
             }
 
@@ -89,7 +88,6 @@ class CalendarGrid extends ConsumerWidget {
             return DaySquare(
               date: day,
               completed: completionRate > 0,
-              size: 16,
               onTap: null, // Disabled for now, might be used later
             );
           },

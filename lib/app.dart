@@ -59,12 +59,23 @@ class App extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final themeColor = ref.watch(themeColorProvider);
+    final cardElevation = ref.watch(cardElevationProvider);
+    final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
 
     return MaterialApp.router(
       title: 'Adati',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme(),
-      darkTheme: AppTheme.darkTheme(),
+      theme: AppTheme.lightTheme(
+        seedColor: Color(themeColor),
+        cardElevation: cardElevation,
+        cardBorderRadius: cardBorderRadius,
+      ),
+      darkTheme: AppTheme.darkTheme(
+        seedColor: Color(themeColor),
+        cardElevation: cardElevation,
+        cardBorderRadius: cardBorderRadius,
+      ),
       themeMode: themeMode,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static ThemeData lightTheme() {
+  static ThemeData lightTheme({
+    Color? seedColor,
+    double? cardElevation,
+    double? cardBorderRadius,
+  }) {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.deepPurple,
+        seedColor: seedColor ?? Colors.deepPurple,
         brightness: Brightness.light,
       ),
       appBarTheme: const AppBarTheme(
@@ -13,19 +17,23 @@ class AppTheme {
         elevation: 0,
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: cardElevation ?? 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(cardBorderRadius ?? 12),
         ),
       ),
     );
   }
 
-  static ThemeData darkTheme() {
+  static ThemeData darkTheme({
+    Color? seedColor,
+    double? cardElevation,
+    double? cardBorderRadius,
+  }) {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.deepPurple,
+        seedColor: seedColor ?? Colors.deepPurple,
         brightness: Brightness.dark,
       ),
       appBarTheme: const AppBarTheme(
@@ -33,9 +41,9 @@ class AppTheme {
         elevation: 0,
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: cardElevation ?? 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(cardBorderRadius ?? 12),
         ),
       ),
     );

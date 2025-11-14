@@ -35,7 +35,7 @@ class HabitTimeline extends ConsumerWidget {
             return DaySquare(
               date: day,
               completed: completed,
-              size: compact ? 12 : 16,
+              size: compact ? 12 : null, // Use preference if not compact
               onTap: null, // Disabled - clicking on boxes disabled
             );
           }).toList(),

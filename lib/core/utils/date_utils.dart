@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import '../services/preferences_service.dart';
 
 class DateUtils {
   static DateTime getToday() {
@@ -42,8 +43,9 @@ class DateUtils {
     return getDaysRange(start, today);
   }
 
-  static String formatDate(DateTime date, {String format = 'yyyy-MM-dd'}) {
-    return DateFormat(format).format(date);
+  static String formatDate(DateTime date, {String? format}) {
+    final dateFormat = format ?? PreferencesService.getDateFormat();
+    return DateFormat(dateFormat).format(date);
   }
 
   static String formatDateShort(DateTime date) {
@@ -56,6 +58,10 @@ class DateUtils {
     final startDate = getDateOnly(start);
     final endDate = getDateOnly(end);
     return endDate.difference(startDate).inDays;
+  }
+
+  static int getFirstDayOfWeek() {
+    return PreferencesService.getFirstDayOfWeek();
   }
 }
 
