@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:animations/animations.dart';
 import '../../../../core/services/preferences_service.dart';
+import '../../../../core/services/export_service.dart';
+import '../../../../core/database/app_database.dart' as db;
 import '../providers/settings_providers.dart';
 import '../../habits/widgets/checkbox_style_widget.dart';
+import '../../habits/providers/habit_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -14,6 +17,7 @@ class SettingsPage extends ConsumerWidget {
   static const double defaultCardBorderRadius = 12.0;
   static const String defaultDaySquareSize = 'large';
   static const int defaultTimelineDays = 100;
+  static const int defaultModalTimelineDays = 200;
 
   String _getLanguageName(String? code) {
     switch (code) {
@@ -67,6 +71,108 @@ class SettingsPage extends ConsumerWidget {
 
   String _getFirstDayOfWeekName(int day) {
     return day == 0 ? 'sunday'.tr() : 'monday'.tr();
+  }
+
+  Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
+    final repository = ref.read(habitRepositoryProvider);
+    
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    
+    try {
+      // Fetch all data
+      final habits = await repository.getAllHabits();
+      final entries = <db.TrackingEntry>[];
+      final streaks = <db.Streak>[];
+      
+      for (final habit in habits) {
+        final habitEntries = await repository.getEntriesByHabit(habit.id);
+        entries.addAll(habitEntries);
+        
+        final streak = await repository.getStreakByHabit(habit.id);
+        if (streak != null) {
+          streaks.add(streak);
+        }
+      }
+      
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+        
+        // Show format selection
+        final format = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('export_data'.tr()),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.table_chart),
+                  title: Text('export_as_csv'.tr()),
+                  subtitle: Text('export_csv_description'.tr()),
+                  onTap: () => Navigator.pop(context, 'csv'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: Text('export_as_json'.tr()),
+                  subtitle: Text('export_json_description'.tr()),
+                  onTap: () => Navigator.pop(context, 'json'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('cancel'.tr()),
+              ),
+            ],
+          ),
+        );
+        
+        if (format != null && context.mounted) {
+          String? filePath;
+          if (format == 'csv') {
+            filePath = await ExportService.exportToCSV(habits, entries, streaks);
+          } else {
+            filePath = await ExportService.exportToJSON(habits, entries, streaks);
+          }
+          
+          if (context.mounted) {
+            if (filePath != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('export_success'.tr()),
+                  action: SnackBarAction(
+                    label: 'ok'.tr(),
+                    onPressed: () {},
+                  ),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('export_cancelled'.tr()),
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'export_error'.tr()}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildSectionHeader(String title) {
@@ -546,8 +652,6 @@ class SettingsPage extends ConsumerWidget {
     switch (style) {
       case 'square':
         return 'Square';
-      case 'rounded':
-        return 'Rounded';
       case 'bordered':
         return 'Bordered';
       case 'circle':
@@ -582,6 +686,12 @@ class SettingsPage extends ConsumerWidget {
     final notifier = ref.read(timelineDaysNotifierProvider);
     await notifier.setTimelineDays(defaultTimelineDays);
     ref.invalidate(timelineDaysNotifierProvider);
+  }
+
+  Future<void> _revertModalTimelineDays(BuildContext context, WidgetRef ref) async {
+    final notifier = ref.read(modalTimelineDaysNotifierProvider);
+    await notifier.setModalTimelineDays(defaultModalTimelineDays);
+    ref.invalidate(modalTimelineDaysNotifierProvider);
   }
 
   void _showTimelineDaysDialog(BuildContext context, WidgetRef ref) {
@@ -630,6 +740,52 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  void _showModalTimelineDaysDialog(BuildContext context, WidgetRef ref) {
+    final currentDays = ref.watch(modalTimelineDaysProvider);
+    final notifier = ref.read(modalTimelineDaysNotifierProvider);
+    final navigator = Navigator.of(context);
+    final controller = TextEditingController(text: currentDays.toString());
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('modal_timeline_days'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'number_of_days_to_show'.tr(),
+                hintText: 'enter_number_of_days'.tr(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () async {
+              final days = int.tryParse(controller.text);
+              if (days != null && days > 0) {
+                await notifier.setModalTimelineDays(days);
+                ref.invalidate(modalTimelineDaysNotifierProvider);
+                if (dialogContext.mounted) {
+                  navigator.pop();
+                }
+              }
+            },
+            child: Text('save'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentLanguage = PreferencesService.getLanguage() ?? 'en';
@@ -641,6 +797,7 @@ class SettingsPage extends ConsumerWidget {
     final dateFormat = ref.watch(dateFormatProvider);
     final firstDayOfWeek = ref.watch(firstDayOfWeekProvider);
     final timelineDays = ref.watch(timelineDaysProvider);
+    final modalTimelineDays = ref.watch(modalTimelineDaysProvider);
     final habitCheckboxStyle = ref.watch(habitCheckboxStyleProvider);
     final notificationsEnabled = ref.watch(notificationsEnabledProvider);
     final notificationsNotifier = ref.read(
@@ -751,6 +908,19 @@ class SettingsPage extends ConsumerWidget {
               : null,
           onTap: () => _showTimelineDaysDialog(context, ref),
         ),
+        ListTile(
+          leading: const Icon(Icons.view_timeline),
+          title: Text('modal_timeline_days'.tr()),
+          subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
+          trailing: modalTimelineDays != defaultModalTimelineDays
+              ? IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'reset_to_default'.tr(),
+                  onPressed: () => _revertModalTimelineDays(context, ref),
+                )
+              : null,
+          onTap: () => _showModalTimelineDaysDialog(context, ref),
+        ),
 
         // Notifications Section
         _buildSectionHeader('notifications'.tr()),
@@ -763,6 +933,15 @@ class SettingsPage extends ConsumerWidget {
             await notificationsNotifier.setNotificationsEnabled(value);
             ref.invalidate(notificationsEnabledNotifierProvider);
           },
+        ),
+        // Data & Export Section
+        _buildSectionHeader('data_export'.tr()),
+        ListTile(
+          leading: const Icon(Icons.file_download),
+          title: Text('export_data'.tr()),
+          subtitle: Text('export_habit_data_description'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showExportDialog(context, ref),
         ),
       ],
     );

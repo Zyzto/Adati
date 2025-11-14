@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 enum HabitCheckboxStyle {
   square,
-  rounded,
   bordered,
   circle,
   radio,
@@ -28,33 +27,19 @@ Widget buildCheckboxWidget(
         size: size,
       );
 
-    case HabitCheckboxStyle.rounded:
-      return Icon(
-        isCompleted
-            ? Icons.check_box_rounded
-            : Icons.check_box_outline_blank_rounded,
-        color: color,
-        size: size,
-      );
-
     case HabitCheckboxStyle.bordered:
       return Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          border: Border.all(
-            color: color,
-            width: 2,
-          ),
+          border: Border.all(color: color, width: 2),
           borderRadius: BorderRadius.circular(4),
-          color: isCompleted ? color.withOpacity(0.1) : Colors.transparent,
+          color: isCompleted
+              ? color.withValues(alpha: 0.1)
+              : Colors.transparent,
         ),
         child: isCompleted
-            ? Icon(
-                Icons.check,
-                color: color,
-                size: iconSize,
-              )
+            ? Icon(Icons.check, color: color, size: iconSize)
             : null,
       );
 
@@ -67,9 +52,7 @@ Widget buildCheckboxWidget(
 
     case HabitCheckboxStyle.radio:
       return Icon(
-        isCompleted
-            ? Icons.radio_button_checked
-            : Icons.radio_button_unchecked,
+        isCompleted ? Icons.radio_button_checked : Icons.radio_button_unchecked,
         color: color,
         size: size,
       );
@@ -101,8 +84,6 @@ HabitCheckboxStyle habitCheckboxStyleFromString(String? value) {
   switch (value) {
     case 'square':
       return HabitCheckboxStyle.square;
-    case 'rounded':
-      return HabitCheckboxStyle.rounded;
     case 'bordered':
       return HabitCheckboxStyle.bordered;
     case 'circle':
@@ -124,8 +105,6 @@ String habitCheckboxStyleToString(HabitCheckboxStyle style) {
   switch (style) {
     case HabitCheckboxStyle.square:
       return 'square';
-    case HabitCheckboxStyle.rounded:
-      return 'rounded';
     case HabitCheckboxStyle.bordered:
       return 'bordered';
     case HabitCheckboxStyle.circle:
@@ -140,4 +119,3 @@ String habitCheckboxStyleToString(HabitCheckboxStyle style) {
       return 'taskAlt';
   }
 }
-

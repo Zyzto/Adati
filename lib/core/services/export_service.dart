@@ -1,0 +1,141 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
+import '../database/app_database.dart' as db;
+import 'logging_service.dart';
+
+class ExportService {
+  static Future<String?> exportToCSV(
+    List<db.Habit> habits,
+    List<db.TrackingEntry> entries,
+    List<db.Streak> streaks,
+  ) async {
+    try {
+      final buffer = StringBuffer();
+      
+      // Header
+      buffer.writeln('Habit Name,Date,Completed,Notes,Current Streak,Longest Streak');
+      
+      // Group entries by habit
+      final entriesByHabit = <int, List<db.TrackingEntry>>{};
+      for (final entry in entries) {
+        entriesByHabit.putIfAbsent(entry.habitId, () => []).add(entry);
+      }
+      
+      // Write data
+      for (final habit in habits) {
+        final habitEntries = entriesByHabit[habit.id] ?? [];
+        final streak = streaks.firstWhere(
+          (s) => s.habitId == habit.id,
+          orElse: () => db.Streak(
+            id: 0,
+            habitId: habit.id,
+            currentStreak: 0,
+            longestStreak: 0,
+            lastUpdated: DateTime.now(),
+          ),
+        );
+        
+        if (habitEntries.isEmpty) {
+          // Write habit with no entries
+          buffer.writeln(
+            '"${habit.name}",,,,${streak.currentStreak},${streak.longestStreak}',
+          );
+        } else {
+          for (final entry in habitEntries) {
+            final dateStr = DateFormat('yyyy-MM-dd').format(entry.date);
+            final notes = entry.notes?.replaceAll('"', '""') ?? '';
+            buffer.writeln(
+              '"${habit.name}",$dateStr,${entry.completed ? "Yes" : "No"},"$notes",${streak.currentStreak},${streak.longestStreak}',
+            );
+          }
+        }
+      }
+      
+      // Save file
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'adati_export_$timestamp.csv';
+      
+      // Use file_picker to save
+      final result = await FilePicker.platform.saveFile(
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        dialogTitle: 'Export Habit Data',
+      );
+      
+      if (result != null) {
+        // Write to the selected path
+        final file = await File(result).create(recursive: true);
+        await file.writeAsString(buffer.toString());
+        LoggingService.info('Exported data to: $result');
+        return result;
+      }
+      
+      return null;
+    } catch (e) {
+      LoggingService.error('Error exporting to CSV: $e');
+      return null;
+    }
+  }
+
+  static Future<String?> exportToJSON(
+    List<db.Habit> habits,
+    List<db.TrackingEntry> entries,
+    List<db.Streak> streaks,
+  ) async {
+    try {
+      final data = {
+        'exportDate': DateTime.now().toIso8601String(),
+        'version': '1.0',
+        'habits': habits.map((h) => {
+          'id': h.id,
+          'name': h.name,
+          'description': h.description,
+          'color': h.color,
+          'icon': h.icon,
+          'categoryId': h.categoryId,
+        }).toList(),
+        'entries': entries.map((e) => {
+          'habitId': e.habitId,
+          'date': e.date.toIso8601String(),
+          'completed': e.completed,
+          'notes': e.notes,
+        }).toList(),
+        'streaks': streaks.map((s) => {
+          'habitId': s.habitId,
+          'currentStreak': s.currentStreak,
+          'longestStreak': s.longestStreak,
+          'lastUpdated': s.lastUpdated.toIso8601String(),
+        }).toList(),
+      };
+      
+      final jsonString = const JsonEncoder.withIndent('  ').convert(data);
+      
+      // Save file
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'adati_export_$timestamp.json';
+      
+      final result = await FilePicker.platform.saveFile(
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        dialogTitle: 'Export Habit Data',
+      );
+      
+      if (result != null) {
+        final file = await File(result).create(recursive: true);
+        await file.writeAsString(jsonString);
+        LoggingService.info('Exported data to: $result');
+        return result;
+      }
+      
+      return null;
+    } catch (e) {
+      LoggingService.error('Error exporting to JSON: $e');
+      return null;
+    }
+  }
+}
+

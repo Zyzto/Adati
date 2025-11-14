@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/app_database.dart' as db;
 import '../providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../providers/habit_providers.dart';
 import '../widgets/habit_timeline.dart';
-import 'habit_management_menu.dart';
 import 'habit_calendar_modal.dart';
 import 'checkbox_style_widget.dart';
 import '../../settings/providers/settings_providers.dart';
+import '../../../../core/widgets/skeleton_loader.dart';
 
 class HabitCard extends ConsumerWidget {
   final db.Habit habit;
@@ -19,6 +20,7 @@ class HabitCard extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    HapticFeedback.mediumImpact();
     final repository = ref.read(habitRepositoryProvider);
     final today = app_date_utils.DateUtils.getToday();
 
@@ -48,6 +50,7 @@ class HabitCard extends ConsumerWidget {
                   showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
+                    useSafeArea: true,
                     builder: (context) => HabitCalendarModal(habitId: habit.id),
                   );
                 },
@@ -79,28 +82,12 @@ class HabitCard extends ConsumerWidget {
                                 : null,
                           ),
                           const SizedBox(width: 12),
-                          // Title with settings cog
+                          // Title
                           Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    habit.name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.settings, size: 20),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () {
-                                    _showManagementMenu(context, ref);
-                                  },
-                                ),
-                              ],
+                            child: Text(
+                              habit.name,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -117,16 +104,23 @@ class HabitCard extends ConsumerWidget {
             todayEntryAsync.when(
               data: (isCompleted) => Material(
                 color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _toggleTodayCompletion(context, ref),
-                  child: Container(
-                    width: 96,
-                    alignment: Alignment.center,
-                    child: buildCheckboxWidget(
-                      checkboxStyle,
-                      isCompleted,
-                      36,
-                      () => _toggleTodayCompletion(context, ref),
+                child: Semantics(
+                  label: isCompleted
+                      ? 'Mark as incomplete'
+                      : 'Mark as complete',
+                  button: true,
+                  child: InkWell(
+                    onTap: () => _toggleTodayCompletion(context, ref),
+                    child: Container(
+                      width: 96,
+                      constraints: const BoxConstraints(minHeight: 44),
+                      alignment: Alignment.center,
+                      child: buildCheckboxWidget(
+                        checkboxStyle,
+                        isCompleted,
+                        36,
+                        () => _toggleTodayCompletion(context, ref),
+                      ),
                     ),
                   ),
                 ),
@@ -134,20 +128,34 @@ class HabitCard extends ConsumerWidget {
               loading: () => Container(
                 width: 96,
                 alignment: Alignment.center,
-                child: const CircularProgressIndicator(strokeWidth: 2),
+                child: SkeletonLoader(
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.grey,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
               ),
               error: (_, _) => Material(
                 color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _toggleTodayCompletion(context, ref),
-                  child: Container(
-                    width: 96,
-                    alignment: Alignment.center,
-                    child: buildCheckboxWidget(
-                      checkboxStyle,
-                      false,
-                      36,
-                      () => _toggleTodayCompletion(context, ref),
+                child: Semantics(
+                  label: 'Mark as complete',
+                  button: true,
+                  child: InkWell(
+                    onTap: () => _toggleTodayCompletion(context, ref),
+                    child: Container(
+                      width: 96,
+                      constraints: const BoxConstraints(minHeight: 44),
+                      alignment: Alignment.center,
+                      child: buildCheckboxWidget(
+                        checkboxStyle,
+                        false,
+                        36,
+                        () => _toggleTodayCompletion(context, ref),
+                      ),
                     ),
                   ),
                 ),
@@ -156,13 +164,6 @@ class HabitCard extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _showManagementMenu(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => HabitManagementMenu(habit: habit),
     );
   }
 }

@@ -14,6 +14,11 @@ class PreferencesService {
   static const String _keyFirstDayOfWeek = 'first_day_of_week';
   static const String _keyNotificationsEnabled = 'notifications_enabled';
   static const String _keyHabitCheckboxStyle = 'habit_checkbox_style';
+  static const String _keyModalTimelineDays = 'modal_timeline_days';
+  static const String _keyHabitSortOrder = 'habit_sort_order';
+  static const String _keyHabitFilterQuery = 'habit_filter_query';
+  static const String _keyHabitWeeklyGoal = 'habit_weekly_goal_';
+  static const String _keyHabitMonthlyGoal = 'habit_monthly_goal_';
 
   static SharedPreferences? _prefs;
 
@@ -94,6 +99,45 @@ class PreferencesService {
       prefs.getString(_keyHabitCheckboxStyle) ?? 'square';
   static Future<bool> setHabitCheckboxStyle(String style) =>
       prefs.setString(_keyHabitCheckboxStyle, style);
+
+  // Modal timeline days (default: 200)
+  static int getModalTimelineDays() => prefs.getInt(_keyModalTimelineDays) ?? 200;
+  static Future<bool> setModalTimelineDays(int days) =>
+      prefs.setInt(_keyModalTimelineDays, days);
+
+  // Habit sort order (default: 'name')
+  static String getHabitSortOrder() =>
+      prefs.getString(_keyHabitSortOrder) ?? 'name';
+  static Future<bool> setHabitSortOrder(String order) =>
+      prefs.setString(_keyHabitSortOrder, order);
+
+  // Habit filter query
+  static String? getHabitFilterQuery() => prefs.getString(_keyHabitFilterQuery);
+  static Future<bool> setHabitFilterQuery(String? query) {
+    if (query == null || query.isEmpty) {
+      return prefs.remove(_keyHabitFilterQuery);
+    }
+    return prefs.setString(_keyHabitFilterQuery, query);
+  }
+
+  // Habit Goals
+  static int? getHabitWeeklyGoal(int habitId) =>
+      prefs.getInt('$_keyHabitWeeklyGoal$habitId');
+  static Future<bool> setHabitWeeklyGoal(int habitId, int? days) {
+    if (days == null) {
+      return prefs.remove('$_keyHabitWeeklyGoal$habitId');
+    }
+    return prefs.setInt('$_keyHabitWeeklyGoal$habitId', days);
+  }
+
+  static int? getHabitMonthlyGoal(int habitId) =>
+      prefs.getInt('$_keyHabitMonthlyGoal$habitId');
+  static Future<bool> setHabitMonthlyGoal(int habitId, int? days) {
+    if (days == null) {
+      return prefs.remove('$_keyHabitMonthlyGoal$habitId');
+    }
+    return prefs.setInt('$_keyHabitMonthlyGoal$habitId', days);
+  }
 
   // Clear all preferences
   static Future<bool> clear() => prefs.clear();

@@ -271,3 +271,69 @@ final habitCheckboxStyleProvider = Provider<String>((ref) {
   return ref.watch(habitCheckboxStyleNotifierProvider).style;
 });
 
+// Modal Timeline Days
+class ModalTimelineDaysNotifier {
+  int _days;
+
+  ModalTimelineDaysNotifier() : _days = PreferencesService.getModalTimelineDays();
+
+  int get days => _days;
+
+  Future<void> setModalTimelineDays(int days) async {
+    _days = days;
+    await PreferencesService.setModalTimelineDays(days);
+  }
+}
+
+final modalTimelineDaysNotifierProvider = Provider<ModalTimelineDaysNotifier>((ref) {
+  return ModalTimelineDaysNotifier();
+});
+
+final modalTimelineDaysProvider = Provider<int>((ref) {
+  return ref.watch(modalTimelineDaysNotifierProvider).days;
+});
+
+// Habit Sort Order
+class HabitSortOrderNotifier {
+  String _order;
+
+  HabitSortOrderNotifier() : _order = PreferencesService.getHabitSortOrder();
+
+  String get order => _order;
+
+  Future<void> setHabitSortOrder(String order) async {
+    _order = order;
+    await PreferencesService.setHabitSortOrder(order);
+  }
+}
+
+final habitSortOrderNotifierProvider = Provider<HabitSortOrderNotifier>((ref) {
+  return HabitSortOrderNotifier();
+});
+
+final habitSortOrderProvider = Provider<String>((ref) {
+  return ref.watch(habitSortOrderNotifierProvider).order;
+});
+
+// Habit Filter Query
+class HabitFilterQueryNotifier {
+  String? _query;
+
+  HabitFilterQueryNotifier() : _query = PreferencesService.getHabitFilterQuery();
+
+  String? get query => _query;
+
+  Future<void> setHabitFilterQuery(String? query) async {
+    _query = query;
+    await PreferencesService.setHabitFilterQuery(query);
+  }
+}
+
+final habitFilterQueryNotifierProvider = Provider<HabitFilterQueryNotifier>((ref) {
+  return HabitFilterQueryNotifier();
+});
+
+final habitFilterQueryProvider = Provider<String?>((ref) {
+  return ref.watch(habitFilterQueryNotifierProvider).query;
+});
+
