@@ -17,35 +17,35 @@ class SettingsPage extends ConsumerWidget {
   String _getLanguageName(String? code) {
     switch (code) {
       case 'en':
-        return 'English';
+        return 'english'.tr();
       case 'ar':
-        return 'العربية';
+        return 'arabic'.tr();
       default:
-        return 'English';
+        return 'english'.tr();
     }
   }
 
   String _getThemeName(ThemeMode mode) {
     switch (mode) {
       case ThemeMode.light:
-        return 'Light';
+        return 'light'.tr();
       case ThemeMode.dark:
-        return 'Dark';
+        return 'dark'.tr();
       case ThemeMode.system:
-        return 'System';
+        return 'system'.tr();
     }
   }
 
   String _getDaySquareSizeName(String size) {
     switch (size) {
       case 'small':
-        return 'Small';
+        return 'small'.tr();
       case 'medium':
-        return 'Medium';
+        return 'medium'.tr();
       case 'large':
-        return 'Large';
+        return 'large'.tr();
       default:
-        return 'Medium';
+        return 'medium'.tr();
     }
   }
 
@@ -65,7 +65,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   String _getFirstDayOfWeekName(int day) {
-    return day == 0 ? 'Sunday' : 'Monday';
+    return day == 0 ? 'sunday'.tr() : 'monday'.tr();
   }
 
   Widget _buildSectionHeader(String title) {
@@ -89,13 +89,13 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Select Language'),
+        title: Text('select_language'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // ignore: deprecated_member_use
             RadioListTile<String>(
-              title: const Text('English'),
+              title: Text('english'.tr()),
               value: 'en',
               // ignore: deprecated_member_use
               groupValue: currentLanguage,
@@ -112,7 +112,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             // ignore: deprecated_member_use
             RadioListTile<String>(
-              title: const Text('العربية'),
+              title: Text('arabic'.tr()),
               value: 'ar',
               // ignore: deprecated_member_use
               groupValue: currentLanguage,
@@ -132,7 +132,7 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => navigator.pop(),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
         ],
       ),
@@ -147,13 +147,13 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Select Theme'),
+        title: Text('select_theme'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // ignore: deprecated_member_use
             RadioListTile<ThemeMode>(
-              title: const Text('Light'),
+              title: Text('light'.tr()),
               value: ThemeMode.light,
               // ignore: deprecated_member_use
               groupValue: currentTheme,
@@ -170,7 +170,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             // ignore: deprecated_member_use
             RadioListTile<ThemeMode>(
-              title: const Text('Dark'),
+              title: Text('dark'.tr()),
               value: ThemeMode.dark,
               // ignore: deprecated_member_use
               groupValue: currentTheme,
@@ -187,7 +187,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             // ignore: deprecated_member_use
             RadioListTile<ThemeMode>(
-              title: const Text('System'),
+              title: Text('system'.tr()),
               value: ThemeMode.system,
               // ignore: deprecated_member_use
               groupValue: currentTheme,
@@ -207,7 +207,7 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => navigator.pop(),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
         ],
       ),
@@ -236,7 +236,7 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Select Theme Color'),
+        title: Text('select_theme_color'.tr()),
         content: SizedBox(
           width: double.maxFinite,
           child: GridView.builder(
@@ -276,7 +276,7 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => navigator.pop(),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
         ],
       ),
@@ -309,13 +309,13 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Day Square Size'),
+        title: Text('day_square_size'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // ignore: deprecated_member_use
             RadioListTile<String>(
-              title: const Text('Small'),
+              title: Text('small'.tr()),
               value: 'small',
               // ignore: deprecated_member_use
               groupValue: currentSize,
@@ -332,7 +332,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             // ignore: deprecated_member_use
             RadioListTile<String>(
-              title: const Text('Medium'),
+              title: Text('medium'.tr()),
               value: 'medium',
               // ignore: deprecated_member_use
               groupValue: currentSize,
@@ -349,7 +349,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             // ignore: deprecated_member_use
             RadioListTile<String>(
-              title: const Text('Large'),
+              title: Text('large'.tr()),
               value: 'large',
               // ignore: deprecated_member_use
               groupValue: currentSize,
@@ -369,7 +369,7 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => navigator.pop(),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
         ],
       ),
@@ -385,7 +385,7 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Date Format'),
+        title: Text('date_format'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: formats.map((format) {
@@ -412,7 +412,7 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => navigator.pop(),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
         ],
       ),
@@ -427,13 +427,13 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('First Day of Week'),
+        title: Text('first_day_of_week'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // ignore: deprecated_member_use
             RadioListTile<int>(
-              title: const Text('Sunday'),
+              title: Text('sunday'.tr()),
               value: 0,
               // ignore: deprecated_member_use
               groupValue: currentDay,
@@ -450,7 +450,7 @@ class SettingsPage extends ConsumerWidget {
             ),
             // ignore: deprecated_member_use
             RadioListTile<int>(
-              title: const Text('Monday'),
+              title: Text('monday'.tr()),
               value: 1,
               // ignore: deprecated_member_use
               groupValue: currentDay,
@@ -470,7 +470,7 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => navigator.pop(),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
         ],
       ),
@@ -505,16 +505,16 @@ class SettingsPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Timeline Days'),
+        title: Text('timeline_days'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Number of days to show',
-                hintText: 'Enter number of days',
+              decoration: InputDecoration(
+                labelText: 'number_of_days_to_show'.tr(),
+                hintText: 'enter_number_of_days'.tr(),
               ),
             ),
           ],
@@ -522,7 +522,7 @@ class SettingsPage extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => navigator.pop(),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
           TextButton(
             onPressed: () async {
@@ -535,7 +535,7 @@ class SettingsPage extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Save'),
+            child: Text('save'.tr()),
           ),
         ],
       ),
@@ -565,25 +565,25 @@ class SettingsPage extends ConsumerWidget {
     final settingsList = ListView(
       children: [
         // General Section
-        _buildSectionHeader('General'),
+        _buildSectionHeader('general'.tr()),
         ListTile(
           leading: const Icon(Icons.language),
-          title: const Text('Language'),
+          title: Text('language'.tr()),
           subtitle: Text(_getLanguageName(currentLanguage)),
           onTap: () => _showLanguageDialog(context),
         ),
         ListTile(
           leading: const Icon(Icons.dark_mode),
-          title: const Text('Theme'),
+          title: Text('theme'.tr()),
           subtitle: Text(_getThemeName(themeMode)),
           onTap: () => _showThemeDialog(context, ref),
         ),
 
         // Appearance Section
-        _buildSectionHeader('Appearance'),
+        _buildSectionHeader('appearance'.tr()),
         ListTile(
           leading: const Icon(Icons.palette),
-          title: const Text('Theme Color'),
+          title: Text('select_theme_color'.tr()),
           trailing: Container(
             width: 32,
             height: 32,
@@ -600,16 +600,16 @@ class SettingsPage extends ConsumerWidget {
         ),
         ListTile(
           leading: const Icon(Icons.style),
-          title: const Text('Card Style'),
+          title: Text('card_style'.tr()),
           subtitle: Text(
-            'Elevation: ${cardElevation.toStringAsFixed(1)}, Radius: ${cardBorderRadius.toStringAsFixed(1)}',
+            '${'elevation'.tr()}: ${cardElevation.toStringAsFixed(1)}, ${'border_radius'.tr()}: ${cardBorderRadius.toStringAsFixed(1)}',
           ),
           trailing:
               (cardElevation != defaultCardElevation ||
                   cardBorderRadius != defaultCardBorderRadius)
               ? IconButton(
                   icon: const Icon(Icons.refresh),
-                  tooltip: 'Reset to default',
+                  tooltip: 'reset_to_default'.tr(),
                   onPressed: () => _revertCardStyle(context, ref),
                 )
               : null,
@@ -617,12 +617,12 @@ class SettingsPage extends ConsumerWidget {
         ),
         ListTile(
           leading: const Icon(Icons.square),
-          title: const Text('Day Square Size'),
+          title: Text('day_square_size'.tr()),
           subtitle: Text(_getDaySquareSizeName(daySquareSize)),
           trailing: daySquareSize != defaultDaySquareSize
               ? IconButton(
                   icon: const Icon(Icons.refresh),
-                  tooltip: 'Reset to default',
+                  tooltip: 'reset_to_default'.tr(),
                   onPressed: () => _revertDaySquareSize(context, ref),
                 )
               : null,
@@ -630,27 +630,27 @@ class SettingsPage extends ConsumerWidget {
         ),
 
         // Display Section
-        _buildSectionHeader('Display'),
+        _buildSectionHeader('display'.tr()),
         ListTile(
           leading: const Icon(Icons.calendar_today),
-          title: const Text('Date Format'),
+          title: Text('date_format'.tr()),
           subtitle: Text(_getDateFormatName(dateFormat)),
           onTap: () => _showDateFormatDialog(context, ref),
         ),
         ListTile(
           leading: const Icon(Icons.view_week),
-          title: const Text('First Day of Week'),
+          title: Text('first_day_of_week'.tr()),
           subtitle: Text(_getFirstDayOfWeekName(firstDayOfWeek)),
           onTap: () => _showFirstDayOfWeekDialog(context, ref),
         ),
         ListTile(
           leading: const Icon(Icons.calendar_view_week),
-          title: const Text('Timeline Days'),
-          subtitle: Text('$timelineDays days'),
+          title: Text('timeline_days'.tr()),
+          subtitle: Text('$timelineDays ${'days'.tr()}'),
           trailing: timelineDays != defaultTimelineDays
               ? IconButton(
                   icon: const Icon(Icons.refresh),
-                  tooltip: 'Reset to default',
+                  tooltip: 'reset_to_default'.tr(),
                   onPressed: () => _revertTimelineDays(context, ref),
                 )
               : null,
@@ -658,11 +658,11 @@ class SettingsPage extends ConsumerWidget {
         ),
 
         // Notifications Section
-        _buildSectionHeader('Notifications'),
+        _buildSectionHeader('notifications'.tr()),
         SwitchListTile(
           secondary: const Icon(Icons.notifications),
-          title: const Text('Enable Notifications'),
-          subtitle: const Text('Receive habit reminders'),
+          title: Text('enable_notifications'.tr()),
+          subtitle: Text('receive_habit_reminders'.tr()),
           value: notificationsEnabled,
           onChanged: (value) async {
             await notificationsNotifier.setNotificationsEnabled(value);
@@ -690,7 +690,7 @@ class SettingsPage extends ConsumerWidget {
             child: Column(
               children: [
                 AppBar(
-                  title: const Text('Settings'),
+                  title: Text('settings'.tr()),
                   automaticallyImplyLeading: true,
                 ),
                 Expanded(
@@ -721,7 +721,7 @@ class SettingsPage extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text('settings'.tr())),
       body: PageTransitionSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder:
@@ -776,11 +776,11 @@ class _CardStyleDialogContentState extends State<_CardStyleDialogContent> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Card Style'),
+      title: Text('card_style'.tr()),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Elevation: ${_elevation.toStringAsFixed(1)}'),
+          Text('${'elevation'.tr()}: ${_elevation.toStringAsFixed(1)}'),
           Slider(
             value: _elevation,
             min: 0,
@@ -795,7 +795,7 @@ class _CardStyleDialogContentState extends State<_CardStyleDialogContent> {
             },
           ),
           const SizedBox(height: 16),
-          Text('Border Radius: ${_borderRadius.toStringAsFixed(1)}'),
+          Text('${'border_radius'.tr()}: ${_borderRadius.toStringAsFixed(1)}'),
           Slider(
             value: _borderRadius,
             min: 0,
@@ -814,7 +814,7 @@ class _CardStyleDialogContentState extends State<_CardStyleDialogContent> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Done'),
+          child: Text('done'.tr()),
         ),
       ],
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../tracking/presentation/providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../timeline/presentation/widgets/day_square.dart';
@@ -45,7 +46,7 @@ class HabitTimeline extends ConsumerWidget {
         height: 50,
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (error, stack) => Text('Error: $error'),
+      error: (error, stack) => Text('${'error'.tr()}: $error'),
     );
   }
 }

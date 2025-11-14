@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../habits/presentation/providers/habit_providers.dart';
 import '../../../tracking/presentation/providers/tracking_providers.dart';
@@ -57,7 +58,7 @@ class DayDetailPage extends ConsumerWidget {
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                'Completed',
+                                'completed'.tr(),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
@@ -72,7 +73,7 @@ class DayDetailPage extends ConsumerWidget {
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                'Total Habits',
+                                'total_habits'.tr(),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
@@ -89,7 +90,7 @@ class DayDetailPage extends ConsumerWidget {
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                'Completion',
+                                'completion'.tr(),
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
@@ -112,13 +113,13 @@ class DayDetailPage extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No habits completed',
+                                  'no_habits_completed'.tr(),
                                   style: Theme.of(context).textTheme.titleLarge
                                       ?.copyWith(color: Colors.grey[600]),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Complete habits to see them here',
+                                  'complete_habits_to_see'.tr(),
                                   style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(color: Colors.grey[500]),
                                 ),
@@ -141,11 +142,12 @@ class DayDetailPage extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => Center(child: Text('Error: $error')),
+            error: (error, stack) =>
+                Center(child: Text('${'error'.tr()}: $error')),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+        error: (error, stack) => Center(child: Text('${'error'.tr()}: $error')),
       ),
     );
   }
@@ -233,7 +235,7 @@ class _HabitEntryCardState extends ConsumerState<_HabitEntryCard> {
         ),
         subtitle: _notes != null && _notes!.isNotEmpty
             ? Text(_notes!, maxLines: 2, overflow: TextOverflow.ellipsis)
-            : const Text('Tap to add notes'),
+            : Text('tap_to_add_notes'.tr()),
         trailing: IconButton(
           icon: Icon(
             _notes != null && _notes!.isNotEmpty
@@ -275,12 +277,12 @@ class _NotesDialogState extends State<_NotesDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Notes'),
+      title: Text('notes'.tr()),
       content: TextField(
         controller: _controller,
-        decoration: const InputDecoration(
-          hintText: 'Add notes about this habit...',
-          border: OutlineInputBorder(),
+        decoration: InputDecoration(
+          hintText: 'add_notes_about_habit'.tr(),
+          border: const OutlineInputBorder(),
         ),
         maxLines: 5,
         autofocus: true,
@@ -288,11 +290,11 @@ class _NotesDialogState extends State<_NotesDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text('cancel'.tr()),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Save'),
+          child: Text('save'.tr()),
         ),
       ],
     );

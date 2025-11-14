@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import '../../../tracking/presentation/providers/tracking_providers.dart';
 import '../widgets/habit_timeline.dart';
@@ -15,14 +16,14 @@ class HabitDetailPage extends ConsumerWidget {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Delete Habit'),
-          content: const Text(
-            'Are you sure you want to delete this habit? This action cannot be undone.',
+          title: Text('delete_habit'.tr()),
+          content: Text(
+            'delete_habit_confirmation_generic'.tr(),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: Text('cancel'.tr()),
             ),
             TextButton(
               onPressed: () async {
@@ -34,7 +35,7 @@ class HabitDetailPage extends ConsumerWidget {
                 }
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
+              child: Text('delete'.tr()),
             ),
           ],
         );
@@ -51,8 +52,8 @@ class HabitDetailPage extends ConsumerWidget {
       appBar: AppBar(
         title: habitAsync.when(
           data: (habit) => Text(habit?.name ?? 'Habit'),
-          loading: () => const Text('Loading...'),
-          error: (_, _) => const Text('Error'),
+          loading: () => Text('loading'.tr()),
+          error: (_, _) => Text('error'.tr()),
         ),
         actions: [
           IconButton(
@@ -68,7 +69,7 @@ class HabitDetailPage extends ConsumerWidget {
       body: habitAsync.when(
         data: (habit) {
           if (habit == null) {
-            return const Center(child: Text('Habit not found'));
+            return Center(child: Text('habit_not_found'.tr()));
           }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -105,7 +106,7 @@ class HabitDetailPage extends ConsumerWidget {
                                       ),
                                 ),
                                 Text(
-                                  'Current Streak',
+                                  'current_streak'.tr(),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -122,7 +123,7 @@ class HabitDetailPage extends ConsumerWidget {
                                       ),
                                 ),
                                 Text(
-                                  'Longest Streak',
+                                  'longest_streak'.tr(),
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -137,7 +138,7 @@ class HabitDetailPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Timeline',
+                  'timeline'.tr(),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
@@ -147,7 +148,7 @@ class HabitDetailPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+        error: (error, stack) => Center(child: Text('${'error'.tr()}: $error')),
       ),
     );
   }

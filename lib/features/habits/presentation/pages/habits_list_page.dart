@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import '../widgets/habit_card.dart';
 
@@ -13,7 +14,7 @@ class HabitsListPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Habits'),
+        title: Text('habits'.tr()),
       ),
       body: habitsAsync.when(
         data: (habits) {
@@ -29,14 +30,14 @@ class HabitsListPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No habits yet',
+                    'no_habits'.tr(),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.grey[600],
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Create your first habit to get started',
+                    'create_first_habit'.tr(),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[500],
                         ),
@@ -55,7 +56,7 @@ class HabitsListPage extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Error: $error'),
+          child: Text('${'error'.tr()}: $error'),
         ),
       ),
       floatingActionButton: FloatingActionButton(

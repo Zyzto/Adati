@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import 'habit_card.dart';
 
@@ -27,14 +28,14 @@ class HabitsSection extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No habits yet',
+                    'no_habits'.tr(),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: Colors.grey[600],
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Create your first habit to get started',
+                    'create_first_habit'.tr(),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.grey[500],
                         ),
@@ -43,7 +44,7 @@ class HabitsSection extends ConsumerWidget {
                   ElevatedButton.icon(
                     onPressed: () => context.push('/habits/new'),
                     icon: const Icon(Icons.add),
-                    label: const Text('Create Habit'),
+                    label: Text('create_habit'.tr()),
                   ),
                 ],
               ),
@@ -60,7 +61,7 @@ class HabitsSection extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Habits',
+                    'habits'.tr(),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -92,7 +93,7 @@ class HabitsSection extends ConsumerWidget {
       error: (error, stack) => Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
-          child: Text('Error: $error'),
+          child: Text('${'error'.tr()}: $error'),
         ),
       ),
     );

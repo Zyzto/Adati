@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import '../../domain/models/habit.dart';
 
@@ -81,11 +82,11 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.habitId == null ? 'New Habit' : 'Edit Habit'),
+        title: Text(widget.habitId == null ? 'new_habit'.tr() : 'edit_habit'.tr()),
         actions: [
           TextButton(
             onPressed: _saveHabit,
-            child: const Text('Save'),
+            child: Text('save'.tr()),
           ),
         ],
       ),
@@ -96,13 +97,13 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
           children: [
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'habit_name'.tr(),
+                border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a habit name';
+                  return 'please_enter_habit_name'.tr();
                 }
                 return null;
               },
@@ -110,15 +111,15 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'habit_description'.tr(),
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
             const SizedBox(height: 24),
             Text(
-              'Color',
+              'color'.tr(),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),

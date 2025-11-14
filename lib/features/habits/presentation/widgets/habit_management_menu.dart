@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../domain/models/habit.dart';
 import '../providers/habit_providers.dart';
 
@@ -13,17 +14,17 @@ class HabitManagementMenu extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Habit'),
-        content: Text('Are you sure you want to delete "${habit.name}"? This action cannot be undone.'),
+        title: Text('delete_habit'.tr()),
+        content: Text('delete_habit_confirmation'.tr(namedArgs: {'name': habit.name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text('delete'.tr()),
           ),
         ],
       ),
@@ -46,7 +47,7 @@ class HabitManagementMenu extends ConsumerWidget {
         children: [
           ListTile(
             leading: const Icon(Icons.edit),
-            title: const Text('Edit Habit'),
+            title: Text('edit_habit'.tr()),
             onTap: () {
               Navigator.pop(context);
               context.push('/habits/${habit.id}/edit');
@@ -54,7 +55,7 @@ class HabitManagementMenu extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Delete Habit', style: TextStyle(color: Colors.red)),
+            title: Text('delete_habit'.tr(), style: const TextStyle(color: Colors.red)),
             onTap: () => _deleteHabit(context, ref),
           ),
           const SizedBox(height: 8),

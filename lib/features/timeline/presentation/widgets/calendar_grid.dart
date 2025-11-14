@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../habits/presentation/providers/habit_providers.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
@@ -25,7 +26,7 @@ class CalendarGrid extends ConsumerWidget {
                 Icon(Icons.calendar_today, size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
-                  'No habits yet',
+                  'no_habits'.tr(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.grey[600],
                       ),
@@ -33,7 +34,7 @@ class CalendarGrid extends ConsumerWidget {
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => context.push('/habits/new'),
-                  child: const Text('Create your first habit'),
+                  child: Text('create_first_habit'.tr()),
                 ),
               ],
             ),
@@ -46,7 +47,7 @@ class CalendarGrid extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Last $daysToShow days',
+                'last_days'.tr(namedArgs: {'days': daysToShow.toString()}),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
@@ -56,7 +57,7 @@ class CalendarGrid extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
+      error: (error, stack) => Center(child: Text('${'error'.tr()}: $error')),
     );
   }
 

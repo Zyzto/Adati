@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../tracking/presentation/providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../providers/habit_providers.dart';
@@ -91,7 +92,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                     return _buildCalendar(entriesMap);
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Center(child: Text('Error: $error')),
+                  error: (error, stack) => Center(child: Text('${'error'.tr()}: $error')),
                 ),
               ),
             ],

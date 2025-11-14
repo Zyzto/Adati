@@ -23,6 +23,64 @@
   "theme": "المظهر",
   "system": "النظام",
   "light": "فاتح",
-  "dark": "داكن"
+  "dark": "داكن",
+  "completed": "مكتمل",
+  "completion": "الإتمام",
+  "no_habits_completed": "لم يتم إكمال أي عادات",
+  "complete_habits_to_see": "أكمل العادات لرؤيتها هنا",
+  "tap_to_add_notes": "اضغط لإضافة ملاحظات",
+  "notes": "ملاحظات",
+  "add_notes_about_habit": "أضف ملاحظات حول هذه العادة...",
+  "error": "خطأ",
+  "loading": "جاري التحميل...",
+  "habit_not_found": "لم يتم العثور على العادة",
+  "delete_habit": "حذف العادة",
+  "delete_habit_confirmation": "هل أنت متأكد من حذف \"{name}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+  "delete_habit_confirmation_generic": "هل أنت متأكد من حذف هذه العادة؟ لا يمكن التراجع عن هذا الإجراء.",
+  "@delete_habit_confirmation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "select_language": "اختر اللغة",
+  "english": "English",
+  "arabic": "العربية",
+  "select_theme": "اختر المظهر",
+  "select_theme_color": "اختر لون المظهر",
+  "day_square_size": "حجم مربع اليوم",
+  "small": "صغير",
+  "medium": "متوسط",
+  "large": "كبير",
+  "date_format": "تنسيق التاريخ",
+  "first_day_of_week": "أول يوم من الأسبوع",
+  "sunday": "الأحد",
+  "monday": "الاثنين",
+  "timeline_days": "أيام الجدول الزمني",
+  "number_of_days_to_show": "عدد الأيام المعروضة",
+  "enter_number_of_days": "أدخل عدد الأيام",
+  "days": "أيام",
+  "enable_notifications": "تفعيل الإشعارات",
+  "receive_habit_reminders": "تلقي تذكيرات العادات",
+  "general": "عام",
+  "appearance": "المظهر",
+  "display": "العرض",
+  "notifications": "الإشعارات",
+  "card_style": "نمط البطاقة",
+  "elevation": "الارتفاع",
+  "border_radius": "نصف قطر الحدود",
+  "done": "تم",
+  "create_habit": "إنشاء عادة",
+  "add_habit": "إضافة عادة",
+  "last_days": "آخر {days} أيام",
+  "@last_days": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "please_enter_habit_name": "يرجى إدخال اسم العادة",
+  "reset_to_default": "إعادة تعيين إلى الافتراضي"
 }
-
