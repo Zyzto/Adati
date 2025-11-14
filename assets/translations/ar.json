@@ -1,0 +1,28 @@
+{
+  "app_name": "عادتي",
+  "habits": "العادات",
+  "timeline": "الجدول الزمني",
+  "settings": "الإعدادات",
+  "new_habit": "عادة جديدة",
+  "edit_habit": "تعديل العادة",
+  "habit_name": "الاسم",
+  "habit_description": "الوصف (اختياري)",
+  "color": "اللون",
+  "save": "حفظ",
+  "cancel": "إلغاء",
+  "delete": "حذف",
+  "no_habits": "لا توجد عادات بعد",
+  "create_first_habit": "أنشئ عادتك الأولى للبدء",
+  "current_streak": "السلسلة الحالية",
+  "longest_streak": "أطول سلسلة",
+  "day_streak": "يوم متتالي",
+  "total_habits": "إجمالي العادات",
+  "today": "اليوم",
+  "yesterday": "أمس",
+  "language": "اللغة",
+  "theme": "المظهر",
+  "system": "النظام",
+  "light": "فاتح",
+  "dark": "داكن"
+}
+

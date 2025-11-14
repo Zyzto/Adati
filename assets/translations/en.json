@@ -1,0 +1,28 @@
+{
+  "app_name": "Adati",
+  "habits": "Habits",
+  "timeline": "Timeline",
+  "settings": "Settings",
+  "new_habit": "New Habit",
+  "edit_habit": "Edit Habit",
+  "habit_name": "Name",
+  "habit_description": "Description (optional)",
+  "color": "Color",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "no_habits": "No habits yet",
+  "create_first_habit": "Create your first habit to get started",
+  "current_streak": "Current Streak",
+  "longest_streak": "Longest Streak",
+  "day_streak": "day streak",
+  "total_habits": "Total Habits",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "language": "Language",
+  "theme": "Theme",
+  "system": "System",
+  "light": "Light",
+  "dark": "Dark"
+}
+

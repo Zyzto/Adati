@@ -1,0 +1,61 @@
+import 'package:intl/intl.dart';
+
+class DateUtils {
+  static DateTime getToday() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  static DateTime getDateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  static bool isSameDay(DateTime date1, DateTime date2) {
+    return getDateOnly(date1).isAtSameMomentAs(getDateOnly(date2));
+  }
+
+  static bool isToday(DateTime date) {
+    return isSameDay(date, DateTime.now());
+  }
+
+  static bool isYesterday(DateTime date) {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return isSameDay(date, yesterday);
+  }
+
+  static List<DateTime> getDaysRange(DateTime start, DateTime end) {
+    final days = <DateTime>[];
+    var current = getDateOnly(start);
+    final endDate = getDateOnly(end);
+
+    while (!current.isAfter(endDate)) {
+      days.add(current);
+      current = current.add(const Duration(days: 1));
+    }
+
+    return days;
+  }
+
+  static List<DateTime> getLastNDays(int n) {
+    final today = getToday();
+    final start = today.subtract(Duration(days: n - 1));
+    return getDaysRange(start, today);
+  }
+
+  static String formatDate(DateTime date, {String format = 'yyyy-MM-dd'}) {
+    return DateFormat(format).format(date);
+  }
+
+  static String formatDateShort(DateTime date) {
+    if (isToday(date)) return 'Today';
+    if (isYesterday(date)) return 'Yesterday';
+    return DateFormat('MMM d').format(date);
+  }
+
+  static int daysBetween(DateTime start, DateTime end) {
+    final startDate = getDateOnly(start);
+    final endDate = getDateOnly(end);
+    return endDate.difference(startDate).inDays;
+  }
+}
+
