@@ -13,6 +13,7 @@ class PreferencesService {
   static const String _keyDateFormat = 'date_format';
   static const String _keyFirstDayOfWeek = 'first_day_of_week';
   static const String _keyNotificationsEnabled = 'notifications_enabled';
+  static const String _keyHabitCheckboxStyle = 'habit_checkbox_style';
 
   static SharedPreferences? _prefs;
 
@@ -87,6 +88,12 @@ class PreferencesService {
       prefs.getBool(_keyNotificationsEnabled) ?? true;
   static Future<bool> setNotificationsEnabled(bool enabled) =>
       prefs.setBool(_keyNotificationsEnabled, enabled);
+
+  // Habit checkbox style (default: square)
+  static String getHabitCheckboxStyle() =>
+      prefs.getString(_keyHabitCheckboxStyle) ?? 'square';
+  static Future<bool> setHabitCheckboxStyle(String style) =>
+      prefs.setString(_keyHabitCheckboxStyle, style);
 
   // Clear all preferences
   static Future<bool> clear() => prefs.clear();

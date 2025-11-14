@@ -82,5 +82,6 @@
     }
   },
   "please_enter_habit_name": "Please enter a habit name",
-  "reset_to_default": "Reset to default"
+  "reset_to_default": "Reset to default",
+  "habit_checkbox_style": "Habit Checkbox Style"
 }

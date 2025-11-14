@@ -247,3 +247,27 @@ final notificationsEnabledProvider = Provider<bool>((ref) {
   return ref.watch(notificationsEnabledNotifierProvider).enabled;
 });
 
+// Habit Checkbox Style
+class HabitCheckboxStyleNotifier {
+  String _style;
+
+  HabitCheckboxStyleNotifier()
+      : _style = PreferencesService.getHabitCheckboxStyle();
+
+  String get style => _style;
+
+  Future<void> setHabitCheckboxStyle(String style) async {
+    _style = style;
+    await PreferencesService.setHabitCheckboxStyle(style);
+  }
+}
+
+final habitCheckboxStyleNotifierProvider =
+    Provider<HabitCheckboxStyleNotifier>((ref) {
+  return HabitCheckboxStyleNotifier();
+});
+
+final habitCheckboxStyleProvider = Provider<String>((ref) {
+  return ref.watch(habitCheckboxStyleNotifierProvider).style;
+});
+

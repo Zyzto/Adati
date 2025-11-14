@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:animations/animations.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../providers/settings_providers.dart';
+import '../../habits/widgets/checkbox_style_widget.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -482,6 +483,88 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  void _showHabitCheckboxStyleDialog(BuildContext context, WidgetRef ref) {
+    final currentStyle = ref.watch(habitCheckboxStyleProvider);
+    final notifier = ref.read(habitCheckboxStyleNotifierProvider);
+    final navigator = Navigator.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final isLandscape = screenWidth > mediaQuery.size.height;
+    final maxWidth = 600.0; // Same as settings list max width
+    final contentWidth = isLandscape ? maxWidth : screenWidth * 0.5;
+
+    final styles = HabitCheckboxStyle.values;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('habit_checkbox_style'.tr()),
+        content: SizedBox(
+          width: contentWidth,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: styles.map((style) {
+              final styleString = habitCheckboxStyleToString(style);
+              return RadioListTile<String>(
+                title: Row(
+                  children: [
+                    Text(_getCheckboxStyleName(styleString)),
+                    const SizedBox(width: 16),
+                    // Preview: completed state
+                    buildCheckboxWidget(style, true, 24, null),
+                    const SizedBox(width: 8),
+                    // Preview: uncompleted state
+                    buildCheckboxWidget(style, false, 24, null),
+                  ],
+                ),
+                value: styleString,
+                groupValue: currentStyle,
+                onChanged: (value) async {
+                  if (value != null) {
+                    await notifier.setHabitCheckboxStyle(value);
+                    ref.invalidate(habitCheckboxStyleNotifierProvider);
+                    if (dialogContext.mounted) {
+                      navigator.pop();
+                    }
+                  }
+                },
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getCheckboxStyleName(String style) {
+    switch (style) {
+      case 'square':
+        return 'Square';
+      case 'rounded':
+        return 'Rounded';
+      case 'bordered':
+        return 'Bordered';
+      case 'circle':
+        return 'Circle';
+      case 'radio':
+        return 'Radio';
+      case 'task':
+        return 'Task';
+      case 'verified':
+        return 'Verified';
+      case 'taskAlt':
+        return 'Task Alt';
+      default:
+        return style;
+    }
+  }
+
   Future<void> _revertCardStyle(BuildContext context, WidgetRef ref) async {
     final cardStyleNotifier = ref.read(cardStyleNotifierProvider);
     await cardStyleNotifier.setElevation(defaultCardElevation);
@@ -558,6 +641,7 @@ class SettingsPage extends ConsumerWidget {
     final dateFormat = ref.watch(dateFormatProvider);
     final firstDayOfWeek = ref.watch(firstDayOfWeekProvider);
     final timelineDays = ref.watch(timelineDaysProvider);
+    final habitCheckboxStyle = ref.watch(habitCheckboxStyleProvider);
     final notificationsEnabled = ref.watch(notificationsEnabledProvider);
     final notificationsNotifier = ref.read(
       notificationsEnabledNotifierProvider,
@@ -632,6 +716,12 @@ class SettingsPage extends ConsumerWidget {
                 )
               : null,
           onTap: () => _showDaySquareSizeDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.check_box),
+          title: Text('habit_checkbox_style'.tr()),
+          subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
+          onTap: () => _showHabitCheckboxStyleDialog(context, ref),
         ),
 
         // Display Section

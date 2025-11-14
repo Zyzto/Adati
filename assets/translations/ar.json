@@ -82,5 +82,6 @@
     }
   },
   "please_enter_habit_name": "يرجى إدخال اسم العادة",
-  "reset_to_default": "إعادة تعيين إلى الافتراضي"
+  "reset_to_default": "إعادة تعيين إلى الافتراضي",
+  "habit_checkbox_style": "نمط مربع اختيار العادة"
 }
