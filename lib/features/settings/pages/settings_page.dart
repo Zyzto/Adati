@@ -218,6 +218,11 @@ class SettingsPage extends ConsumerWidget {
     final currentColor = ref.watch(themeColorProvider);
     final notifier = ref.read(themeColorNotifierProvider);
     final navigator = Navigator.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final isLandscape = screenWidth > mediaQuery.size.height;
+    final maxWidth = 600.0; // Same as settings list max width
+    final contentWidth = isLandscape ? maxWidth : screenWidth * 0.5;
     final colors = [
       Colors.deepPurple,
       Colors.blue,
@@ -238,7 +243,7 @@ class SettingsPage extends ConsumerWidget {
       builder: (dialogContext) => AlertDialog(
         title: Text('select_theme_color'.tr()),
         content: SizedBox(
-          width: double.maxFinite,
+          width: contentWidth,
           child: GridView.builder(
             shrinkWrap: true,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
