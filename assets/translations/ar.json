@@ -134,5 +134,10 @@
   "this_week_goal": "هذا الأسبوع (هدف)",
   "this_month_goal": "هذا الشهر (هدف)",
   "weekly_goal_progress": "تقدم الهدف الأسبوعي",
-  "monthly_goal_progress": "تقدم الهدف الشهري"
+  "monthly_goal_progress": "تقدم الهدف الشهري",
+  "previous_month": "الشهر السابق",
+  "next_month": "الشهر التالي",
+  "habit_settings": "إعدادات العادة",
+  "mark_as_complete": "تحديد كمكتمل",
+  "active_streaks": "السلاسل النشطة"
 }

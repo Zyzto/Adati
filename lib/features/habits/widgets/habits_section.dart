@@ -248,7 +248,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
               IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () => context.push('/habits/new'),
-                tooltip: 'Add Habit',
+                tooltip: 'add_habit'.tr(),
               ),
             ],
           ),

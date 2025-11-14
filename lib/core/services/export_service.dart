@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../database/app_database.dart' as db;
 import 'logging_service.dart';
 
@@ -62,7 +63,7 @@ class ExportService {
         fileName: fileName,
         type: FileType.custom,
         allowedExtensions: ['csv'],
-        dialogTitle: 'Export Habit Data',
+        dialogTitle: 'export_data'.tr(),
       );
       
       if (result != null) {
@@ -121,7 +122,7 @@ class ExportService {
         fileName: fileName,
         type: FileType.custom,
         allowedExtensions: ['json'],
-        dialogTitle: 'Export Habit Data',
+        dialogTitle: 'export_data'.tr(),
       );
       
       if (result != null) {

@@ -134,5 +134,10 @@
   "this_week_goal": "This Week (Goal)",
   "this_month_goal": "This Month (Goal)",
   "weekly_goal_progress": "Weekly Goal Progress",
-  "monthly_goal_progress": "Monthly Goal Progress"
+  "monthly_goal_progress": "Monthly Goal Progress",
+  "previous_month": "Previous month",
+  "next_month": "Next month",
+  "habit_settings": "Habit settings",
+  "mark_as_complete": "Mark as complete",
+  "active_streaks": "Active Streaks"
 }

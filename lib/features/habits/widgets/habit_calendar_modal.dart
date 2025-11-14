@@ -75,7 +75,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.chevron_left),
-                      tooltip: 'Previous month',
+                      tooltip: 'previous_month'.tr(),
                       onPressed: () {
                         setState(() {
                           _selectedMonth = DateTime(
@@ -96,7 +96,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right),
-                      tooltip: 'Next month',
+                      tooltip: 'next_month'.tr(),
                       onPressed: () {
                         setState(() {
                           _selectedMonth = DateTime(
@@ -110,7 +110,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                       data: (habit) => habit != null
                           ? IconButton(
                               icon: const Icon(Icons.settings, size: 20),
-                              tooltip: 'Habit settings',
+                              tooltip: 'habit_settings'.tr(),
                               onPressed: () =>
                                   _showManagementMenu(context, ref, habit),
                             )

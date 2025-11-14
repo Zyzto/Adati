@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/database/app_database.dart' as db;
 import '../providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
@@ -142,7 +143,7 @@ class HabitCard extends ConsumerWidget {
               error: (_, _) => Material(
                 color: Colors.transparent,
                 child: Semantics(
-                  label: 'Mark as complete',
+                  label: 'mark_as_complete'.tr(),
                   button: true,
                   child: InkWell(
                     onTap: () => _toggleTodayCompletion(context, ref),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../habits/providers/habit_providers.dart';
 import '../../habits/providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
@@ -39,7 +40,7 @@ class TimelineStats extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _StatItem(
-                      label: 'Today',
+                      label: 'today'.tr(),
                       value: '$completedCount/$totalHabits',
                       icon: Icons.check_circle,
                       color: completionRate == 100
@@ -49,7 +50,7 @@ class TimelineStats extends ConsumerWidget {
                               : Colors.grey,
                     ),
                     _StatItem(
-                      label: 'Completion',
+                      label: 'completion'.tr(),
                       value: '$completionRate%',
                       icon: Icons.trending_up,
                       color: completionRate == 100
@@ -59,7 +60,7 @@ class TimelineStats extends ConsumerWidget {
                               : Colors.grey,
                     ),
                     _StatItem(
-                      label: 'Active Streaks',
+                      label: 'active_streaks'.tr(),
                       value: '$activeStreaks',
                       icon: Icons.local_fire_department,
                       color: Colors.orange,
