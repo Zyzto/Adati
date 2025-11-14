@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../../core/database/app_database.dart' as db;
-import '../../../habits/presentation/providers/habit_providers.dart';
-import '../../../habits/presentation/providers/tracking_providers.dart';
+import '../../../habits/providers/habit_providers.dart';
+import '../../../habits/providers/tracking_providers.dart';
 
 class DayDetailPage extends ConsumerWidget {
   final DateTime date;
@@ -32,7 +32,7 @@ class DayDetailPage extends ConsumerWidget {
             data: (entries) {
               // Filter to only show completed habits
               final completedHabits = habits.where((habit) {
-                return entries[habit.id!] == true;
+                return entries[habit.id] == true;
               }).toList();
 
               final totalHabits = habits.length;
@@ -174,7 +174,7 @@ class _HabitEntryCardState extends ConsumerState<_HabitEntryCard> {
 
   Future<void> _loadNotes() async {
     final repository = ref.read(habitRepositoryProvider);
-    final entry = await repository.getEntry(widget.habit.id!, widget.date);
+    final entry = await repository.getEntry(widget.habit.id, widget.date);
     if (mounted) {
       setState(() {
         _notes = entry?.notes;
@@ -184,7 +184,7 @@ class _HabitEntryCardState extends ConsumerState<_HabitEntryCard> {
 
   Future<void> _showNotesDialog() async {
     final repository = ref.read(habitRepositoryProvider);
-    final entry = await repository.getEntry(widget.habit.id!, widget.date);
+    final entry = await repository.getEntry(widget.habit.id, widget.date);
     final currentNotes = entry?.notes ?? '';
 
     if (!mounted) return;
@@ -196,7 +196,7 @@ class _HabitEntryCardState extends ConsumerState<_HabitEntryCard> {
 
     if (result != null && mounted) {
       await repository.toggleCompletion(
-        widget.habit.id!,
+        widget.habit.id,
         widget.date,
         true,
         notes: result.isEmpty ? null : result,
