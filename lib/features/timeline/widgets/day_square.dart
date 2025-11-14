@@ -56,9 +56,9 @@ class DaySquare extends ConsumerWidget {
       final intensity = (streakLength! / 30).clamp(0.0, 1.0); // Max at 30 days
       final baseGreen = Colors.green;
       return Color.fromRGBO(
-        (baseGreen.red * (0.5 + intensity * 0.5)).round(),
-        (baseGreen.green * (0.5 + intensity * 0.5)).round(),
-        (baseGreen.blue * (0.5 + intensity * 0.5)).round(),
+        ((baseGreen.r * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
+        ((baseGreen.g * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
+        ((baseGreen.b * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
         1.0,
       );
     }

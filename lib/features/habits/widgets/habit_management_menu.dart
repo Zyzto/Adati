@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/database/app_database.dart' as db;
 import '../providers/habit_providers.dart';
+import 'habit_form_modal.dart';
 
 class HabitManagementMenu extends ConsumerWidget {
   final db.Habit habit;
@@ -50,7 +50,7 @@ class HabitManagementMenu extends ConsumerWidget {
             title: Text('edit_habit'.tr()),
             onTap: () {
               Navigator.pop(context);
-              context.push('/habits/${habit.id}/edit');
+              HabitFormModal.show(context, habitId: habit.id);
             },
           ),
           ListTile(

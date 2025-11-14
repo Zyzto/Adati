@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../habits/providers/habit_providers.dart';
+import '../../habits/widgets/habit_form_modal.dart';
 import '../../settings/providers/settings_providers.dart';
 import 'day_square.dart';
 
@@ -33,7 +33,7 @@ class CalendarGrid extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 TextButton(
-                  onPressed: () => context.push('/habits/new'),
+                  onPressed: () => HabitFormModal.show(context),
                   child: Text('create_first_habit'.tr()),
                 ),
               ],

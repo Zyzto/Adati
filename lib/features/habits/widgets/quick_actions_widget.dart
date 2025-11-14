@@ -14,7 +14,7 @@ class QuickActionsWidget extends ConsumerWidget {
     final habitsAsync = ref.read(habitsProvider);
     final today = app_date_utils.DateUtils.getToday();
     
-    final habits = await habitsAsync.value;
+    final habits = habitsAsync.value;
     if (habits == null) return;
     
     for (final habit in habits) {
@@ -44,7 +44,7 @@ class QuickActionsWidget extends ConsumerWidget {
     final habitsAsync = ref.read(habitsProvider);
     final yesterday = app_date_utils.DateUtils.getToday().subtract(const Duration(days: 1));
     
-    final habits = await habitsAsync.value;
+    final habits = habitsAsync.value;
     if (habits == null) return;
     
     for (final habit in habits) {

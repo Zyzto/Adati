@@ -116,7 +116,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                             )
                           : const SizedBox.shrink(),
                       loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
                     ),
                   ],
                 ),
@@ -196,7 +196,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                   padding: EdgeInsets.all(16),
                   child: SkeletonCard(),
                 ),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 8),
               // Statistics section
@@ -448,11 +448,11 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
             );
           },
           loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 

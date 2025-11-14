@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import 'habit_card.dart';
 import 'quick_actions_widget.dart';
+import 'habit_form_modal.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../settings/providers/settings_providers.dart';
 
@@ -77,7 +77,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
             title: 'no_habits'.tr(),
             message: 'create_first_habit'.tr(),
             action: ElevatedButton.icon(
-              onPressed: () => context.push('/habits/new'),
+              onPressed: () => HabitFormModal.show(context),
               icon: const Icon(Icons.add),
               label: Text('create_habit'.tr()),
             ),
@@ -247,7 +247,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.add),
-                onPressed: () => context.push('/habits/new'),
+                onPressed: () => HabitFormModal.show(context),
                 tooltip: 'add_habit'.tr(),
               ),
             ],

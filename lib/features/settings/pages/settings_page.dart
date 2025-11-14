@@ -624,7 +624,9 @@ class SettingsPage extends ConsumerWidget {
                   ],
                 ),
                 value: styleString,
+                // ignore: deprecated_member_use
                 groupValue: currentStyle,
+                // ignore: deprecated_member_use
                 onChanged: (value) async {
                   if (value != null) {
                     await notifier.setHabitCheckboxStyle(value);
