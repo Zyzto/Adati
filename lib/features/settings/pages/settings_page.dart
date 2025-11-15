@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:animations/animations.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/export_service.dart';
+import '../../../../core/services/import_service.dart';
 import '../../../../core/database/app_database.dart' as db;
 import '../providers/settings_providers.dart';
 import '../../habits/widgets/checkbox_style_widget.dart';
@@ -22,10 +25,64 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _generalExpanded = true;
   bool _appearanceExpanded = false;
   bool _displayExpanded = false;
-  bool _displayPreferencesExpanded = false; // Collapsed by default
-  bool _notificationsExpanded = true;
-  bool _tagsExpanded = true;
-  bool _dataExportExpanded = true;
+  bool _displayPreferencesExpanded = false;
+  bool _notificationsExpanded = false;
+  bool _tagsExpanded = false;
+  bool _dataExportExpanded = false;
+  bool _advancedExpanded = false;
+  bool _aboutExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExpansionStates();
+  }
+
+  void _loadExpansionStates() {
+    setState(() {
+      _generalExpanded = PreferencesService.getSettingsGeneralExpanded();
+      _appearanceExpanded = PreferencesService.getSettingsAppearanceExpanded();
+      _displayExpanded = PreferencesService.getSettingsDisplayExpanded();
+      _displayPreferencesExpanded = PreferencesService.getSettingsDisplayPreferencesExpanded();
+      _notificationsExpanded = PreferencesService.getSettingsNotificationsExpanded();
+      _tagsExpanded = PreferencesService.getSettingsTagsExpanded();
+      _dataExportExpanded = PreferencesService.getSettingsDataExportExpanded();
+      _advancedExpanded = PreferencesService.getSettingsAdvancedExpanded();
+      _aboutExpanded = PreferencesService.getSettingsAboutExpanded();
+    });
+  }
+
+  Future<void> _saveExpansionState(String section, bool expanded) async {
+    switch (section) {
+      case 'general':
+        await PreferencesService.setSettingsGeneralExpanded(expanded);
+        break;
+      case 'appearance':
+        await PreferencesService.setSettingsAppearanceExpanded(expanded);
+        break;
+      case 'display':
+        await PreferencesService.setSettingsDisplayExpanded(expanded);
+        break;
+      case 'displayPreferences':
+        await PreferencesService.setSettingsDisplayPreferencesExpanded(expanded);
+        break;
+      case 'notifications':
+        await PreferencesService.setSettingsNotificationsExpanded(expanded);
+        break;
+      case 'tags':
+        await PreferencesService.setSettingsTagsExpanded(expanded);
+        break;
+      case 'dataExport':
+        await PreferencesService.setSettingsDataExportExpanded(expanded);
+        break;
+      case 'advanced':
+        await PreferencesService.setSettingsAdvancedExpanded(expanded);
+        break;
+      case 'about':
+        await PreferencesService.setSettingsAboutExpanded(expanded);
+        break;
+    }
+  }
 
   // Helper method to build radio list item
   Widget _buildRadioListItem<T>({
@@ -140,9 +197,444 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
+    // First, show what to export
+    final exportType = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('export_data'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.archive),
+              title: Text('export_all_data'.tr()),
+              subtitle: Text('export_all_data_description'.tr()),
+              onTap: () => Navigator.pop(context, 'all'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.check_circle),
+              title: Text('export_habits'.tr()),
+              subtitle: Text('export_habits_description'.tr()),
+              onTap: () => Navigator.pop(context, 'habits'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: Text('export_settings'.tr()),
+              subtitle: Text('export_settings_description'.tr()),
+              onTap: () => Navigator.pop(context, 'settings'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (exportType == null || !context.mounted) return;
+
+    // Handle settings export (no loading needed)
+    if (exportType == 'settings') {
+      try {
+        final filePath = await ExportService.exportSettings();
+        if (context.mounted) {
+          if (filePath != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('export_success'.tr()),
+                action: SnackBarAction(
+                  label: 'ok'.tr(),
+                  onPressed: () {},
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('export_cancelled'.tr()),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'export_error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    // Handle habits export (no loading needed)
+    if (exportType == 'habits') {
+      try {
+        final repository = ref.read(habitRepositoryProvider);
+        final habits = await repository.getAllHabits();
+        final filePath = await ExportService.exportHabitsOnly(habits);
+        if (context.mounted) {
+          if (filePath != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('export_success'.tr()),
+                action: SnackBarAction(
+                  label: 'ok'.tr(),
+                  onPressed: () {},
+                ),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('export_cancelled'.tr()),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'export_error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+      return;
+    }
+
+    // Handle all data export (with format selection)
+    if (exportType == 'all') {
+      final repository = ref.read(habitRepositoryProvider);
+      
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+      
+      try {
+        // Fetch all data
+        final habits = await repository.getAllHabits();
+        final entries = <db.TrackingEntry>[];
+        final streaks = <db.Streak>[];
+        
+        for (final habit in habits) {
+          final habitEntries = await repository.getEntriesByHabit(habit.id);
+          entries.addAll(habitEntries);
+          
+          final streak = await repository.getStreakByHabit(habit.id);
+          if (streak != null) {
+            streaks.add(streak);
+          }
+        }
+        
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          
+          // Show format selection
+          final format = await showDialog<String>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('select_format'.tr()),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.table_chart),
+                    title: Text('export_as_csv'.tr()),
+                    subtitle: Text('export_csv_description'.tr()),
+                    onTap: () => Navigator.pop(context, 'csv'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.code),
+                    title: Text('export_as_json'.tr()),
+                    subtitle: Text('export_json_description'.tr()),
+                    onTap: () => Navigator.pop(context, 'json'),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('cancel'.tr()),
+                ),
+              ],
+            ),
+          );
+          
+          if (format != null && context.mounted) {
+            String? filePath;
+            if (format == 'csv') {
+              filePath = await ExportService.exportToCSV(habits, entries, streaks);
+            } else {
+              filePath = await ExportService.exportToJSON(habits, entries, streaks);
+            }
+            
+            if (context.mounted) {
+              if (filePath != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('export_success'.tr()),
+                    action: SnackBarAction(
+                      label: 'ok'.tr(),
+                      onPressed: () {},
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('export_cancelled'.tr()),
+                  ),
+                );
+              }
+            }
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'export_error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _showImportDialog(BuildContext context, WidgetRef ref) async {
+    final importType = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('import_data'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.archive),
+              title: Text('import_all_data'.tr()),
+              subtitle: Text('import_all_data_description_with_format'.tr()),
+              onTap: () => Navigator.pop(context, 'all'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.check_circle),
+              title: Text('import_habits'.tr()),
+              subtitle: Text('import_habits_description_with_format'.tr()),
+              onTap: () => Navigator.pop(context, 'habits'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: Text('import_settings'.tr()),
+              subtitle: Text('import_settings_description_with_format'.tr()),
+              onTap: () => Navigator.pop(context, 'settings'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (importType == null || !context.mounted) return;
+
+    // Pick file
+    final filePath = await ImportService.pickImportFile(importType: importType);
+    if (filePath == null || !context.mounted) return;
+
+    // Show progress dialog with ValueNotifier for updates
+    final progressNotifier = ValueNotifier<double>(0.0);
+    final messageNotifier = ValueNotifier<String>('starting_import'.tr());
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ValueListenableBuilder<double>(
+        valueListenable: progressNotifier,
+        builder: (context, progress, _) {
+          return ValueListenableBuilder<String>(
+            valueListenable: messageNotifier,
+            builder: (context, message, _) {
+              return AlertDialog(
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(value: progress > 0 ? progress : null),
+                    const SizedBox(height: 16),
+                    Text(message),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+
+    ImportResult result;
+    final repository = ref.read(habitRepositoryProvider);
+
+    try {
+      if (importType == 'all') {
+        result = await ImportService.importAllData(
+          repository,
+          filePath,
+          (message, prog) {
+            messageNotifier.value = message;
+            progressNotifier.value = prog;
+          },
+        );
+      } else if (importType == 'habits') {
+        result = await ImportService.importHabitsOnly(
+          repository,
+          filePath,
+          (message, prog) {
+            messageNotifier.value = message;
+            progressNotifier.value = prog;
+          },
+        );
+      } else {
+        result = await ImportService.importSettings(
+          filePath,
+          (message, prog) {
+            messageNotifier.value = message;
+            progressNotifier.value = prog;
+          },
+        );
+      }
+    } catch (e) {
+      result = ImportResult(
+        success: false,
+        errors: ['${'import_error'.tr()}: $e'],
+      );
+    }
+
+    if (context.mounted) {
+      Navigator.pop(context); // Close progress dialog
+      progressNotifier.dispose();
+      messageNotifier.dispose();
+      _showImportResultDialog(context, result);
+    }
+  }
+
+  void _showImportResultDialog(BuildContext context, ImportResult result) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              result.success ? Icons.check_circle : Icons.error,
+              color: result.success ? Colors.green : Colors.red,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(result.success ? 'import_success'.tr() : 'import_failed'.tr()),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (result.habitsImported > 0)
+                _buildResultRow('habits_imported'.tr(), result.habitsImported, true),
+              if (result.habitsSkipped > 0)
+                _buildResultRow('habits_skipped'.tr(), result.habitsSkipped, false),
+              if (result.entriesImported > 0)
+                _buildResultRow('entries_imported'.tr(), result.entriesImported, true),
+              if (result.entriesSkipped > 0)
+                _buildResultRow('entries_skipped'.tr(), result.entriesSkipped, false),
+              if (result.streaksImported > 0)
+                _buildResultRow('streaks_imported'.tr(), result.streaksImported, true),
+              if (result.streaksSkipped > 0)
+                _buildResultRow('streaks_skipped'.tr(), result.streaksSkipped, false),
+              if (result.settingsImported > 0)
+                _buildResultRow('settings_imported'.tr(), result.settingsImported, true),
+              if (result.settingsSkipped > 0)
+                _buildResultRow('settings_skipped'.tr(), result.settingsSkipped, false),
+              if (result.warnings.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'warnings'.tr(),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                ...result.warnings.map((w) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('• $w', style: theme.textTheme.bodySmall),
+                )),
+              ],
+              if (result.errors.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'errors'.tr(),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                ...result.errors.map((e) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('• $e', style: theme.textTheme.bodySmall),
+                )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('ok'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultRow(String label, int count, bool isSuccess) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(
+            isSuccess ? Icons.check_circle : Icons.warning,
+            size: 16,
+            color: isSuccess ? Colors.green : Colors.orange,
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label)),
+          Text(
+            count.toString(),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDatabaseStatsDialog(BuildContext context, WidgetRef ref) async {
     final repository = ref.read(habitRepositoryProvider);
     
-    // Show loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -150,93 +642,314 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
     
     try {
-      // Fetch all data
-      final habits = await repository.getAllHabits();
-      final entries = <db.TrackingEntry>[];
-      final streaks = <db.Streak>[];
-      
-      for (final habit in habits) {
-        final habitEntries = await repository.getEntriesByHabit(habit.id);
-        entries.addAll(habitEntries);
-        
-        final streak = await repository.getStreakByHabit(habit.id);
-        if (streak != null) {
-          streaks.add(streak);
-        }
-      }
+      final stats = await repository.getDatabaseStats();
       
       if (context.mounted) {
         Navigator.pop(context); // Close loading
         
-        // Show format selection
-        final format = await showDialog<String>(
+        showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text('export_data'.tr()),
+            title: Text('database_statistics'.tr()),
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.table_chart),
-                  title: Text('export_as_csv'.tr()),
-                  subtitle: Text('export_csv_description'.tr()),
-                  onTap: () => Navigator.pop(context, 'csv'),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.code),
-                  title: Text('export_as_json'.tr()),
-                  subtitle: Text('export_json_description'.tr()),
-                  onTap: () => Navigator.pop(context, 'json'),
-                ),
+                _buildStatRow('habits'.tr(), stats['habits'] ?? 0),
+                _buildStatRow('tags'.tr(), stats['tags'] ?? 0),
+                _buildStatRow('entries'.tr(), stats['entries'] ?? 0),
+                _buildStatRow('streaks'.tr(), stats['streaks'] ?? 0),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('cancel'.tr()),
+                child: Text('ok'.tr()),
               ),
             ],
           ),
         );
-        
-        if (format != null && context.mounted) {
-          String? filePath;
-          if (format == 'csv') {
-            filePath = await ExportService.exportToCSV(habits, entries, streaks);
-          } else {
-            filePath = await ExportService.exportToJSON(habits, entries, streaks);
-          }
-          
-          if (context.mounted) {
-            if (filePath != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('export_success'.tr()),
-                  action: SnackBarAction(
-                    label: 'ok'.tr(),
-                    onPressed: () {},
-                  ),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('export_cancelled'.tr()),
-                ),
-              );
-            }
-          }
-        }
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context); // Close loading
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${'export_error'.tr()}: $e'),
+            content: Text('${'error'.tr()}: $e'),
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  Widget _buildStatRow(String label, int value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(
+            value.toString(),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showResetHabitsDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('reset_all_habits'.tr()),
+        content: Text('reset_all_habits_confirmation'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('reset'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final repository = ref.read(habitRepositoryProvider);
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+      
+      try {
+        await repository.deleteAllHabits();
+        
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('habits_reset_success'.tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _showResetSettingsDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('reset_all_settings'.tr()),
+        content: Text('reset_all_settings_confirmation'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('reset'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+      
+      try {
+        final success = await PreferencesService.resetAllSettings();
+        
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('settings_reset_success'.tr()),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('settings_reset_failed'.tr()),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _showClearAllDataDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('clear_all_data'.tr()),
+        content: Text('clear_all_data_confirmation'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('clear'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final repository = ref.read(habitRepositoryProvider);
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+      
+      try {
+        await repository.deleteAllData();
+        await PreferencesService.resetAllSettings();
+        
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('all_data_cleared_success'.tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _returnToOnboarding(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('return_to_onboarding'.tr()),
+        content: Text('return_to_onboarding_confirmation'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('continue'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      await PreferencesService.setFirstLaunch(true);
+      if (context.mounted) {
+        context.go('/onboarding');
+      }
+    }
+  }
+
+  Future<void> _optimizeDatabase(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('optimize_database'.tr()),
+        content: Text('optimize_database_confirmation'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('optimize'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final repository = ref.read(habitRepositoryProvider);
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+      
+      try {
+        await repository.vacuumDatabase();
+        
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('database_optimized_success'.tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -1515,6 +2228,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             setState(() {
               _generalExpanded = expanded;
             });
+            _saveExpansionState('general', expanded);
           },
           children: [
             ListTile(
@@ -1541,6 +2255,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             setState(() {
               _appearanceExpanded = expanded;
             });
+            _saveExpansionState('appearance', expanded);
           },
           children: [
         ListTile(
@@ -1608,6 +2323,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             setState(() {
               _displayExpanded = expanded;
             });
+            _saveExpansionState('display', expanded);
           },
           children: [
         ListTile(
@@ -1660,6 +2376,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             setState(() {
               _displayPreferencesExpanded = expanded;
             });
+            _saveExpansionState('displayPreferences', expanded);
           },
           children: [
         SwitchListTile(
@@ -1832,6 +2549,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             setState(() {
               _notificationsExpanded = expanded;
             });
+            _saveExpansionState('notifications', expanded);
           },
           children: [
         SwitchListTile(
@@ -1855,6 +2573,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             setState(() {
               _tagsExpanded = expanded;
             });
+            _saveExpansionState('tags', expanded);
           },
           children: [
         const Padding(
@@ -1872,6 +2591,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             setState(() {
               _dataExportExpanded = expanded;
             });
+            _saveExpansionState('dataExport', expanded);
           },
           children: [
         ListTile(
@@ -1881,8 +2601,124 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showExportDialog(context, ref),
         ),
+        ListTile(
+          leading: const Icon(Icons.file_upload),
+          title: Text('import_data'.tr()),
+          subtitle: Text('import_data_description'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showImportDialog(context, ref),
+        ),
           ],
         ),
+
+        // Advanced Section
+        _buildCollapsibleSection(
+          title: 'advanced'.tr(),
+          icon: Icons.settings_applications,
+          isExpanded: _advancedExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _advancedExpanded = expanded;
+            });
+            _saveExpansionState('advanced', expanded);
+          },
+          children: [
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: Text('database_statistics'.tr()),
+          subtitle: Text('view_database_stats'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showDatabaseStatsDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.delete_sweep),
+          title: Text('reset_all_habits'.tr()),
+          subtitle: Text('reset_all_habits_description'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showResetHabitsDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.settings_backup_restore),
+          title: Text('reset_all_settings'.tr()),
+          subtitle: Text('reset_all_settings_description'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showResetSettingsDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.delete_forever),
+          title: Text('clear_all_data'.tr()),
+          subtitle: Text('clear_all_data_description'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showClearAllDataDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.cleaning_services),
+          title: Text('optimize_database'.tr()),
+          subtitle: Text('optimize_database_description'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _optimizeDatabase(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.school),
+          title: Text('return_to_onboarding'.tr()),
+          subtitle: Text('return_to_onboarding_description'.tr()),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _returnToOnboarding(context),
+        ),
+          ],
+        ),
+
+        // About Section
+        _buildCollapsibleSection(
+          title: 'about'.tr(),
+          icon: Icons.info,
+          isExpanded: _aboutExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _aboutExpanded = expanded;
+            });
+            _saveExpansionState('about', expanded);
+          },
+          children: [
+        FutureBuilder<PackageInfo>(
+          future: PackageInfo.fromPlatform(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const ListTile(
+                leading: CircularProgressIndicator(),
+                title: Text('Loading...'),
+              );
+            }
+            final packageInfo = snapshot.data!;
+            return Column(
+              children: [
+        ListTile(
+          leading: const Icon(Icons.apps),
+          title: Text('app_name'.tr()),
+          subtitle: Text(packageInfo.appName),
+        ),
+        ListTile(
+          leading: const Icon(Icons.tag),
+          title: Text('version'.tr()),
+          subtitle: Text('${packageInfo.version} (${packageInfo.buildNumber})'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.description),
+          title: Text('description'.tr()),
+          subtitle: Text('app_description'.tr()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.code),
+          title: Text('package_name'.tr()),
+          subtitle: Text(packageInfo.packageName),
+        ),
+              ],
+            );
+          },
+        ),
+          ],
+        ),
+
       ],
     );
 

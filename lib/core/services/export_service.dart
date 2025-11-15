@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../database/app_database.dart' as db;
 import 'logging_service.dart';
+import 'preferences_service.dart';
 
 class ExportService {
   static Future<String?> exportToCSV(
@@ -153,6 +154,101 @@ class ExportService {
       return null;
     } catch (e) {
       LoggingService.error('Error exporting to JSON: $e');
+      return null;
+    }
+  }
+
+  static Future<String?> exportHabitsOnly(
+    List<db.Habit> habits,
+  ) async {
+    try {
+      final data = {
+        'exportDate': DateTime.now().toIso8601String(),
+        'version': '1.0',
+        'type': 'habits',
+        'habits': habits.map((h) => {
+          'id': h.id,
+          'name': h.name,
+          'description': h.description,
+          'color': h.color,
+          'icon': h.icon,
+          'habitType': h.habitType,
+          'trackingType': h.trackingType,
+          'unit': h.unit,
+          'goalValue': h.goalValue,
+          'goalPeriod': h.goalPeriod,
+          'occurrenceNames': h.occurrenceNames,
+        }).toList(),
+      };
+      
+      final jsonString = const JsonEncoder.withIndent('  ').convert(data);
+      
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'adati_habits_$timestamp.json';
+      
+      final result = await FilePicker.platform.saveFile(
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        dialogTitle: 'export_habits'.tr(),
+      );
+      
+      if (result != null) {
+        final file = await File(result).create(recursive: true);
+        await file.writeAsString(jsonString);
+        LoggingService.info('Exported habits to: $result');
+        return result;
+      }
+      
+      return null;
+    } catch (e) {
+      LoggingService.error('Error exporting habits: $e');
+      return null;
+    }
+  }
+
+  static Future<String?> exportSettings() async {
+    try {
+      final prefs = PreferencesService.prefs;
+      final allKeys = prefs.getKeys();
+      
+      final settings = <String, dynamic>{};
+      for (final key in allKeys) {
+        final value = prefs.get(key);
+        if (value != null) {
+          settings[key] = value;
+        }
+      }
+      
+      final data = {
+        'exportDate': DateTime.now().toIso8601String(),
+        'version': '1.0',
+        'type': 'settings',
+        'settings': settings,
+      };
+      
+      final jsonString = const JsonEncoder.withIndent('  ').convert(data);
+      
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'adati_settings_$timestamp.json';
+      
+      final result = await FilePicker.platform.saveFile(
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        dialogTitle: 'export_settings'.tr(),
+      );
+      
+      if (result != null) {
+        final file = await File(result).create(recursive: true);
+        await file.writeAsString(jsonString);
+        LoggingService.info('Exported settings to: $result');
+        return result;
+      }
+      
+      return null;
+    } catch (e) {
+      LoggingService.error('Error exporting settings: $e');
       return null;
     }
   }

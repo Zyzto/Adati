@@ -40,6 +40,7 @@ Adati is a modern, feature-rich habit tracking application built with Flutter. I
 - **Preferences**: Persistent user settings and preferences
 - **Timezone Support**: Accurate date handling across timezones
 - **Logging**: Comprehensive logging for debugging and error tracking
+- **Desktop Mouse Support**: Custom scroll behavior enables mouse drag gestures on desktop platforms (Linux, Windows, macOS) for PageView and other scrollable widgets
 
 ### Platform Support
 - ✅ Android
@@ -142,6 +143,18 @@ flutter build web --release
 - **Theme**: Choose Light, Dark, or System theme
 - All preferences are saved automatically
 
+## 🖥️ Desktop-Specific Features
+
+### Mouse Drag Support
+The app includes a custom scroll behavior (`AppScrollBehavior`) that enables mouse drag gestures on desktop platforms. This allows users to:
+- Click and hold to drag PageView slides (e.g., in the onboarding screen)
+- Use mouse drag for all scrollable widgets throughout the app
+- Support trackpad gestures
+
+**Implementation**: The custom behavior extends `MaterialScrollBehavior` and includes `PointerDeviceKind.mouse` and `PointerDeviceKind.trackpad` in the allowed drag devices. This is applied globally via `MaterialApp.scrollBehavior`.
+
+**Why it's needed**: Flutter's default `MaterialScrollBehavior` only allows drag gestures for touch devices, stylus, and inverted stylus. Without this custom behavior, users on desktop platforms cannot drag scrollable widgets with a mouse.
+
 ## 🏗️ Project Structure
 
 ```
@@ -159,6 +172,8 @@ lib/
 │   │   ├── preferences_service.dart
 │   │   └── logging_service.dart
 │   ├── theme/               # App theming
+│   │   ├── app_theme.dart
+│   │   └── app_scroll_behavior.dart  # Custom scroll behavior for desktop mouse support
 │   └── utils/               # Utility functions
 │
 └── features/                 # Feature modules

@@ -4,6 +4,7 @@ import '../../../../core/database/models/tracking_types.dart';
 import '../habit_repository.dart';
 import '../../settings/providers/settings_providers.dart';
 import '../../../../core/services/preferences_service.dart';
+import '../../../../core/services/demo_data_service.dart';
 
 final databaseProvider = Provider<db.AppDatabase>((ref) {
   return db.AppDatabase();
@@ -272,3 +273,16 @@ void updateSessionViewOptions(WidgetRef ref, SessionViewOptions newOptions) {
   _globalSessionViewOptions = newOptions;
   ref.invalidate(sessionViewOptionsProvider);
 }
+
+// Demo data provider
+final hasDemoDataProvider = StreamProvider<bool>((ref) async* {
+  final repository = ref.watch(habitRepositoryProvider);
+  await for (final _ in repository.watchAllHabits()) {
+    try {
+      final hasDemo = await DemoDataService.hasDemoData(repository);
+      yield hasDemo;
+    } catch (e) {
+      yield false;
+    }
+  }
+});

@@ -71,25 +71,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
 
     return habitsAsync.when(
       data: (habits) {
-        final allHabitsAsync = ref.watch(habitsProvider);
-        final hasHabits = allHabitsAsync.maybeWhen(
-          data: (allHabits) => allHabits.isNotEmpty,
-          orElse: () => false,
-        );
-
-        if (!hasHabits) {
-          return EmptyStateWidget(
-            icon: Icons.check_circle_outline,
-            title: 'no_habits'.tr(),
-            message: 'create_first_habit'.tr(),
-            action: ElevatedButton.icon(
-              onPressed: () => HabitFormModal.show(context),
-              icon: const Icon(Icons.add),
-              label: Text('create_habit'.tr()),
-            ),
-          );
-        }
-
+        // Only show empty state for filtered results (when search has no matches)
         if (habits.isEmpty && (filterQuery != null && filterQuery.isNotEmpty)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +389,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 

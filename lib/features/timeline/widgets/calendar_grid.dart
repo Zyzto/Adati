@@ -4,7 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../habits/providers/habit_providers.dart';
 import '../../habits/providers/tracking_providers.dart';
-import '../../habits/widgets/habit_form_modal.dart';
 import '../../settings/providers/settings_providers.dart';
 import 'day_square.dart';
 
@@ -20,26 +19,7 @@ class CalendarGrid extends ConsumerWidget {
     return habitsAsync.when(
       data: (habits) {
         if (habits.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.calendar_today, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  'no_habits'.tr(),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => HabitFormModal.show(context),
-                  child: Text('create_first_habit'.tr()),
-                ),
-              ],
-            ),
-          );
+          return const SizedBox.shrink();
         }
 
         return Padding(
@@ -74,12 +54,14 @@ class CalendarGrid extends ConsumerWidget {
       children: days.map<Widget>((day) {
         // Use provider to watch for changes reactively
         final dayEntriesAsync = ref.watch(dayEntriesProvider(day));
-        
+
         return dayEntriesAsync.when(
           data: (entries) {
             final completedCount = entries.values.where((v) => v).length;
             final totalCount = entries.length;
-            final completionRate = totalCount > 0 ? completedCount / totalCount : 0.0;
+            final completionRate = totalCount > 0
+                ? completedCount / totalCount
+                : 0.0;
 
             return DaySquare(
               date: day,
@@ -87,17 +69,10 @@ class CalendarGrid extends ConsumerWidget {
               onTap: null, // Disabled for now, might be used later
             );
           },
-          loading: () => DaySquare(
-            date: day,
-            completed: false,
-          ),
-          error: (_, _) => DaySquare(
-            date: day,
-            completed: false,
-          ),
+          loading: () => DaySquare(date: day, completed: false),
+          error: (_, _) => DaySquare(date: day, completed: false),
         );
       }).toList(),
     );
   }
 }
-

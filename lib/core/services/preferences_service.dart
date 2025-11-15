@@ -41,6 +41,16 @@ class PreferencesService {
   static const String _keyHabitGroupBy = 'habit_group_by';
   static const String _keyHabitFilterByType = 'habit_filter_by_type';
   static const String _keyHabitFilterByTags = 'habit_filter_by_tags';
+  // Settings page section expansion states
+  static const String _keySettingsGeneralExpanded = 'settings_general_expanded';
+  static const String _keySettingsAppearanceExpanded = 'settings_appearance_expanded';
+  static const String _keySettingsDisplayExpanded = 'settings_display_expanded';
+  static const String _keySettingsDisplayPreferencesExpanded = 'settings_display_preferences_expanded';
+  static const String _keySettingsNotificationsExpanded = 'settings_notifications_expanded';
+  static const String _keySettingsTagsExpanded = 'settings_tags_expanded';
+  static const String _keySettingsDataExportExpanded = 'settings_data_export_expanded';
+  static const String _keySettingsAdvancedExpanded = 'settings_advanced_expanded';
+  static const String _keySettingsAboutExpanded = 'settings_about_expanded';
 
   static SharedPreferences? _prefs;
 
@@ -54,6 +64,18 @@ class PreferencesService {
       throw Exception('PreferencesService not initialized. Call init() first.');
     }
     return _prefs!;
+  }
+
+  // Advanced: Reset all settings to defaults
+  static Future<bool> resetAllSettings() async {
+    try {
+      await prefs.clear();
+      LoggingService.info('All settings reset to defaults');
+      return true;
+    } catch (e) {
+      LoggingService.error('Error resetting settings: $e');
+      return false;
+    }
   }
 
   // Theme mode
@@ -271,6 +293,52 @@ class PreferencesService {
     }
     return prefs.setString(_keyHabitFilterByTags, value);
   }
+
+  // Settings page section expansion states
+  static bool getSettingsGeneralExpanded() =>
+      prefs.getBool(_keySettingsGeneralExpanded) ?? true; // Default: expanded
+  static Future<bool> setSettingsGeneralExpanded(bool value) =>
+      prefs.setBool(_keySettingsGeneralExpanded, value);
+
+  static bool getSettingsAppearanceExpanded() =>
+      prefs.getBool(_keySettingsAppearanceExpanded) ?? false;
+  static Future<bool> setSettingsAppearanceExpanded(bool value) =>
+      prefs.setBool(_keySettingsAppearanceExpanded, value);
+
+  static bool getSettingsDisplayExpanded() =>
+      prefs.getBool(_keySettingsDisplayExpanded) ?? false;
+  static Future<bool> setSettingsDisplayExpanded(bool value) =>
+      prefs.setBool(_keySettingsDisplayExpanded, value);
+
+  static bool getSettingsDisplayPreferencesExpanded() =>
+      prefs.getBool(_keySettingsDisplayPreferencesExpanded) ?? false;
+  static Future<bool> setSettingsDisplayPreferencesExpanded(bool value) =>
+      prefs.setBool(_keySettingsDisplayPreferencesExpanded, value);
+
+  static bool getSettingsNotificationsExpanded() =>
+      prefs.getBool(_keySettingsNotificationsExpanded) ?? false;
+  static Future<bool> setSettingsNotificationsExpanded(bool value) =>
+      prefs.setBool(_keySettingsNotificationsExpanded, value);
+
+  static bool getSettingsTagsExpanded() =>
+      prefs.getBool(_keySettingsTagsExpanded) ?? false;
+  static Future<bool> setSettingsTagsExpanded(bool value) =>
+      prefs.setBool(_keySettingsTagsExpanded, value);
+
+  static bool getSettingsDataExportExpanded() =>
+      prefs.getBool(_keySettingsDataExportExpanded) ?? false;
+  static Future<bool> setSettingsDataExportExpanded(bool value) =>
+      prefs.setBool(_keySettingsDataExportExpanded, value);
+
+  static bool getSettingsAdvancedExpanded() =>
+      prefs.getBool(_keySettingsAdvancedExpanded) ?? false;
+  static Future<bool> setSettingsAdvancedExpanded(bool value) =>
+      prefs.setBool(_keySettingsAdvancedExpanded, value);
+
+  static bool getSettingsAboutExpanded() =>
+      prefs.getBool(_keySettingsAboutExpanded) ?? false;
+  static Future<bool> setSettingsAboutExpanded(bool value) =>
+      prefs.setBool(_keySettingsAboutExpanded, value);
 
   // Clear all preferences
   static Future<bool> clear() => prefs.clear();

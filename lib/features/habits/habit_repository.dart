@@ -333,4 +333,63 @@ class HabitRepository {
 
   Future<db.Streak?> getStreakByHabit(int habitId) =>
       _streakDao.getStreakByHabit(habitId);
+
+  // Import helper methods
+  Future<void> insertOrUpdateEntry(db.TrackingEntriesCompanion entry) async {
+    await _trackingEntryDao.insertOrUpdateEntry(entry);
+  }
+
+  Future<void> insertOrUpdateStreak(db.StreaksCompanion streak) async {
+    await _streakDao.insertOrUpdateStreak(streak);
+  }
+
+  // Advanced: Delete all data
+  Future<void> deleteAllHabits() async {
+    // Delete all habits (cascades to entries and streaks via foreign keys)
+    await _db.delete(_db.habits).go();
+  }
+
+  Future<void> deleteAllTags() async {
+    await _db.delete(_db.tags).go();
+  }
+
+  Future<void> deleteAllData() async {
+    // Delete all data in correct order to respect foreign keys
+    await _db.delete(_db.habitTags).go();
+    await _db.delete(_db.trackingEntries).go();
+    await _db.delete(_db.streaks).go();
+    await _db.delete(_db.habits).go();
+    await _db.delete(_db.tags).go();
+  }
+
+  // Advanced: Database statistics
+  Future<Map<String, int>> getDatabaseStats() async {
+    final habits = await getAllHabits();
+    final tags = await getAllTags();
+    
+    int totalEntries = 0;
+    int totalStreaks = 0;
+    
+    for (final habit in habits) {
+      final entries = await getEntriesByHabit(habit.id);
+      totalEntries += entries.length;
+      
+      final streak = await getStreakByHabit(habit.id);
+      if (streak != null) {
+        totalStreaks++;
+      }
+    }
+    
+    return {
+      'habits': habits.length,
+      'tags': tags.length,
+      'entries': totalEntries,
+      'streaks': totalStreaks,
+    };
+  }
+
+  // Advanced: Vacuum database (optimize)
+  Future<void> vacuumDatabase() async {
+    await _db.customStatement('VACUUM');
+  }
 }
