@@ -28,6 +28,8 @@ class HabitCalendarModal extends ConsumerStatefulWidget {
 
 class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
   DateTime _selectedMonth = DateTime.now();
+  // Optimistic updates: track pending changes for immediate UI feedback
+  final Map<DateTime, bool> _optimisticUpdates = {};
 
   void _showManagementMenu(
     BuildContext context,
@@ -46,6 +48,21 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
     final habitAsync = ref.watch(habitByIdProvider(widget.habitId));
     final modalTimelineDays = ref.watch(modalTimelineDaysProvider);
     final streakAsync = ref.watch(streakProvider(widget.habitId));
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Clear optimistic updates when actual data arrives from database
+    ref.listen(trackingEntriesProvider(widget.habitId), (previous, next) {
+      if (next.hasValue && _optimisticUpdates.isNotEmpty) {
+        // Clear all optimistic updates when we get fresh data from the stream
+        // The stream update means the database operation completed
+        final hadUpdates = _optimisticUpdates.isNotEmpty;
+        _optimisticUpdates.clear();
+        if (hadUpdates && mounted) {
+          setState(() {});
+        }
+      }
+    });
 
     return DraggableScrollableSheet(
       expand: false,
@@ -55,165 +72,193 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
-          child: Column(
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              children: [
+                // Enhanced handle bar with theme colors
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              // Header with month navigation and settings
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left),
-                      tooltip: 'previous_month'.tr(),
-                      onPressed: () {
-                        setState(() {
-                          _selectedMonth = DateTime(
-                            _selectedMonth.year,
-                            _selectedMonth.month - 1,
-                          );
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: Text(
-                        DateFormat('MMMM yyyy').format(_selectedMonth),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                // Enhanced header with better theming
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        tooltip: 'previous_month'.tr(),
+                        style: IconButton.styleFrom(
+                          foregroundColor: colorScheme.onSurface,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _selectedMonth = DateTime(
+                              _selectedMonth.year,
+                              _selectedMonth.month - 1,
+                            );
+                          });
+                        },
+                      ),
+                      Expanded(
+                        child: Text(
+                          DateFormat('MMMM yyyy').format(_selectedMonth),
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      tooltip: 'next_month'.tr(),
-                      onPressed: () {
-                        setState(() {
-                          _selectedMonth = DateTime(
-                            _selectedMonth.year,
-                            _selectedMonth.month + 1,
-                          );
-                        });
-                      },
-                    ),
-                    habitAsync.when(
-                      data: (habit) => habit != null
-                          ? IconButton(
-                              icon: const Icon(Icons.settings, size: 20),
-                              tooltip: 'habit_settings'.tr(),
-                              onPressed: () =>
-                                  _showManagementMenu(context, ref, habit),
-                            )
-                          : const SizedBox.shrink(),
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, _) => const SizedBox.shrink(),
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        tooltip: 'next_month'.tr(),
+                        style: IconButton.styleFrom(
+                          foregroundColor: colorScheme.onSurface,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _selectedMonth = DateTime(
+                              _selectedMonth.year,
+                              _selectedMonth.month + 1,
+                            );
+                          });
+                        },
+                      ),
+                      habitAsync.when(
+                        data: (habit) => habit != null
+                            ? IconButton(
+                                icon: const Icon(Icons.settings, size: 20),
+                                tooltip: 'habit_settings'.tr(),
+                                style: IconButton.styleFrom(
+                                  foregroundColor: colorScheme.onSurface,
+                                ),
+                                onPressed: () =>
+                                    _showManagementMenu(context, ref, habit),
+                              )
+                            : const SizedBox.shrink(),
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, _) => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              // Card preview section
-              habitAsync.when(
-                data: (habit) {
-                  if (habit == null) {
-                    return const SizedBox.shrink();
-                  }
-                  return Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                          spreadRadius: 0,
+                // Enhanced card preview section
+                habitAsync.when(
+                  data: (habit) {
+                    if (habit == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant,
+                          width: 1,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Icon - Title row
-                        Row(
-                          children: [
-                            // Icon
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Color(habit.color),
-                                borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Icon - Title row
+                          Row(
+                            children: [
+                              // Icon with better theming
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Color(habit.color),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Color(
+                                        habit.color,
+                                      ).withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: habit.icon != null
+                                    ? Icon(
+                                        IconData(
+                                          int.parse(habit.icon!),
+                                          fontFamily: 'MaterialIcons',
+                                        ),
+                                        color: Colors.white,
+                                        size: 24,
+                                      )
+                                    : null,
                               ),
-                              child: habit.icon != null
-                                  ? Icon(
-                                      IconData(
-                                        int.parse(habit.icon!),
-                                        fontFamily: 'MaterialIcons',
-                                      ),
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-                            // Title
-                            Expanded(
-                              child: Text(
-                                habit.name,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              const SizedBox(width: 12),
+                              // Title
+                              Expanded(
+                                child: Text(
+                                  habit.name,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        // Timeline visualization
-                        const SizedBox(height: 16),
-                        HabitTimeline(
-                          habitId: habit.id,
-                          compact: false,
-                          daysToShow: modalTimelineDays,
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: SkeletonCard(),
+                            ],
+                          ),
+                          // Timeline visualization
+                          const SizedBox(height: 16),
+                          HabitTimeline(
+                            habitId: habit.id,
+                            compact: false,
+                            daysToShow: modalTimelineDays,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: SkeletonCard(),
+                  ),
+                  error: (_, _) => const SizedBox.shrink(),
                 ),
-                error: (_, _) => const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 8),
-              // Statistics section
-              _buildStatisticsSection(context, ref, entriesAsync, streakAsync),
-              // Divider between statistics and calendar
-              Divider(
-                height: 1,
-                thickness: 1,
-                indent: 16,
-                endIndent: 16,
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-              ),
-              // Calendar with animated month transitions
-              Expanded(
-                child: entriesAsync.when(
+                const SizedBox(height: 8),
+                // Statistics section
+                _buildStatisticsSection(
+                  context,
+                  ref,
+                  entriesAsync,
+                  streakAsync,
+                ),
+                // Enhanced divider
+                Divider(
+                  height: 24,
+                  thickness: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: colorScheme.outlineVariant,
+                ),
+                // Calendar with animated month transitions
+                entriesAsync.when(
                   data: (entries) {
                     if (entries.isEmpty) {
                       return EmptyStateWidget(
@@ -222,11 +267,15 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                         message: 'complete_habit_to_see_calendar'.tr(),
                       );
                     }
-                    final entriesMap = {
+                    // Merge actual entries with optimistic updates for immediate feedback
+                    final entriesMap = <DateTime, bool>{
                       for (var entry in entries)
                         app_date_utils.DateUtils.getDateOnly(entry.date):
                             entry.completed,
                     };
+                    // Apply optimistic updates (they override actual entries)
+                    entriesMap.addAll(_optimisticUpdates);
+
                     final entriesWithNotes = {
                       for (var entry in entries)
                         if (entry.notes != null && entry.notes!.isNotEmpty)
@@ -234,21 +283,26 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                               true,
                     };
                     return AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
+                      duration: const Duration(milliseconds: 400),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
                       transitionBuilder: (child, animation) {
                         return SlideTransition(
                           position:
                               Tween<Offset>(
-                                begin: const Offset(0.3, 0),
+                                begin: const Offset(0.2, 0),
                                 end: Offset.zero,
                               ).animate(
                                 CurvedAnimation(
                                   parent: animation,
-                                  curve: Curves.easeInOut,
+                                  curve: Curves.easeOutCubic,
                                 ),
                               ),
                           child: FadeTransition(
-                            opacity: animation,
+                            opacity: CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOut,
+                            ),
                             child: child,
                           ),
                         );
@@ -264,8 +318,8 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                   error: (error, stack) =>
                       Center(child: Text('${'error'.tr()}: $error')),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -278,6 +332,9 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
     AsyncValue<List<db.TrackingEntry>> entriesAsync,
     AsyncValue<db.Streak?> streakAsync,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return entriesAsync.when(
       data: (entries) {
         return streakAsync.when(
@@ -346,15 +403,9 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.outlineVariant, width: 1),
               ),
               child: Column(
                 children: [
@@ -366,14 +417,14 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                         Icons.local_fire_department,
                         '${streak?.currentStreak ?? 0}',
                         'current_streak'.tr(),
-                        Colors.orange,
+                        colorScheme.primary,
                       ),
                       _buildStatItem(
                         context,
                         Icons.emoji_events,
                         '${streak?.longestStreak ?? 0}',
                         'longest_streak'.tr(),
-                        Colors.amber,
+                        colorScheme.secondary,
                       ),
                       _buildStatItem(
                         context,
@@ -384,7 +435,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                         weeklyGoal != null
                             ? 'this_week_goal'.tr()
                             : 'this_month'.tr(),
-                        Colors.blue,
+                        colorScheme.tertiary,
                       ),
                       _buildStatItem(
                         context,
@@ -395,7 +446,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                         monthlyGoal != null
                             ? 'this_month_goal'.tr()
                             : 'this_week'.tr(),
-                        Colors.green,
+                        colorScheme.primary,
                       ),
                     ],
                   ),
@@ -410,7 +461,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                             'weekly_goal_progress'.tr(),
                             weekCompleted,
                             weeklyGoal,
-                            Colors.blue,
+                            colorScheme.tertiary,
                           ),
                         if (weeklyGoal != null && monthlyGoal != null)
                           const SizedBox(height: 8),
@@ -420,13 +471,13 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                             'monthly_goal_progress'.tr(),
                             monthCompleted,
                             monthlyGoal,
-                            Colors.green,
+                            colorScheme.primaryContainer,
                           ),
                       ],
                     ),
                   const SizedBox(height: 8),
-                  // Goal setting button
-                  TextButton.icon(
+                  // Goal setting button with theme colors
+                  FilledButton.icon(
                     onPressed: () {
                       final habitAsync = ref.read(
                         habitByIdProvider(widget.habitId),
@@ -444,6 +495,11 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                     },
                     icon: const Icon(Icons.flag, size: 18),
                     label: Text('set_goals'.tr()),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colorScheme.primaryContainer,
+                      foregroundColor: colorScheme.onPrimaryContainer,
+                      elevation: 0,
+                    ),
                   ),
                 ],
               ),
@@ -465,6 +521,8 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
     int goal,
     Color color,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final progress = (completed / goal).clamp(0.0, 1.0);
     final percentage = ((completed / goal) * 100).round();
 
@@ -474,26 +532,35 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
             Text(
               '$completed/$goal ($percentage%)',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: progress >= 1.0 ? Colors.green : color,
+                color: progress >= 1.0
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
               ),
             ),
           ],
         ),
         const SizedBox(height: 4),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(8),
           child: LinearProgressIndicator(
             value: progress,
-            backgroundColor: color.withValues(alpha: 0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(
-              progress >= 1.0 ? Colors.green : color,
+            backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+              alpha: colorScheme.brightness == Brightness.dark ? 0.5 : 0.3,
             ),
-            minHeight: 6,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              progress >= 1.0 ? colorScheme.primary : color,
+            ),
+            minHeight: 8,
           ),
         ),
       ],
@@ -507,24 +574,36 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
     String label,
     Color color,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: isDark ? 0.25 : 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.white, size: 26),
+        ),
+        const SizedBox(height: 8),
         Text(
           value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: color,
+            color: colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
           textAlign: TextAlign.center,
         ),
       ],
@@ -579,6 +658,9 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
     Map<DateTime, bool> entriesWithNotes,
     List<db.TrackingEntry> allEntries,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final firstDayOfMonth = DateTime(
       _selectedMonth.year,
       _selectedMonth.month,
@@ -617,31 +699,35 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
         ? ((monthCompleted / monthDays.length) * 100).round()
         : 0;
 
+    // Calculate number of weeks needed
+    final numberOfWeeks = (days.length / 7).ceil();
+
     return Padding(
       key: ValueKey(monthKey),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Month completion percentage
+          // Month completion percentage with theme colors
           Padding(
-            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            padding: const EdgeInsets.only(top: 8, bottom: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.trending_up, size: 16, color: Colors.grey[600]),
+                Icon(Icons.trending_up, size: 18, color: colorScheme.primary),
                 const SizedBox(width: 4),
                 Text(
                   '${'completion'.tr()}: $monthCompletionPercentage%',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+                    color: colorScheme.primary,
                   ),
                 ),
               ],
             ),
           ),
-          // Weekday headers
+          // Weekday headers with theme colors
           Row(
             children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                 .map(
@@ -649,9 +735,9 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                     child: Center(
                       child: Text(
                         day,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[600],
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -660,81 +746,95 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                 .toList(),
           ),
           const SizedBox(height: 8),
-          // Calendar grid with swipe gestures
-          Expanded(
-            child: GestureDetector(
-              onHorizontalDragEnd: (details) {
-                if (details.primaryVelocity != null) {
-                  if (details.primaryVelocity! > 0) {
-                    // Swipe right - previous month
-                    setState(() {
-                      _selectedMonth = DateTime(
-                        _selectedMonth.year,
-                        _selectedMonth.month - 1,
-                      );
-                    });
-                  } else if (details.primaryVelocity! < 0) {
-                    // Swipe left - next month
-                    setState(() {
-                      _selectedMonth = DateTime(
-                        _selectedMonth.year,
-                        _selectedMonth.month + 1,
-                      );
-                    });
-                  }
-                }
-              },
-              child: GridView.builder(
-                shrinkWrap: false,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  childAspectRatio: 1,
-                  mainAxisSpacing: 4,
-                  crossAxisSpacing: 4,
-                ),
-                itemCount: days.length,
-                itemBuilder: (context, index) {
-                  final day = days[index];
-                  if (day == null) {
-                    return const SizedBox.shrink();
-                  }
+          // Calendar grid with swipe gestures - fixed height
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cellSize =
+                  (constraints.maxWidth - 24) / 7; // 24 = 4*6 spacing
+              final gridHeight =
+                  (cellSize * numberOfWeeks) + (4 * (numberOfWeeks - 1));
 
-                  final dayOnly = app_date_utils.DateUtils.getDateOnly(day);
-                  final isCompleted = entriesMap[dayOnly] ?? false;
-                  final isToday = app_date_utils.DateUtils.isToday(day);
-                  final isWeekend =
-                      day.weekday == 6 ||
-                      day.weekday == 7; // Saturday or Sunday
-                  final hasNotes = entriesWithNotes[dayOnly] ?? false;
-                  final streakLength = streakMap[day] ?? 0;
-
-                  return Semantics(
-                    label: isCompleted
-                        ? 'Completed on ${DateFormat('MMMM d').format(day)}'
-                        : 'Not completed on ${DateFormat('MMMM d').format(day)}',
-                    button: true,
-                    child: _AnimatedCalendarDay(
-                      isCompleted: isCompleted,
-                      isToday: isToday,
-                      isWeekend: isWeekend,
-                      day: day,
-                      entriesMap: entriesMap,
-                      hasNotes: hasNotes,
-                      streakLength: streakLength,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        _toggleDay(day);
-                      },
-                      onLongPress: () {
-                        HapticFeedback.mediumImpact();
-                        _showNoteEditor(context, day);
-                      },
-                    ),
-                  );
+              return GestureDetector(
+                onHorizontalDragEnd: (details) {
+                  if (details.primaryVelocity != null) {
+                    if (details.primaryVelocity! > 0) {
+                      // Swipe right - previous month
+                      setState(() {
+                        _selectedMonth = DateTime(
+                          _selectedMonth.year,
+                          _selectedMonth.month - 1,
+                        );
+                      });
+                    } else if (details.primaryVelocity! < 0) {
+                      // Swipe left - next month
+                      setState(() {
+                        _selectedMonth = DateTime(
+                          _selectedMonth.year,
+                          _selectedMonth.month + 1,
+                        );
+                      });
+                    }
+                  }
                 },
-              ),
-            ),
+                child: SizedBox(
+                  height: gridHeight,
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: false,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          childAspectRatio: 1,
+                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 4,
+                        ),
+                    itemCount: days.length,
+                    itemBuilder: (context, index) {
+                      final day = days[index];
+                      if (day == null) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final dayOnly = app_date_utils.DateUtils.getDateOnly(day);
+                      final isCompleted = entriesMap[dayOnly] ?? false;
+                      final isToday = app_date_utils.DateUtils.isToday(day);
+                      final isWeekend =
+                          day.weekday == 6 ||
+                          day.weekday == 7; // Saturday or Sunday
+                      final hasNotes = entriesWithNotes[dayOnly] ?? false;
+                      final streakLength = streakMap[day] ?? 0;
+
+                      return Semantics(
+                        label: isCompleted
+                            ? 'Completed on ${DateFormat('MMMM d').format(day)}'
+                            : 'Not completed on ${DateFormat('MMMM d').format(day)}',
+                        button: true,
+                        child: _AnimatedCalendarDay(
+                          key: ValueKey('${day.year}-${day.month}-${day.day}'),
+                          isCompleted: isCompleted,
+                          isToday: isToday,
+                          isWeekend: isWeekend,
+                          day: day,
+                          entriesMap: entriesMap,
+                          hasNotes: hasNotes,
+                          streakLength: streakLength,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _toggleDay(day);
+                          },
+                          onLongPress: () {
+                            HapticFeedback.mediumImpact();
+                            _showNoteEditor(context, day);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
+          const SizedBox(height: 16), // Bottom padding
         ],
       ),
     );
@@ -762,30 +862,73 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
 
   Future<void> _toggleDay(DateTime day) async {
     final repository = ref.read(habitRepositoryProvider);
+    final dateOnly = app_date_utils.DateUtils.getDateOnly(day);
+
+    // Get current state from entries provider for immediate feedback
+    final entriesAsync = ref.read(trackingEntriesProvider(widget.habitId));
+    final currentEntries = entriesAsync.maybeWhen(
+      data: (entries) => entries,
+      orElse: () => <db.TrackingEntry>[],
+    );
+    final currentEntry = currentEntries
+        .where((e) => app_date_utils.DateUtils.getDateOnly(e.date) == dateOnly)
+        .firstOrNull;
+    final currentCompleted = currentEntry?.completed ?? false;
+
+    // Apply optimistic update immediately for instant UI feedback
+    final newCompleted = !currentCompleted;
+    setState(() {
+      _optimisticUpdates[dateOnly] = newCompleted;
+    });
+
     final habitAsync = ref.read(habitByIdProvider(widget.habitId).future);
     final habit = await habitAsync;
-    if (habit == null) return;
+    if (habit == null) {
+      // Revert optimistic update if habit not found
+      setState(() {
+        _optimisticUpdates.remove(dateOnly);
+      });
+      return;
+    }
 
-    final dateOnly = app_date_utils.DateUtils.getDateOnly(day);
     final trackingType = TrackingType.fromValue(habit.trackingType);
-
-    // Get current status
-    final entry = await repository.getEntry(widget.habitId, dateOnly);
-    final isCompleted = entry?.completed ?? false;
 
     // Handle different tracking types
     if (trackingType == TrackingType.completed) {
-      // Simple toggle for completed tracking
-      await repository.toggleCompletion(widget.habitId, dateOnly, !isCompleted);
+      // Simple toggle for completed tracking - don't await to make UI responsive
+      repository
+          .toggleCompletion(widget.habitId, dateOnly, newCompleted)
+          .then((_) {
+            // Clear optimistic update once database confirms
+            if (mounted) {
+              setState(() {
+                _optimisticUpdates.remove(dateOnly);
+              });
+            }
+          })
+          .catchError((error) {
+            // Revert optimistic update on error
+            if (mounted) {
+              setState(() {
+                _optimisticUpdates.remove(dateOnly);
+              });
+            }
+          });
     } else if (trackingType == TrackingType.measurable) {
-      // For measurable, open input dialog
+      // Revert optimistic update and open dialog
+      setState(() {
+        _optimisticUpdates.remove(dateOnly);
+      });
       if (mounted) {
-        _showMeasurableInputDialog(context, day, entry, habit);
+        _showMeasurableInputDialog(context, day, currentEntry, habit);
       }
     } else if (trackingType == TrackingType.occurrences) {
-      // For occurrences, open selection dialog
+      // Revert optimistic update and open dialog
+      setState(() {
+        _optimisticUpdates.remove(dateOnly);
+      });
       if (mounted) {
-        _showOccurrencesInputDialog(context, day, entry, habit);
+        _showOccurrencesInputDialog(context, day, currentEntry, habit);
       }
     }
   }
@@ -817,7 +960,10 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  app_date_utils.DateUtils.formatDate(dateOnly, format: 'MMMM d, yyyy'),
+                  app_date_utils.DateUtils.formatDate(
+                    dateOnly,
+                    format: 'MMMM d, yyyy',
+                  ),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 16),
@@ -870,19 +1016,27 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                     IconButton(
                       icon: const Icon(Icons.remove),
                       onPressed: () {
-                        final current = double.tryParse(controller.text.trim()) ?? 0.0;
+                        final current =
+                            double.tryParse(controller.text.trim()) ?? 0.0;
                         final step = goalValue != null && goalValue > 0
                             ? goalValue / 20
                             : 1.0;
-                        final newValue = (current - step).clamp(0.0, double.infinity);
-                        controller.text = newValue.toStringAsFixed(newValue % 1 == 0 ? 0 : 1);
+                        final newValue = (current - step).clamp(
+                          0.0,
+                          double.infinity,
+                        );
+                        controller.text = newValue.toStringAsFixed(
+                          newValue % 1 == 0 ? 0 : 1,
+                        );
                         setDialogState(() {});
                       },
                     ),
                     Expanded(
                       child: TextFormField(
                         controller: controller,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
                           labelText: 'value'.tr(),
@@ -895,12 +1049,15 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                     IconButton(
                       icon: const Icon(Icons.add),
                       onPressed: () {
-                        final current = double.tryParse(controller.text.trim()) ?? 0.0;
+                        final current =
+                            double.tryParse(controller.text.trim()) ?? 0.0;
                         final step = goalValue != null && goalValue > 0
                             ? goalValue / 20
                             : 1.0;
                         final newValue = current + step;
-                        controller.text = newValue.toStringAsFixed(newValue % 1 == 0 ? 0 : 1);
+                        controller.text = newValue.toStringAsFixed(
+                          newValue % 1 == 0 ? 0 : 1,
+                        );
                         setDialogState(() {});
                       },
                     ),
@@ -911,8 +1068,12 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: controller,
                     builder: (context, value, child) {
-                      final inputValue = double.tryParse(value.text.trim()) ?? currentValue;
-                      final percentage = (inputValue / goalValue * 100).clamp(0.0, double.infinity);
+                      final inputValue =
+                          double.tryParse(value.text.trim()) ?? currentValue;
+                      final percentage = (inputValue / goalValue * 100).clamp(
+                        0.0,
+                        double.infinity,
+                      );
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -992,7 +1153,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
   ) {
     final repository = ref.read(habitRepositoryProvider);
     final dateOnly = app_date_utils.DateUtils.getDateOnly(day);
-    
+
     List<String> occurrenceNames = [];
     if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
       try {
@@ -1020,9 +1181,13 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
     }
 
     List<String> selectedOccurrences = [];
-    if (entry?.occurrenceData != null && entry!.occurrenceData!.isNotEmpty) {
+    if (entry != null &&
+        entry.occurrenceData != null &&
+        entry.occurrenceData!.isNotEmpty) {
       try {
-        selectedOccurrences = List<String>.from(jsonDecode(entry.occurrenceData!));
+        selectedOccurrences = List<String>.from(
+          jsonDecode(entry.occurrenceData!),
+        );
       } catch (e) {
         selectedOccurrences = [];
       }
@@ -1039,7 +1204,10 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  app_date_utils.DateUtils.formatDate(dateOnly, format: 'MMMM d, yyyy'),
+                  app_date_utils.DateUtils.formatDate(
+                    dateOnly,
+                    format: 'MMMM d, yyyy',
+                  ),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 16),
@@ -1105,6 +1273,7 @@ class _AnimatedCalendarDay extends StatefulWidget {
   final VoidCallback? onLongPress;
 
   const _AnimatedCalendarDay({
+    super.key,
     required this.isCompleted,
     required this.isToday,
     required this.isWeekend,
@@ -1121,26 +1290,44 @@ class _AnimatedCalendarDay extends StatefulWidget {
 }
 
 class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+    with TickerProviderStateMixin {
+  late final AnimationController _tapController;
+  late final AnimationController _completionController;
+  late final Animation<double> _tapScaleAnimation;
+  late final Animation<double> _completionScaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
+    // Controller for tap feedback
+    _tapController = AnimationController(
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(
+    _tapScaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _tapController, curve: Curves.easeOut));
+
+    // Controller for completion state change
+    _completionController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _completionScaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _completionController, curve: Curves.easeOut),
+    );
+
+    // Set initial state based on completion
+    if (widget.isCompleted) {
+      _completionController.value = 1.0;
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _tapController.dispose();
+    _completionController.dispose();
     super.dispose();
   }
 
@@ -1148,143 +1335,240 @@ class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
   void didUpdateWidget(_AnimatedCalendarDay oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isCompleted != oldWidget.isCompleted) {
-      // Animate on completion change
-      _controller.forward().then((_) => _controller.reverse());
+      // Animate completion state change
+      if (widget.isCompleted) {
+        // Marking: grow from 0 to 1
+        _completionController.forward();
+      } else {
+        // Unmarking: shrink from 1 to 0
+        _completionController.reverse();
+      }
     }
   }
 
-  Color _getTodayTextColor(BuildContext context) {
-    // Always use a visible color for today - blue shade for better contrast
-    return Theme.of(context).brightness == Brightness.dark
-        ? Colors.blue.shade300
-        : Colors.blue.shade700;
+  Color _getCompletedColor(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return colorScheme.primary;
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
+      onTapDown: (_) => _tapController.forward(),
       onTapUp: (_) {
-        _controller.reverse();
+        _tapController.reverse();
         widget.onTap();
       },
-      onTapCancel: () => _controller.reverse(),
+      onTapCancel: () => _tapController.reverse(),
       onLongPress: widget.onLongPress,
       child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-          decoration: BoxDecoration(
-            color: widget.isCompleted
-                ? Colors.green
-                : (widget.isToday
-                      ? Theme.of(context).brightness == Brightness.dark
-                            ? Colors.blue.withValues(alpha: 0.3)
-                            : Colors.blue.withValues(alpha: 0.2)
-                      : (widget.isWeekend
-                            ? Colors.grey[100]
-                            : Colors.grey[200])),
-            shape: BoxShape.circle,
-            border: widget.isToday
-                ? Border.all(color: Colors.blue, width: 3)
-                : (widget.isCompleted
-                      ? Border.all(color: Colors.green.shade700, width: 1)
-                      : null),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '${widget.day.day}',
-                    style: TextStyle(
-                      fontWeight: widget.isToday
-                          ? FontWeight.bold
-                          : (widget.isCompleted
-                                ? FontWeight.w600
-                                : FontWeight.normal),
-                      fontSize: widget.isToday ? 15 : 14,
-                      color: widget.isCompleted
-                          ? Colors.white
-                          : (widget.isToday
-                                ? _getTodayTextColor(context)
-                                : (widget.isWeekend
-                                      ? Colors.grey[600]
-                                      : Colors.black87)),
+        scale: _tapScaleAnimation,
+        child: AnimatedBuilder(
+          animation: _completionScaleAnimation,
+          builder: (context, child) {
+            // Interpolate between uncompleted and completed states
+            final completionValue = _completionScaleAnimation.value;
+            final isAnimatingCompleted = completionValue > 0.0;
+
+            // Calculate background color based on animation
+            Color backgroundColor;
+            if (isAnimatingCompleted) {
+              // Interpolate between uncompleted and completed colors
+              final uncompletedColor = widget.isToday
+                  ? colorScheme.primaryContainer.withValues(
+                      alpha: colorScheme.brightness == Brightness.dark
+                          ? 0.4
+                          : 0.3,
+                    )
+                  : (widget.isWeekend
+                        ? colorScheme.surfaceContainerHighest
+                        : colorScheme.surface);
+              final completedColor = _getCompletedColor(context);
+              backgroundColor = Color.lerp(
+                uncompletedColor,
+                completedColor,
+                completionValue,
+              )!;
+            } else {
+              backgroundColor = widget.isCompleted
+                  ? _getCompletedColor(context)
+                  : (widget.isToday
+                        ? colorScheme.primaryContainer.withValues(
+                            alpha: colorScheme.brightness == Brightness.dark
+                                ? 0.4
+                                : 0.3,
+                          )
+                        : (widget.isWeekend
+                              ? colorScheme.surfaceContainerHighest
+                              : colorScheme.surface));
+            }
+
+            // Scale the container based on completion animation
+            // When marking: scale grows from 1.0 to 1.02 (very subtle growth)
+            // When unmarking: scale shrinks from 1.0 to 0.95 (subtle shrinkage)
+            final containerScale = widget.isCompleted
+                ? 1.0 +
+                      (completionValue * 0.02) // Grow when marking (2% max)
+                : 1.0 -
+                      ((1.0 - completionValue) *
+                          0.05); // Shrink when unmarking (5% max)
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                // Use the smaller dimension to ensure circle fits in grid cell
+                final size = constraints.maxWidth < constraints.maxHeight
+                    ? constraints.maxWidth
+                    : constraints.maxHeight;
+
+                return Center(
+                  child: Transform.scale(
+                    scale: containerScale,
+                    child: Container(
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        shape: BoxShape.circle,
+                        border: widget.isToday
+                            ? Border.all(color: colorScheme.primary, width: 2.5)
+                            : (isAnimatingCompleted || widget.isCompleted
+                                  ? Border.all(
+                                      color: colorScheme.primary.withValues(
+                                        alpha: 0.8 * completionValue,
+                                      ),
+                                      width: 1.5,
+                                    )
+                                  : null),
+                      ),
+                      child: child,
                     ),
                   ),
-                  if (widget.isCompleted)
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 300),
-                      builder: (context, value, child) {
-                        return Transform.scale(
-                          scale: value,
-                          child: Opacity(
-                            opacity: value,
-                            child: const Icon(
-                              Icons.check,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                          ),
-                        );
-                      },
+                );
+              },
+            );
+          },
+          child: _buildContent(colorScheme),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(ColorScheme colorScheme) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '${widget.day.day}',
+              style: TextStyle(
+                fontWeight: widget.isToday
+                    ? FontWeight.bold
+                    : (widget.isCompleted
+                          ? FontWeight.w600
+                          : FontWeight.normal),
+                fontSize: widget.isToday ? 15 : 14,
+                color: widget.isCompleted
+                    ? colorScheme.onPrimary
+                    : (widget.isToday
+                          ? colorScheme.onPrimaryContainer
+                          : (widget.isWeekend
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.onSurface)),
+              ),
+            ),
+            if (widget.isCompleted)
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) {
+                  // Clamp values to valid ranges
+                  final clampedOpacity = value.clamp(0.0, 1.0);
+                  final clampedScale = value.clamp(0.0, 1.2);
+                  return Transform.scale(
+                    scale: clampedScale,
+                    child: Opacity(
+                      opacity: clampedOpacity,
+                      child: Icon(
+                        Icons.check,
+                        size: 12,
+                        color: colorScheme.onPrimary,
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+        // Streak indicator with theme colors
+        if (widget.streakLength > 1)
+          Positioned(
+            top: 2,
+            right: 2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: colorScheme.secondary,
+                shape: BoxShape.circle,
+                border: Border.all(color: colorScheme.surface, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.secondary.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                    spreadRadius: 0.5,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.local_fire_department,
+                    size: 11,
+                    color: colorScheme.onSecondary,
+                  ),
+                  if (widget.streakLength > 9)
+                    Text(
+                      '${widget.streakLength}',
+                      style: TextStyle(
+                        color: colorScheme.onSecondary,
+                        fontSize: 7,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                 ],
               ),
-              // Streak indicator (top right)
-              if (widget.streakLength > 1)
-                Positioned(
-                  top: 2,
-                  right: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.local_fire_department,
-                          size: 10,
-                          color: Colors.white,
-                        ),
-                        if (widget.streakLength > 9)
-                          Text(
-                            '${widget.streakLength}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              // Notes indicator (bottom right)
-              if (widget.hasNotes)
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.note, size: 8, color: Colors.white),
-                  ),
-                ),
-            ],
+            ),
           ),
-        ),
-      ),
+        // Notes indicator with theme colors
+        if (widget.hasNotes)
+          Positioned(
+            bottom: 2,
+            right: 2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: colorScheme.tertiary,
+                shape: BoxShape.circle,
+                border: Border.all(color: colorScheme.surface, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.tertiary.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                    spreadRadius: 0.5,
+                  ),
+                ],
+              ),
+              child: Icon(Icons.note, size: 9, color: colorScheme.onTertiary),
+            ),
+          ),
+      ],
     );
   }
 }
