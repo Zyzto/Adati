@@ -83,23 +83,16 @@ class DaySquare extends ConsumerWidget {
     }
   }
 
-  String _getTooltipMessage() {
-    final dateStr = app_date_utils.DateUtils.formatDate(date);
-    final status = completed ? 'completed'.tr() : 'not_completed'.tr();
-    final streakInfo = streakLength != null && streakLength! > 0
-        ? ' - ${'streak'.tr()}: $streakLength'
-        : '';
-    return '$dateStr - $status$streakInfo';
-  }
 
-  Border? _getBorder() {
+  Border? _getBorder(WidgetRef ref) {
+    final showStreakBorders = ref.watch(showStreakBordersProvider);
     final streakBorderColor = _getStreakBorderColor();
     final isToday = app_date_utils.DateUtils.isToday(date);
     
     // Priority: Today > Streak (only for completed days with active streaks)
     if (isToday) {
       return Border.all(color: Colors.blue, width: 1.5);
-    } else if (streakBorderColor != null && completed && streakLength != null && streakLength! > 0) {
+    } else if (showStreakBorders && streakBorderColor != null && completed && streakLength != null && streakLength! > 0) {
       // Show streak border only for completed days with active streaks
       return Border.all(
         color: streakBorderColor,
@@ -111,9 +104,20 @@ class DaySquare extends ConsumerWidget {
     return null;
   }
 
+  String _getTooltipMessage(WidgetRef ref) {
+    final dateStr = app_date_utils.DateUtils.formatDate(date);
+    final status = completed ? 'completed'.tr() : 'not_completed'.tr();
+    final showStreakNumbers = ref.watch(showStreakNumbersProvider);
+    final streakInfo = showStreakNumbers && streakLength != null && streakLength! > 0
+        ? ' - ${'streak'.tr()}: $streakLength'
+        : '';
+    return '$dateStr - $status$streakInfo';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final squareSize = _getSize(ref);
+    final showStreakNumbers = ref.watch(showStreakNumbersProvider);
     
     Widget square = GestureDetector(
       onLongPress: () {
@@ -132,7 +136,7 @@ class DaySquare extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  _getTooltipMessage(),
+                  _getTooltipMessage(ref),
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
@@ -145,16 +149,30 @@ class DaySquare extends ConsumerWidget {
         });
       },
       child: Tooltip(
-        message: _getTooltipMessage(),
+        message: _getTooltipMessage(ref),
         waitDuration: const Duration(milliseconds: 500),
-        child: Container(
-          width: squareSize,
-          height: squareSize,
-          decoration: BoxDecoration(
-            color: _getColor(),
-            borderRadius: BorderRadius.circular(2),
-            border: _getBorder(),
-          ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: squareSize,
+              height: squareSize,
+              decoration: BoxDecoration(
+                color: _getColor(),
+                borderRadius: BorderRadius.circular(2),
+                border: _getBorder(ref),
+              ),
+            ),
+            if (showStreakNumbers && streakLength != null && streakLength! > 0)
+              Text(
+                streakLength.toString(),
+                style: TextStyle(
+                  fontSize: squareSize * 0.4,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+          ],
         ),
       ),
     );

@@ -85,7 +85,8 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
             ? GoalPeriod.fromValue(habit.goalPeriod!)
             : GoalPeriod.daily;
         // Load occurrences configuration
-        if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
+        if (habit.occurrenceNames != null &&
+            habit.occurrenceNames!.isNotEmpty) {
           try {
             _occurrenceNames.clear();
             _occurrenceNames.addAll(
@@ -202,8 +203,9 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
       habitType: drift.Value(_habitType.value),
       trackingType: drift.Value(_trackingType.value),
       unit: unit == null ? const drift.Value.absent() : drift.Value(unit),
-      goalValue:
-          goalValue == null ? const drift.Value.absent() : drift.Value(goalValue),
+      goalValue: goalValue == null
+          ? const drift.Value.absent()
+          : drift.Value(goalValue),
       goalPeriod: goalPeriod == null
           ? const drift.Value.absent()
           : drift.Value(goalPeriod),
@@ -350,6 +352,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                                 _habitType = newSelection.first;
                               });
                             },
+                            showSelectedIcon: false,
                           ),
                           const SizedBox(height: 24),
 
@@ -374,11 +377,13 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                               ),
                             ],
                             selected: {_trackingType},
-                            onSelectionChanged: (Set<TrackingType> newSelection) {
-                              setState(() {
-                                _trackingType = newSelection.first;
-                              });
-                            },
+                            onSelectionChanged:
+                                (Set<TrackingType> newSelection) {
+                                  setState(() {
+                                    _trackingType = newSelection.first;
+                                  });
+                                },
+                            showSelectedIcon: false,
                           ),
                           const SizedBox(height: 24),
 
@@ -402,9 +407,10 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _goalValueController,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               decoration: InputDecoration(
                                 labelText: 'goal_value'.tr(),
                                 hintText: 'e.g., 10, 5.5',
@@ -447,7 +453,8 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                               },
                             ),
                             const SizedBox(height: 24),
-                          ] else if (_trackingType == TrackingType.occurrences) ...[
+                          ] else if (_trackingType ==
+                              TrackingType.occurrences) ...[
                             _buildSectionHeader('occurrences_config'.tr()),
                             Text(
                               'occurrence_names'.tr(),
@@ -490,7 +497,9 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                                     ),
                                     onFieldSubmitted: (value) {
                                       if (value.trim().isNotEmpty &&
-                                          !_occurrenceNames.contains(value.trim())) {
+                                          !_occurrenceNames.contains(
+                                            value.trim(),
+                                          )) {
                                         setState(() {
                                           _occurrenceNames.add(value.trim());
                                           _occurrenceNameController.clear();
@@ -503,7 +512,8 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                                 IconButton(
                                   icon: const Icon(Icons.add_circle),
                                   onPressed: () {
-                                    final value = _occurrenceNameController.text.trim();
+                                    final value = _occurrenceNameController.text
+                                        .trim();
                                     if (value.isNotEmpty &&
                                         !_occurrenceNames.contains(value)) {
                                       setState(() {
@@ -727,6 +737,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
             return FilterChip(
               label: Text(tag.name),
               selected: isSelected,
+              showCheckmark: false,
               onSelected: (selected) {
                 setState(() {
                   if (selected) {
@@ -763,8 +774,8 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                     ),
               selectedColor: Theme.of(
                 context,
-              ).colorScheme.secondary.withValues(alpha: 0.15),
-              checkmarkColor: Theme.of(context).colorScheme.secondary,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              checkmarkColor: Theme.of(context).colorScheme.primary,
               side: BorderSide(
                 color: isSelected
                     ? Theme.of(context).colorScheme.secondary
@@ -881,6 +892,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
               return FilterChip(
                 label: Text(dayNames[index]),
                 selected: isSelected,
+                showCheckmark: false,
                 onSelected: (selected) {
                   setState(() {
                     if (selected) {
@@ -891,6 +903,10 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                     _reminderDays.sort();
                   });
                 },
+                selectedColor: Theme.of(
+                  context,
+                ).colorScheme.secondary.withValues(alpha: 0.15),
+                checkmarkColor: Theme.of(context).colorScheme.secondary,
               );
             }),
           ),
@@ -914,6 +930,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
             return FilterChip(
               label: Text('$day'),
               selected: isSelected,
+              showCheckmark: false,
               onSelected: (selected) {
                 setState(() {
                   if (selected) {
@@ -924,6 +941,10 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                   _reminderDays.sort();
                 });
               },
+              selectedColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.15),
+              checkmarkColor: Theme.of(context).colorScheme.primary,
             );
           }),
         ),

@@ -123,19 +123,27 @@ class HabitCard extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.remove),
                       onPressed: () {
-                        final current = double.tryParse(controller.text.trim()) ?? 0.0;
+                        final current =
+                            double.tryParse(controller.text.trim()) ?? 0.0;
                         final step = goalValue != null && goalValue > 0
                             ? goalValue / 20
                             : 1.0; // 5% of goal or 1 unit
-                        final newValue = (current - step).clamp(0.0, double.infinity);
-                        controller.text = newValue.toStringAsFixed(newValue % 1 == 0 ? 0 : 1);
+                        final newValue = (current - step).clamp(
+                          0.0,
+                          double.infinity,
+                        );
+                        controller.text = newValue.toStringAsFixed(
+                          newValue % 1 == 0 ? 0 : 1,
+                        );
                         setDialogState(() {});
                       },
                     ),
                     Expanded(
                       child: TextFormField(
                         controller: controller,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
                           labelText: 'value'.tr(),
@@ -148,12 +156,15 @@ class HabitCard extends ConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.add),
                       onPressed: () {
-                        final current = double.tryParse(controller.text.trim()) ?? 0.0;
+                        final current =
+                            double.tryParse(controller.text.trim()) ?? 0.0;
                         final step = goalValue != null && goalValue > 0
                             ? goalValue / 20
                             : 1.0; // 5% of goal or 1 unit
                         final newValue = current + step;
-                        controller.text = newValue.toStringAsFixed(newValue % 1 == 0 ? 0 : 1);
+                        controller.text = newValue.toStringAsFixed(
+                          newValue % 1 == 0 ? 0 : 1,
+                        );
                         setDialogState(() {});
                       },
                     ),
@@ -164,8 +175,12 @@ class HabitCard extends ConsumerWidget {
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: controller,
                     builder: (context, value, child) {
-                      final inputValue = double.tryParse(value.text.trim()) ?? currentValue;
-                      final percentage = (inputValue / goalValue * 100).clamp(0.0, double.infinity);
+                      final inputValue =
+                          double.tryParse(value.text.trim()) ?? currentValue;
+                      final percentage = (inputValue / goalValue * 100).clamp(
+                        0.0,
+                        double.infinity,
+                      );
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -239,7 +254,7 @@ class HabitCard extends ConsumerWidget {
   ) {
     final repository = ref.read(habitRepositoryProvider);
     final today = app_date_utils.DateUtils.getToday();
-    
+
     List<String> occurrenceNames = [];
     if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
       try {
@@ -270,7 +285,9 @@ class HabitCard extends ConsumerWidget {
     List<String> selectedOccurrences = [];
     if (entry?.occurrenceData != null && entry!.occurrenceData!.isNotEmpty) {
       try {
-        selectedOccurrences = List<String>.from(jsonDecode(entry.occurrenceData!));
+        selectedOccurrences = List<String>.from(
+          jsonDecode(entry.occurrenceData!),
+        );
       } catch (e) {
         selectedOccurrences = [];
       }
@@ -346,7 +363,7 @@ class HabitCard extends ConsumerWidget {
       final isCompleted = entry?.completed ?? false;
       final checkboxStyleString = ref.watch(habitCheckboxStyleProvider);
       final checkboxStyle = habitCheckboxStyleFromString(checkboxStyleString);
-      
+
       return IgnorePointer(
         child: buildCheckboxWidget(
           checkboxStyle,
@@ -360,9 +377,12 @@ class HabitCard extends ConsumerWidget {
       final value = entry?.value ?? 0.0;
       final goalValue = habit.goalValue;
       final unit = habit.unit ?? '';
-      
+
       if (goalValue != null && goalValue > 0) {
-        final percentage = (value / goalValue * 100).clamp(0.0, double.infinity);
+        final percentage = (value / goalValue * 100).clamp(
+          0.0,
+          double.infinity,
+        );
         return IgnorePointer(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -424,7 +444,9 @@ class HabitCard extends ConsumerWidget {
       List<String> completedOccurrences = [];
       if (entry?.occurrenceData != null && entry!.occurrenceData!.isNotEmpty) {
         try {
-          completedOccurrences = List<String>.from(jsonDecode(entry.occurrenceData!));
+          completedOccurrences = List<String>.from(
+            jsonDecode(entry.occurrenceData!),
+          );
         } catch (e) {
           completedOccurrences = [];
         }
@@ -433,7 +455,9 @@ class HabitCard extends ConsumerWidget {
       List<String> allOccurrences = [];
       if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
         try {
-          allOccurrences = List<String>.from(jsonDecode(habit.occurrenceNames!));
+          allOccurrences = List<String>.from(
+            jsonDecode(habit.occurrenceNames!),
+          );
         } catch (e) {
           allOccurrences = [];
         }
@@ -444,24 +468,31 @@ class HabitCard extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              completedOccurrences.isNotEmpty ? Icons.check_circle : Icons.circle_outlined,
-              color: completedOccurrences.isNotEmpty ? Colors.green : Colors.grey,
+              completedOccurrences.isNotEmpty
+                  ? Icons.check_circle
+                  : Icons.circle_outlined,
+              color: completedOccurrences.isNotEmpty
+                  ? Colors.green
+                  : Colors.grey,
               size: 36,
             ),
             const SizedBox(height: 4),
             Text(
               '${completedOccurrences.length}/${allOccurrences.length}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-            if (completedOccurrences.isNotEmpty && completedOccurrences.length <= 3)
-              ...completedOccurrences.map((name) => Text(
-                name,
-                style: Theme.of(context).textTheme.bodySmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              )),
+            if (completedOccurrences.isNotEmpty &&
+                completedOccurrences.length <= 3)
+              ...completedOccurrences.map(
+                (name) => Text(
+                  name,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
           ],
         ),
       );
@@ -469,6 +500,147 @@ class HabitCard extends ConsumerWidget {
 
     // Fallback
     return const SizedBox.shrink();
+  }
+
+  Widget _buildCardContent(BuildContext context, WidgetRef ref) {
+    final sessionOptions = ref.watch(sessionViewOptionsProvider);
+    final globalShowDescriptions = ref.watch(showDescriptionsProvider);
+    final showDescriptions =
+        sessionOptions.showDescriptions ?? globalShowDescriptions;
+    final showStreakOnCard = ref.watch(showStreakOnCardProvider);
+    final iconSize = ref.watch(iconSizeProvider);
+    final globalCompactCards = ref.watch(compactCardsProvider);
+    final compactCards = sessionOptions.compactCards ?? globalCompactCards;
+    final streakAsync = ref.watch(streakProvider(habit.id));
+    final tagsAsync = ref.watch(habitTagsProvider(habit.id));
+
+    // Calculate icon size
+    double iconSizeValue;
+    switch (iconSize) {
+      case 'small':
+        iconSizeValue = 32;
+        break;
+      case 'large':
+        iconSizeValue = 48;
+        break;
+      case 'medium':
+      default:
+        iconSizeValue = 40;
+        break;
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Icon - Title row
+        Row(
+          children: [
+            // Icon
+            Container(
+              width: iconSizeValue,
+              height: iconSizeValue,
+              decoration: BoxDecoration(
+                color: Color(habit.color),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: habit.icon != null
+                  ? Icon(
+                      IconData(
+                        int.parse(habit.icon!),
+                        fontFamily: 'MaterialIcons',
+                      ),
+                      color: Colors.white,
+                      size: iconSizeValue * 0.6,
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            // Title and Streak
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    habit.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (showStreakOnCard)
+                    streakAsync.maybeWhen(
+                      data: (streak) {
+                        if (streak != null && streak.combinedStreak > 0) {
+                          return Text(
+                            '${'streak'.tr()}: ${streak.combinedStreak}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                      orElse: () => const SizedBox.shrink(),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        // Description
+        if (showDescriptions &&
+            habit.description != null &&
+            habit.description!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            habit.description!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+            maxLines: compactCards ? 1 : 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+        // Tags
+        if (sessionOptions.showTags ?? true)
+          tagsAsync.when(
+            data: (tags) {
+              if (tags.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: tags.take(3).map((tag) {
+                    return Chip(
+                      label: Text(
+                        tag.name,
+                        style: TextStyle(fontSize: compactCards ? 10 : 12),
+                      ),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
+        // Timeline visualization (disabled clicks)
+        SizedBox(height: compactCards ? 8 : 16),
+        HabitTimeline(
+          habitId: habit.id,
+          compact: compactCards || ref.watch(timelineCompactModeProvider),
+        ),
+      ],
+    );
   }
 
   Color _getStreakColor(int streakLength) {
@@ -490,54 +662,54 @@ class HabitCard extends ConsumerWidget {
     final streakAsync = ref.watch(streakProvider(habit.id));
     final entriesAsync = ref.watch(trackingEntriesProvider(habit.id));
     final isGoodHabit = habit.habitType == HabitType.good.value;
+    final showStreakBorders = ref.watch(showStreakBordersProvider);
+    final cardSpacing = ref.watch(cardSpacingProvider);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: cardSpacing),
       shape: streakAsync.maybeWhen(
         data: (streak) {
-          // Only show border if there's an active streak AND today is part of it
+          // Only show border if there's an active streak AND today is part of it AND setting is enabled
           return entriesAsync.maybeWhen(
             data: (entries) {
               final today = app_date_utils.DateUtils.getToday();
-              final todayEntry = entries.where((e) =>
-                app_date_utils.DateUtils.isSameDay(e.date, today)
-              ).firstOrNull;
-              
+              final todayEntry = entries
+                  .where(
+                    (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
+                  )
+                  .firstOrNull;
+
               // For good habits: today must be completed for streak to be active
               // For bad habits: today must NOT be completed (not doing bad habit) for streak to be active
               // If there's no entry for today, we can't assume it's part of the streak
               bool todayIsPartOfStreak = false;
               if (todayEntry != null) {
-                todayIsPartOfStreak = isGoodHabit 
-                    ? todayEntry.completed 
+                todayIsPartOfStreak = isGoodHabit
+                    ? todayEntry.completed
                     : !todayEntry.completed;
               }
-              
-              // Only show border if streak > 0 AND today is definitely part of the active streak
-              if (streak != null && 
-                  streak.combinedStreak > 0 && 
+
+              // Only show border if streak > 0 AND today is definitely part of the active streak AND setting is enabled
+              if (showStreakBorders &&
+                  streak != null &&
+                  streak.combinedStreak > 0 &&
                   todayIsPartOfStreak) {
                 final streakColor = _getStreakColor(streak.combinedStreak);
                 return RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: streakColor,
-                    width: 2,
-                  ),
+                  side: BorderSide(color: streakColor, width: 2),
                 );
               }
               return RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               );
             },
-            orElse: () => RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            orElse: () =>
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           );
         },
-        orElse: () => RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        orElse: () =>
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -555,47 +727,7 @@ class HabitCard extends ConsumerWidget {
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Icon - Title row
-                      Row(
-                        children: [
-                          // Icon
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Color(habit.color),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: habit.icon != null
-                                ? Icon(
-                                    IconData(
-                                      int.parse(habit.icon!),
-                                      fontFamily: 'MaterialIcons',
-                                    ),
-                                    color: Colors.white,
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 12),
-                          // Title
-                          Expanded(
-                            child: Text(
-                              habit.name,
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Timeline visualization (disabled clicks)
-                      const SizedBox(height: 16),
-                      HabitTimeline(habitId: habit.id, compact: true),
-                    ],
-                  ),
+                  child: _buildCardContent(context, ref),
                 ),
               ),
             ),
@@ -603,15 +735,20 @@ class HabitCard extends ConsumerWidget {
             todayEntryAsync.when(
               data: (isCompleted) {
                 // Get entry from tracking entries stream
-                final entriesAsync = ref.watch(trackingEntriesProvider(habit.id));
-                
+                final entriesAsync = ref.watch(
+                  trackingEntriesProvider(habit.id),
+                );
+
                 return entriesAsync.when(
                   data: (entries) {
                     final today = app_date_utils.DateUtils.getToday();
-                    final entry = entries.where((e) =>
-                      app_date_utils.DateUtils.isSameDay(e.date, today)
-                    ).firstOrNull;
-                    
+                    final entry = entries
+                        .where(
+                          (e) =>
+                              app_date_utils.DateUtils.isSameDay(e.date, today),
+                        )
+                        .firstOrNull;
+
                     return Material(
                       color: Colors.transparent,
                       child: Semantics(

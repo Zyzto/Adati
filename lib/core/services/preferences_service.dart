@@ -19,6 +19,28 @@ class PreferencesService {
   static const String _keyHabitFilterQuery = 'habit_filter_query';
   static const String _keyHabitWeeklyGoal = 'habit_weekly_goal_';
   static const String _keyHabitMonthlyGoal = 'habit_monthly_goal_';
+  // Display Preferences
+  static const String _keyShowStreakBorders = 'show_streak_borders';
+  static const String _keyTimelineCompactMode = 'timeline_compact_mode';
+  static const String _keyShowWeekMonthHighlights = 'show_week_month_highlights';
+  static const String _keyTimelineSpacing = 'timeline_spacing';
+  static const String _keyShowStreakNumbers = 'show_streak_numbers';
+  static const String _keyShowDescriptions = 'show_descriptions';
+  static const String _keyCompactCards = 'compact_cards';
+  static const String _keyIconSize = 'icon_size';
+  static const String _keyProgressIndicatorStyle = 'progress_indicator_style';
+  static const String _keyCompletionColor = 'completion_color';
+  static const String _keyStreakColorScheme = 'streak_color_scheme';
+  static const String _keyShowPercentage = 'show_percentage';
+  static const String _keyFontSizeScale = 'font_size_scale';
+  static const String _keyCardSpacing = 'card_spacing';
+  static const String _keyShowStatisticsCard = 'show_statistics_card';
+  static const String _keyDefaultView = 'default_view';
+  static const String _keyShowStreakOnCard = 'show_streak_on_card';
+  // Habit filtering/grouping (session-based but stored for convenience)
+  static const String _keyHabitGroupBy = 'habit_group_by';
+  static const String _keyHabitFilterByType = 'habit_filter_by_type';
+  static const String _keyHabitFilterByTags = 'habit_filter_by_tags';
 
   static SharedPreferences? _prefs;
 
@@ -137,6 +159,117 @@ class PreferencesService {
       return prefs.remove('$_keyHabitMonthlyGoal$habitId');
     }
     return prefs.setInt('$_keyHabitMonthlyGoal$habitId', days);
+  }
+
+  // Display Preferences
+  static bool getShowStreakBorders() =>
+      prefs.getBool(_keyShowStreakBorders) ?? true;
+  static Future<bool> setShowStreakBorders(bool value) =>
+      prefs.setBool(_keyShowStreakBorders, value);
+
+  static bool getTimelineCompactMode() =>
+      prefs.getBool(_keyTimelineCompactMode) ?? false;
+  static Future<bool> setTimelineCompactMode(bool value) =>
+      prefs.setBool(_keyTimelineCompactMode, value);
+
+  static bool getShowWeekMonthHighlights() =>
+      prefs.getBool(_keyShowWeekMonthHighlights) ?? true;
+  static Future<bool> setShowWeekMonthHighlights(bool value) =>
+      prefs.setBool(_keyShowWeekMonthHighlights, value);
+
+  static double getTimelineSpacing() =>
+      prefs.getDouble(_keyTimelineSpacing) ?? 6.0;
+  static Future<bool> setTimelineSpacing(double value) =>
+      prefs.setDouble(_keyTimelineSpacing, value);
+
+  static bool getShowStreakNumbers() =>
+      prefs.getBool(_keyShowStreakNumbers) ?? false;
+  static Future<bool> setShowStreakNumbers(bool value) =>
+      prefs.setBool(_keyShowStreakNumbers, value);
+
+  static bool getShowDescriptions() =>
+      prefs.getBool(_keyShowDescriptions) ?? true;
+  static Future<bool> setShowDescriptions(bool value) =>
+      prefs.setBool(_keyShowDescriptions, value);
+
+  static bool getCompactCards() =>
+      prefs.getBool(_keyCompactCards) ?? false;
+  static Future<bool> setCompactCards(bool value) =>
+      prefs.setBool(_keyCompactCards, value);
+
+  static String getIconSize() =>
+      prefs.getString(_keyIconSize) ?? 'medium';
+  static Future<bool> setIconSize(String size) =>
+      prefs.setString(_keyIconSize, size);
+
+  static String getProgressIndicatorStyle() =>
+      prefs.getString(_keyProgressIndicatorStyle) ?? 'circular';
+  static Future<bool> setProgressIndicatorStyle(String style) =>
+      prefs.setString(_keyProgressIndicatorStyle, style);
+
+  static int getCompletionColor() =>
+      prefs.getInt(_keyCompletionColor) ?? 0xFF4CAF50; // green default
+  static Future<bool> setCompletionColor(int color) =>
+      prefs.setInt(_keyCompletionColor, color);
+
+  static String getStreakColorScheme() =>
+      prefs.getString(_keyStreakColorScheme) ?? 'default';
+  static Future<bool> setStreakColorScheme(String scheme) =>
+      prefs.setString(_keyStreakColorScheme, scheme);
+
+  static bool getShowPercentage() =>
+      prefs.getBool(_keyShowPercentage) ?? true;
+  static Future<bool> setShowPercentage(bool value) =>
+      prefs.setBool(_keyShowPercentage, value);
+
+  static String getFontSizeScale() =>
+      prefs.getString(_keyFontSizeScale) ?? 'normal';
+  static Future<bool> setFontSizeScale(String scale) =>
+      prefs.setString(_keyFontSizeScale, scale);
+
+  static double getCardSpacing() =>
+      prefs.getDouble(_keyCardSpacing) ?? 12.0;
+  static Future<bool> setCardSpacing(double value) =>
+      prefs.setDouble(_keyCardSpacing, value);
+
+  static bool getShowStatisticsCard() =>
+      prefs.getBool(_keyShowStatisticsCard) ?? true;
+  static Future<bool> setShowStatisticsCard(bool value) =>
+      prefs.setBool(_keyShowStatisticsCard, value);
+
+  static String getDefaultView() =>
+      prefs.getString(_keyDefaultView) ?? 'habits';
+  static Future<bool> setDefaultView(String view) =>
+      prefs.setString(_keyDefaultView, view);
+
+  static bool getShowStreakOnCard() =>
+      prefs.getBool(_keyShowStreakOnCard) ?? false;
+  static Future<bool> setShowStreakOnCard(bool value) =>
+      prefs.setBool(_keyShowStreakOnCard, value);
+
+  // Habit filtering/grouping
+  static String? getHabitGroupBy() => prefs.getString(_keyHabitGroupBy);
+  static Future<bool> setHabitGroupBy(String? value) {
+    if (value == null || value.isEmpty) {
+      return prefs.remove(_keyHabitGroupBy);
+    }
+    return prefs.setString(_keyHabitGroupBy, value);
+  }
+
+  static String? getHabitFilterByType() => prefs.getString(_keyHabitFilterByType);
+  static Future<bool> setHabitFilterByType(String? value) {
+    if (value == null || value.isEmpty) {
+      return prefs.remove(_keyHabitFilterByType);
+    }
+    return prefs.setString(_keyHabitFilterByType, value);
+  }
+
+  static String? getHabitFilterByTags() => prefs.getString(_keyHabitFilterByTags);
+  static Future<bool> setHabitFilterByTags(String? value) {
+    if (value == null || value.isEmpty) {
+      return prefs.remove(_keyHabitFilterByTags);
+    }
+    return prefs.setString(_keyHabitFilterByTags, value);
   }
 
   // Clear all preferences

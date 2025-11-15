@@ -13,6 +13,57 @@ import '../../habits/widgets/tag_management_widget.dart';
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
+  // Helper method to build radio list item
+  Widget _buildRadioListItem<T>({
+    required BuildContext context,
+    required Widget title,
+    Widget? subtitle,
+    required T value,
+    required T? groupValue,
+    required ValueChanged<T?> onChanged,
+  }) {
+    final isSelected = value == groupValue;
+    final theme = Theme.of(context);
+    return ListTile(
+      title: title,
+      subtitle: subtitle,
+      leading: SizedBox(
+        width: 24,
+        height: 24,
+        child: Material(
+          shape: const CircleBorder(),
+          color: Colors.transparent,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => onChanged(value),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  width: 2,
+                ),
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.transparent,
+              ),
+              child: isSelected
+                  ? Icon(
+                      Icons.check,
+                      size: 16,
+                      color: theme.colorScheme.onPrimary,
+                    )
+                  : null,
+            ),
+          ),
+        ),
+      ),
+      onTap: () => onChanged(value),
+    );
+  }
+
   // Default values
   static const double defaultCardElevation = 2.0;
   static const double defaultCardBorderRadius = 12.0;
@@ -201,13 +252,11 @@ class SettingsPage extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
+            _buildRadioListItem<String>(
+              context: dialogContext,
               title: Text('english'.tr()),
               value: 'en',
-              // ignore: deprecated_member_use
               groupValue: currentLanguage,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await PreferencesService.setLanguage(value);
@@ -218,13 +267,11 @@ class SettingsPage extends ConsumerWidget {
                 }
               },
             ),
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
+            _buildRadioListItem<String>(
+              context: dialogContext,
               title: Text('arabic'.tr()),
               value: 'ar',
-              // ignore: deprecated_member_use
               groupValue: currentLanguage,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await PreferencesService.setLanguage(value);
@@ -259,13 +306,11 @@ class SettingsPage extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ignore: deprecated_member_use
-            RadioListTile<ThemeMode>(
+            _buildRadioListItem<ThemeMode>(
+              context: dialogContext,
               title: Text('light'.tr()),
               value: ThemeMode.light,
-              // ignore: deprecated_member_use
               groupValue: currentTheme,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setThemeMode(value);
@@ -276,13 +321,11 @@ class SettingsPage extends ConsumerWidget {
                 }
               },
             ),
-            // ignore: deprecated_member_use
-            RadioListTile<ThemeMode>(
+            _buildRadioListItem<ThemeMode>(
+              context: dialogContext,
               title: Text('dark'.tr()),
               value: ThemeMode.dark,
-              // ignore: deprecated_member_use
               groupValue: currentTheme,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setThemeMode(value);
@@ -293,13 +336,11 @@ class SettingsPage extends ConsumerWidget {
                 }
               },
             ),
-            // ignore: deprecated_member_use
-            RadioListTile<ThemeMode>(
+            _buildRadioListItem<ThemeMode>(
+              context: dialogContext,
               title: Text('system'.tr()),
               value: ThemeMode.system,
-              // ignore: deprecated_member_use
               groupValue: currentTheme,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setThemeMode(value);
@@ -426,13 +467,11 @@ class SettingsPage extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
+            _buildRadioListItem<String>(
+              context: dialogContext,
               title: Text('small'.tr()),
               value: 'small',
-              // ignore: deprecated_member_use
               groupValue: currentSize,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setDaySquareSize(value);
@@ -443,13 +482,11 @@ class SettingsPage extends ConsumerWidget {
                 }
               },
             ),
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
+            _buildRadioListItem<String>(
+              context: dialogContext,
               title: Text('medium'.tr()),
               value: 'medium',
-              // ignore: deprecated_member_use
               groupValue: currentSize,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setDaySquareSize(value);
@@ -460,13 +497,11 @@ class SettingsPage extends ConsumerWidget {
                 }
               },
             ),
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
+            _buildRadioListItem<String>(
+              context: dialogContext,
               title: Text('large'.tr()),
               value: 'large',
-              // ignore: deprecated_member_use
               groupValue: currentSize,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setDaySquareSize(value);
@@ -502,14 +537,12 @@ class SettingsPage extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: formats.map((format) {
-            // ignore: deprecated_member_use
-            return RadioListTile<String>(
+            return _buildRadioListItem<String>(
+              context: dialogContext,
               title: Text(_getDateFormatName(format)),
               subtitle: Text(DateTime.now().toString().split(' ')[0]),
               value: format,
-              // ignore: deprecated_member_use
               groupValue: currentFormat,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setDateFormat(value);
@@ -544,13 +577,11 @@ class SettingsPage extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ignore: deprecated_member_use
-            RadioListTile<int>(
+            _buildRadioListItem<int>(
+              context: dialogContext,
               title: Text('sunday'.tr()),
               value: 0,
-              // ignore: deprecated_member_use
               groupValue: currentDay,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setFirstDayOfWeek(value);
@@ -561,13 +592,11 @@ class SettingsPage extends ConsumerWidget {
                 }
               },
             ),
-            // ignore: deprecated_member_use
-            RadioListTile<int>(
+            _buildRadioListItem<int>(
+              context: dialogContext,
               title: Text('monday'.tr()),
               value: 1,
-              // ignore: deprecated_member_use
               groupValue: currentDay,
-              // ignore: deprecated_member_use
               onChanged: (value) async {
                 if (value != null) {
                   await notifier.setFirstDayOfWeek(value);
@@ -612,7 +641,8 @@ class SettingsPage extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: styles.map((style) {
               final styleString = habitCheckboxStyleToString(style);
-              return RadioListTile<String>(
+              return _buildRadioListItem<String>(
+                context: dialogContext,
                 title: Row(
                   children: [
                     Text(_getCheckboxStyleName(styleString)),
@@ -625,9 +655,7 @@ class SettingsPage extends ConsumerWidget {
                   ],
                 ),
                 value: styleString,
-                // ignore: deprecated_member_use
                 groupValue: currentStyle,
-                // ignore: deprecated_member_use
                 onChanged: (value) async {
                   if (value != null) {
                     await notifier.setHabitCheckboxStyle(value);
@@ -789,6 +817,578 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  // Display Preferences Helper Methods
+  String _getIconSizeName(String size) {
+    switch (size) {
+      case 'small':
+        return 'small'.tr();
+      case 'medium':
+        return 'medium'.tr();
+      case 'large':
+        return 'large'.tr();
+      default:
+        return 'medium'.tr();
+    }
+  }
+
+  String _getProgressIndicatorStyleName(String style) {
+    switch (style) {
+      case 'circular':
+        return 'circular'.tr();
+      case 'linear':
+        return 'linear'.tr();
+      default:
+        return 'circular'.tr();
+    }
+  }
+
+  String _getStreakColorSchemeName(String scheme) {
+    switch (scheme) {
+      case 'default':
+        return 'default'.tr();
+      case 'vibrant':
+        return 'vibrant'.tr();
+      case 'subtle':
+        return 'subtle'.tr();
+      case 'monochrome':
+        return 'monochrome'.tr();
+      default:
+        return 'default'.tr();
+    }
+  }
+
+  String _getFontSizeScaleName(String scale) {
+    switch (scale) {
+      case 'small':
+        return 'small'.tr();
+      case 'normal':
+        return 'normal'.tr();
+      case 'large':
+        return 'large'.tr();
+      case 'extra_large':
+        return 'extra_large'.tr();
+      default:
+        return 'normal'.tr();
+    }
+  }
+
+  String _getDefaultViewName(String view) {
+    switch (view) {
+      case 'habits':
+        return 'habits'.tr();
+      case 'timeline':
+        return 'timeline'.tr();
+      default:
+        return 'habits'.tr();
+    }
+  }
+
+  // Display Preferences Dialog Methods
+  void _showTimelineSpacingDialog(BuildContext context, WidgetRef ref) {
+    final currentSpacing = ref.watch(timelineSpacingProvider);
+    final notifier = ref.read(timelineSpacingNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          double spacing = currentSpacing;
+          return AlertDialog(
+            title: Text('timeline_spacing'.tr()),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${spacing.toStringAsFixed(1)}px'),
+                Slider(
+                  value: spacing,
+                  min: 4.0,
+                  max: 12.0,
+                  divisions: 16,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      spacing = value;
+                    });
+                    notifier.setTimelineSpacing(value);
+                    ref.invalidate(timelineSpacingNotifierProvider);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => navigator.pop(),
+                child: Text('done'.tr()),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showIconSizeDialog(BuildContext context, WidgetRef ref) {
+    final currentSize = ref.watch(iconSizeProvider);
+    final notifier = ref.read(iconSizeNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('icon_size'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('small'.tr()),
+              value: 'small',
+              groupValue: currentSize,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setIconSize(value);
+                  ref.invalidate(iconSizeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('medium'.tr()),
+              value: 'medium',
+              groupValue: currentSize,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setIconSize(value);
+                  ref.invalidate(iconSizeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('large'.tr()),
+              value: 'large',
+              groupValue: currentSize,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setIconSize(value);
+                  ref.invalidate(iconSizeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProgressIndicatorStyleDialog(BuildContext context, WidgetRef ref) {
+    final currentStyle = ref.watch(progressIndicatorStyleProvider);
+    final notifier = ref.read(progressIndicatorStyleNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('progress_indicator_style'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('circular'.tr()),
+              value: 'circular',
+              groupValue: currentStyle,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setProgressIndicatorStyle(value);
+                  ref.invalidate(progressIndicatorStyleNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('linear'.tr()),
+              value: 'linear',
+              groupValue: currentStyle,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setProgressIndicatorStyle(value);
+                  ref.invalidate(progressIndicatorStyleNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCompletionColorDialog(BuildContext context, WidgetRef ref) {
+    final currentColor = ref.watch(completionColorProvider);
+    final notifier = ref.read(completionColorNotifierProvider);
+    final navigator = Navigator.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final isLandscape = screenWidth > mediaQuery.size.height;
+    final maxWidth = 600.0;
+    final contentWidth = isLandscape ? maxWidth : screenWidth * 0.5;
+    final colors = [
+      Colors.green,
+      Colors.blue,
+      Colors.purple,
+      Colors.orange,
+      Colors.red,
+      Colors.teal,
+      Colors.indigo,
+      Colors.amber,
+      Colors.cyan,
+      Colors.pink,
+      Colors.brown,
+      Colors.grey,
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('completion_color'.tr()),
+        content: SizedBox(
+          width: contentWidth,
+          child: GridView.builder(
+            shrinkWrap: true,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: colors.length,
+            itemBuilder: (context, index) {
+              final color = colors[index];
+              final colorValue = color.toARGB32();
+              final isSelected = colorValue == currentColor;
+              return GestureDetector(
+                onTap: () async {
+                  await notifier.setCompletionColor(colorValue);
+                  ref.invalidate(completionColorNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? Colors.black : Colors.transparent,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStreakColorSchemeDialog(BuildContext context, WidgetRef ref) {
+    final currentScheme = ref.watch(streakColorSchemeProvider);
+    final notifier = ref.read(streakColorSchemeNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('streak_color_scheme'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('default'.tr()),
+              value: 'default',
+              groupValue: currentScheme,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setStreakColorScheme(value);
+                  ref.invalidate(streakColorSchemeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('vibrant'.tr()),
+              value: 'vibrant',
+              groupValue: currentScheme,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setStreakColorScheme(value);
+                  ref.invalidate(streakColorSchemeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('subtle'.tr()),
+              value: 'subtle',
+              groupValue: currentScheme,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setStreakColorScheme(value);
+                  ref.invalidate(streakColorSchemeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('monochrome'.tr()),
+              value: 'monochrome',
+              groupValue: currentScheme,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setStreakColorScheme(value);
+                  ref.invalidate(streakColorSchemeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFontSizeScaleDialog(BuildContext context, WidgetRef ref) {
+    final currentScale = ref.watch(fontSizeScaleProvider);
+    final notifier = ref.read(fontSizeScaleNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('font_size_scale'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('small'.tr()),
+              value: 'small',
+              groupValue: currentScale,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setFontSizeScale(value);
+                  ref.invalidate(fontSizeScaleNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('normal'.tr()),
+              value: 'normal',
+              groupValue: currentScale,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setFontSizeScale(value);
+                  ref.invalidate(fontSizeScaleNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('large'.tr()),
+              value: 'large',
+              groupValue: currentScale,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setFontSizeScale(value);
+                  ref.invalidate(fontSizeScaleNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('extra_large'.tr()),
+              value: 'extra_large',
+              groupValue: currentScale,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setFontSizeScale(value);
+                  ref.invalidate(fontSizeScaleNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCardSpacingDialog(BuildContext context, WidgetRef ref) {
+    final currentSpacing = ref.watch(cardSpacingProvider);
+    final notifier = ref.read(cardSpacingNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          double spacing = currentSpacing;
+          return AlertDialog(
+            title: Text('card_spacing'.tr()),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${spacing.toStringAsFixed(1)}px'),
+                Slider(
+                  value: spacing,
+                  min: 8.0,
+                  max: 24.0,
+                  divisions: 32,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      spacing = value;
+                    });
+                    notifier.setCardSpacing(value);
+                    ref.invalidate(cardSpacingNotifierProvider);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => navigator.pop(),
+                child: Text('done'.tr()),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showDefaultViewDialog(BuildContext context, WidgetRef ref) {
+    final currentView = ref.watch(defaultViewProvider);
+    final notifier = ref.read(defaultViewNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('default_view'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('habits'.tr()),
+              value: 'habits',
+              groupValue: currentView,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setDefaultView(value);
+                  ref.invalidate(defaultViewNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('timeline'.tr()),
+              value: 'timeline',
+              groupValue: currentView,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setDefaultView(value);
+                  ref.invalidate(defaultViewNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentLanguage = PreferencesService.getLanguage() ?? 'en';
@@ -806,6 +1406,24 @@ class SettingsPage extends ConsumerWidget {
     final notificationsNotifier = ref.read(
       notificationsEnabledNotifierProvider,
     );
+    // Display Preferences
+    final showStreakBorders = ref.watch(showStreakBordersProvider);
+    final timelineCompactMode = ref.watch(timelineCompactModeProvider);
+    final showWeekMonthHighlights = ref.watch(showWeekMonthHighlightsProvider);
+    final timelineSpacing = ref.watch(timelineSpacingProvider);
+    final showStreakNumbers = ref.watch(showStreakNumbersProvider);
+    final showDescriptions = ref.watch(showDescriptionsProvider);
+    final compactCards = ref.watch(compactCardsProvider);
+    final iconSize = ref.watch(iconSizeProvider);
+    final progressIndicatorStyle = ref.watch(progressIndicatorStyleProvider);
+    final completionColor = ref.watch(completionColorProvider);
+    final streakColorScheme = ref.watch(streakColorSchemeProvider);
+    final showPercentage = ref.watch(showPercentageProvider);
+    final fontSizeScale = ref.watch(fontSizeScaleProvider);
+    final cardSpacing = ref.watch(cardSpacingProvider);
+    final showStatisticsCard = ref.watch(showStatisticsCardProvider);
+    final defaultView = ref.watch(defaultViewProvider);
+    final showStreakOnCard = ref.watch(showStreakOnCardProvider);
 
     final mediaQuery = MediaQuery.of(context);
     final isLandscape = mediaQuery.size.width > mediaQuery.size.height;
@@ -923,6 +1541,167 @@ class SettingsPage extends ConsumerWidget {
                 )
               : null,
           onTap: () => _showModalTimelineDaysDialog(context, ref),
+        ),
+
+        // Display Preferences Section
+        _buildSectionHeader('display_preferences'.tr()),
+        SwitchListTile(
+          secondary: const Icon(Icons.border_color),
+          title: Text('show_streak_borders'.tr()),
+          subtitle: Text('show_streak_borders_description'.tr()),
+          value: showStreakBorders,
+          onChanged: (value) async {
+            final notifier = ref.read(showStreakBordersNotifierProvider);
+            await notifier.setShowStreakBorders(value);
+            ref.invalidate(showStreakBordersNotifierProvider);
+          },
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.compress),
+          title: Text('timeline_compact_mode'.tr()),
+          subtitle: Text('timeline_compact_mode_description'.tr()),
+          value: timelineCompactMode,
+          onChanged: (value) async {
+            final notifier = ref.read(timelineCompactModeNotifierProvider);
+            await notifier.setTimelineCompactMode(value);
+            ref.invalidate(timelineCompactModeNotifierProvider);
+          },
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.highlight),
+          title: Text('show_week_month_highlights'.tr()),
+          subtitle: Text('show_week_month_highlights_description'.tr()),
+          value: showWeekMonthHighlights,
+          onChanged: (value) async {
+            final notifier = ref.read(showWeekMonthHighlightsNotifierProvider);
+            await notifier.setShowWeekMonthHighlights(value);
+            ref.invalidate(showWeekMonthHighlightsNotifierProvider);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.space_bar),
+          title: Text('timeline_spacing'.tr()),
+          subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
+          onTap: () => _showTimelineSpacingDialog(context, ref),
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.numbers),
+          title: Text('show_streak_numbers'.tr()),
+          subtitle: Text('show_streak_numbers_description'.tr()),
+          value: showStreakNumbers,
+          onChanged: (value) async {
+            final notifier = ref.read(showStreakNumbersNotifierProvider);
+            await notifier.setShowStreakNumbers(value);
+            ref.invalidate(showStreakNumbersNotifierProvider);
+          },
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.description),
+          title: Text('show_descriptions'.tr()),
+          subtitle: Text('show_descriptions_description'.tr()),
+          value: showDescriptions,
+          onChanged: (value) async {
+            final notifier = ref.read(showDescriptionsNotifierProvider);
+            await notifier.setShowDescriptions(value);
+            ref.invalidate(showDescriptionsNotifierProvider);
+          },
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.view_compact),
+          title: Text('compact_cards'.tr()),
+          subtitle: Text('compact_cards_description'.tr()),
+          value: compactCards,
+          onChanged: (value) async {
+            final notifier = ref.read(compactCardsNotifierProvider);
+            await notifier.setCompactCards(value);
+            ref.invalidate(compactCardsNotifierProvider);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.image),
+          title: Text('icon_size'.tr()),
+          subtitle: Text(_getIconSizeName(iconSize)),
+          onTap: () => _showIconSizeDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.trending_up),
+          title: Text('progress_indicator_style'.tr()),
+          subtitle: Text(_getProgressIndicatorStyleName(progressIndicatorStyle)),
+          onTap: () => _showProgressIndicatorStyleDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.palette),
+          title: Text('completion_color'.tr()),
+          trailing: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Color(completionColor),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).dividerColor,
+                width: 1.5,
+              ),
+            ),
+          ),
+          onTap: () => _showCompletionColorDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.color_lens),
+          title: Text('streak_color_scheme'.tr()),
+          subtitle: Text(_getStreakColorSchemeName(streakColorScheme)),
+          onTap: () => _showStreakColorSchemeDialog(context, ref),
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.percent),
+          title: Text('show_percentage'.tr()),
+          subtitle: Text('show_percentage_description'.tr()),
+          value: showPercentage,
+          onChanged: (value) async {
+            final notifier = ref.read(showPercentageNotifierProvider);
+            await notifier.setShowPercentage(value);
+            ref.invalidate(showPercentageNotifierProvider);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.text_fields),
+          title: Text('font_size_scale'.tr()),
+          subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
+          onTap: () => _showFontSizeScaleDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.format_line_spacing),
+          title: Text('card_spacing'.tr()),
+          subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
+          onTap: () => _showCardSpacingDialog(context, ref),
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.bar_chart),
+          title: Text('show_statistics_card'.tr()),
+          subtitle: Text('show_statistics_card_description'.tr()),
+          value: showStatisticsCard,
+          onChanged: (value) async {
+            final notifier = ref.read(showStatisticsCardNotifierProvider);
+            await notifier.setShowStatisticsCard(value);
+            ref.invalidate(showStatisticsCardNotifierProvider);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.home),
+          title: Text('default_view'.tr()),
+          subtitle: Text(_getDefaultViewName(defaultView)),
+          onTap: () => _showDefaultViewDialog(context, ref),
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.local_fire_department),
+          title: Text('show_streak_on_card'.tr()),
+          subtitle: Text('show_streak_on_card_description'.tr()),
+          value: showStreakOnCard,
+          onChanged: (value) async {
+            final notifier = ref.read(showStreakOnCardNotifierProvider);
+            await notifier.setShowStreakOnCard(value);
+            ref.invalidate(showStreakOnCardNotifierProvider);
+          },
         ),
 
         // Notifications Section

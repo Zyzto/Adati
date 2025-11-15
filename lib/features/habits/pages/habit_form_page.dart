@@ -216,6 +216,7 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
             return FilterChip(
               label: Text(tag.name),
               selected: isSelected,
+              showCheckmark: false,
               onSelected: (selected) {
                 setState(() {
                   if (selected) {
@@ -250,8 +251,10 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
-              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
-              checkmarkColor: Theme.of(context).primaryColor,
+              selectedColor: Theme.of(context)
+                  .colorScheme.primary
+                  .withValues(alpha: 0.15),
+              checkmarkColor: Theme.of(context).colorScheme.primary,
             );
           }).toList(),
         );

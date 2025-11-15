@@ -7,6 +7,7 @@ import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../../core/database/models/tracking_types.dart';
 import '../../timeline/widgets/day_square.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
+import '../../settings/providers/settings_providers.dart';
 
 class HabitTimeline extends ConsumerWidget {
   final int habitId;
@@ -88,16 +89,20 @@ class HabitTimeline extends ConsumerWidget {
             // Calculate streaks based on habit type
             final streakMap = _calculateStreaks(days, entriesMap, isGoodHabit);
 
+            final timelineSpacing = ref.watch(timelineSpacingProvider);
+            final showWeekMonthHighlights = ref.watch(showWeekMonthHighlightsProvider);
+            final spacing = compact ? 4.0 : timelineSpacing;
+            
             final timelineWidget = Wrap(
-              spacing: compact ? 4 : 6,
-              runSpacing: compact ? 4 : 6,
+              spacing: spacing,
+              runSpacing: spacing,
               children: days.map((day) {
                 final entryCompleted = entriesMap[day] ?? false;
                 // For display: show completed for good habits, show "not done" for bad habits
                 final displayCompleted = isGoodHabit ? entryCompleted : !entryCompleted;
                 final streakLength = streakMap[day] ?? 0;
-                final isCurrentWeek = _isInCurrentWeek(day);
-                final isCurrentMonth = _isInCurrentMonth(day);
+                final isCurrentWeek = showWeekMonthHighlights && _isInCurrentWeek(day);
+                final isCurrentMonth = showWeekMonthHighlights && _isInCurrentMonth(day);
                 
                 return DaySquare(
                   date: day,

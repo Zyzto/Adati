@@ -337,3 +337,378 @@ final habitFilterQueryProvider = Provider<String?>((ref) {
   return ref.watch(habitFilterQueryNotifierProvider).query;
 });
 
+// Display Preferences
+// Show Streak Borders
+class ShowStreakBordersNotifier {
+  bool _value;
+
+  ShowStreakBordersNotifier() : _value = PreferencesService.getShowStreakBorders();
+
+  bool get value => _value;
+
+  Future<void> setShowStreakBorders(bool value) async {
+    _value = value;
+    await PreferencesService.setShowStreakBorders(value);
+  }
+}
+
+final showStreakBordersNotifierProvider = Provider<ShowStreakBordersNotifier>((ref) {
+  return ShowStreakBordersNotifier();
+});
+
+final showStreakBordersProvider = Provider<bool>((ref) {
+  return ref.watch(showStreakBordersNotifierProvider).value;
+});
+
+// Timeline Compact Mode
+class TimelineCompactModeNotifier {
+  bool _value;
+
+  TimelineCompactModeNotifier() : _value = PreferencesService.getTimelineCompactMode();
+
+  bool get value => _value;
+
+  Future<void> setTimelineCompactMode(bool value) async {
+    _value = value;
+    await PreferencesService.setTimelineCompactMode(value);
+  }
+}
+
+final timelineCompactModeNotifierProvider = Provider<TimelineCompactModeNotifier>((ref) {
+  return TimelineCompactModeNotifier();
+});
+
+final timelineCompactModeProvider = Provider<bool>((ref) {
+  return ref.watch(timelineCompactModeNotifierProvider).value;
+});
+
+// Show Week/Month Highlights
+class ShowWeekMonthHighlightsNotifier {
+  bool _value;
+
+  ShowWeekMonthHighlightsNotifier() : _value = PreferencesService.getShowWeekMonthHighlights();
+
+  bool get value => _value;
+
+  Future<void> setShowWeekMonthHighlights(bool value) async {
+    _value = value;
+    await PreferencesService.setShowWeekMonthHighlights(value);
+  }
+}
+
+final showWeekMonthHighlightsNotifierProvider = Provider<ShowWeekMonthHighlightsNotifier>((ref) {
+  return ShowWeekMonthHighlightsNotifier();
+});
+
+final showWeekMonthHighlightsProvider = Provider<bool>((ref) {
+  return ref.watch(showWeekMonthHighlightsNotifierProvider).value;
+});
+
+// Timeline Spacing
+class TimelineSpacingNotifier {
+  double _value;
+
+  TimelineSpacingNotifier() : _value = PreferencesService.getTimelineSpacing();
+
+  double get value => _value;
+
+  Future<void> setTimelineSpacing(double value) async {
+    _value = value;
+    await PreferencesService.setTimelineSpacing(value);
+  }
+}
+
+final timelineSpacingNotifierProvider = Provider<TimelineSpacingNotifier>((ref) {
+  return TimelineSpacingNotifier();
+});
+
+final timelineSpacingProvider = Provider<double>((ref) {
+  return ref.watch(timelineSpacingNotifierProvider).value;
+});
+
+// Show Streak Numbers
+class ShowStreakNumbersNotifier {
+  bool _value;
+
+  ShowStreakNumbersNotifier() : _value = PreferencesService.getShowStreakNumbers();
+
+  bool get value => _value;
+
+  Future<void> setShowStreakNumbers(bool value) async {
+    _value = value;
+    await PreferencesService.setShowStreakNumbers(value);
+  }
+}
+
+final showStreakNumbersNotifierProvider = Provider<ShowStreakNumbersNotifier>((ref) {
+  return ShowStreakNumbersNotifier();
+});
+
+final showStreakNumbersProvider = Provider<bool>((ref) {
+  return ref.watch(showStreakNumbersNotifierProvider).value;
+});
+
+// Show Descriptions
+class ShowDescriptionsNotifier {
+  bool _value;
+
+  ShowDescriptionsNotifier() : _value = PreferencesService.getShowDescriptions();
+
+  bool get value => _value;
+
+  Future<void> setShowDescriptions(bool value) async {
+    _value = value;
+    await PreferencesService.setShowDescriptions(value);
+  }
+}
+
+final showDescriptionsNotifierProvider = Provider<ShowDescriptionsNotifier>((ref) {
+  return ShowDescriptionsNotifier();
+});
+
+final showDescriptionsProvider = Provider<bool>((ref) {
+  return ref.watch(showDescriptionsNotifierProvider).value;
+});
+
+// Compact Cards
+class CompactCardsNotifier {
+  bool _value;
+
+  CompactCardsNotifier() : _value = PreferencesService.getCompactCards();
+
+  bool get value => _value;
+
+  Future<void> setCompactCards(bool value) async {
+    _value = value;
+    await PreferencesService.setCompactCards(value);
+  }
+}
+
+final compactCardsNotifierProvider = Provider<CompactCardsNotifier>((ref) {
+  return CompactCardsNotifier();
+});
+
+final compactCardsProvider = Provider<bool>((ref) {
+  return ref.watch(compactCardsNotifierProvider).value;
+});
+
+// Icon Size
+class IconSizeNotifier {
+  String _size;
+
+  IconSizeNotifier() : _size = PreferencesService.getIconSize();
+
+  String get size => _size;
+
+  Future<void> setIconSize(String size) async {
+    _size = size;
+    await PreferencesService.setIconSize(size);
+  }
+}
+
+final iconSizeNotifierProvider = Provider<IconSizeNotifier>((ref) {
+  return IconSizeNotifier();
+});
+
+final iconSizeProvider = Provider<String>((ref) {
+  return ref.watch(iconSizeNotifierProvider).size;
+});
+
+// Progress Indicator Style
+class ProgressIndicatorStyleNotifier {
+  String _style;
+
+  ProgressIndicatorStyleNotifier() : _style = PreferencesService.getProgressIndicatorStyle();
+
+  String get style => _style;
+
+  Future<void> setProgressIndicatorStyle(String style) async {
+    _style = style;
+    await PreferencesService.setProgressIndicatorStyle(style);
+  }
+}
+
+final progressIndicatorStyleNotifierProvider = Provider<ProgressIndicatorStyleNotifier>((ref) {
+  return ProgressIndicatorStyleNotifier();
+});
+
+final progressIndicatorStyleProvider = Provider<String>((ref) {
+  return ref.watch(progressIndicatorStyleNotifierProvider).style;
+});
+
+// Completion Color
+class CompletionColorNotifier {
+  int _color;
+
+  CompletionColorNotifier() : _color = PreferencesService.getCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setCompletionColor(color);
+  }
+}
+
+final completionColorNotifierProvider = Provider<CompletionColorNotifier>((ref) {
+  return CompletionColorNotifier();
+});
+
+final completionColorProvider = Provider<int>((ref) {
+  return ref.watch(completionColorNotifierProvider).color;
+});
+
+// Streak Color Scheme
+class StreakColorSchemeNotifier {
+  String _scheme;
+
+  StreakColorSchemeNotifier() : _scheme = PreferencesService.getStreakColorScheme();
+
+  String get scheme => _scheme;
+
+  Future<void> setStreakColorScheme(String scheme) async {
+    _scheme = scheme;
+    await PreferencesService.setStreakColorScheme(scheme);
+  }
+}
+
+final streakColorSchemeNotifierProvider = Provider<StreakColorSchemeNotifier>((ref) {
+  return StreakColorSchemeNotifier();
+});
+
+final streakColorSchemeProvider = Provider<String>((ref) {
+  return ref.watch(streakColorSchemeNotifierProvider).scheme;
+});
+
+// Show Percentage
+class ShowPercentageNotifier {
+  bool _value;
+
+  ShowPercentageNotifier() : _value = PreferencesService.getShowPercentage();
+
+  bool get value => _value;
+
+  Future<void> setShowPercentage(bool value) async {
+    _value = value;
+    await PreferencesService.setShowPercentage(value);
+  }
+}
+
+final showPercentageNotifierProvider = Provider<ShowPercentageNotifier>((ref) {
+  return ShowPercentageNotifier();
+});
+
+final showPercentageProvider = Provider<bool>((ref) {
+  return ref.watch(showPercentageNotifierProvider).value;
+});
+
+// Font Size Scale
+class FontSizeScaleNotifier {
+  String _scale;
+
+  FontSizeScaleNotifier() : _scale = PreferencesService.getFontSizeScale();
+
+  String get scale => _scale;
+
+  Future<void> setFontSizeScale(String scale) async {
+    _scale = scale;
+    await PreferencesService.setFontSizeScale(scale);
+  }
+}
+
+final fontSizeScaleNotifierProvider = Provider<FontSizeScaleNotifier>((ref) {
+  return FontSizeScaleNotifier();
+});
+
+final fontSizeScaleProvider = Provider<String>((ref) {
+  return ref.watch(fontSizeScaleNotifierProvider).scale;
+});
+
+// Card Spacing
+class CardSpacingNotifier {
+  double _spacing;
+
+  CardSpacingNotifier() : _spacing = PreferencesService.getCardSpacing();
+
+  double get spacing => _spacing;
+
+  Future<void> setCardSpacing(double spacing) async {
+    _spacing = spacing;
+    await PreferencesService.setCardSpacing(spacing);
+  }
+}
+
+final cardSpacingNotifierProvider = Provider<CardSpacingNotifier>((ref) {
+  return CardSpacingNotifier();
+});
+
+final cardSpacingProvider = Provider<double>((ref) {
+  return ref.watch(cardSpacingNotifierProvider).spacing;
+});
+
+// Show Statistics Card
+class ShowStatisticsCardNotifier {
+  bool _value;
+
+  ShowStatisticsCardNotifier() : _value = PreferencesService.getShowStatisticsCard();
+
+  bool get value => _value;
+
+  Future<void> setShowStatisticsCard(bool value) async {
+    _value = value;
+    await PreferencesService.setShowStatisticsCard(value);
+  }
+}
+
+final showStatisticsCardNotifierProvider = Provider<ShowStatisticsCardNotifier>((ref) {
+  return ShowStatisticsCardNotifier();
+});
+
+final showStatisticsCardProvider = Provider<bool>((ref) {
+  return ref.watch(showStatisticsCardNotifierProvider).value;
+});
+
+// Default View
+class DefaultViewNotifier {
+  String _view;
+
+  DefaultViewNotifier() : _view = PreferencesService.getDefaultView();
+
+  String get view => _view;
+
+  Future<void> setDefaultView(String view) async {
+    _view = view;
+    await PreferencesService.setDefaultView(view);
+  }
+}
+
+final defaultViewNotifierProvider = Provider<DefaultViewNotifier>((ref) {
+  return DefaultViewNotifier();
+});
+
+final defaultViewProvider = Provider<String>((ref) {
+  return ref.watch(defaultViewNotifierProvider).view;
+});
+
+// Show Streak on Card
+class ShowStreakOnCardNotifier {
+  bool _value;
+
+  ShowStreakOnCardNotifier() : _value = PreferencesService.getShowStreakOnCard();
+
+  bool get value => _value;
+
+  Future<void> setShowStreakOnCard(bool value) async {
+    _value = value;
+    await PreferencesService.setShowStreakOnCard(value);
+  }
+}
+
+final showStreakOnCardNotifierProvider = Provider<ShowStreakOnCardNotifier>((ref) {
+  return ShowStreakOnCardNotifier();
+});
+
+final showStreakOnCardProvider = Provider<bool>((ref) {
+  return ref.watch(showStreakOnCardNotifierProvider).value;
+});
+
