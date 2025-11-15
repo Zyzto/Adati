@@ -10,8 +10,22 @@ import '../../habits/widgets/checkbox_style_widget.dart';
 import '../../habits/providers/habit_providers.dart';
 import '../../habits/widgets/tag_management_widget.dart';
 
-class SettingsPage extends ConsumerWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends ConsumerState<SettingsPage> {
+  // Expansion state for each section
+  bool _generalExpanded = true;
+  bool _appearanceExpanded = false;
+  bool _displayExpanded = false;
+  bool _displayPreferencesExpanded = false; // Collapsed by default
+  bool _notificationsExpanded = true;
+  bool _tagsExpanded = true;
+  bool _dataExportExpanded = true;
 
   // Helper method to build radio list item
   Widget _buildRadioListItem<T>({
@@ -227,16 +241,77 @@ class SettingsPage extends ConsumerWidget {
     }
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+  Widget _buildCollapsibleSection({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+    required bool isExpanded,
+    required ValueChanged<bool> onExpansionChanged,
+  }) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: theme.dividerColor.withValues(alpha: 0.5),
+          width: 1,
         ),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => onExpansionChanged(!isExpanded),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.expand_more,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            child: isExpanded
+                ? Column(
+                    children: children,
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
       ),
     );
   }
@@ -1390,7 +1465,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final currentLanguage = PreferencesService.getLanguage() ?? 'en';
     final themeMode = ref.watch(themeModeProvider);
     final themeColor = ref.watch(themeColorProvider);
@@ -1432,22 +1507,42 @@ class SettingsPage extends ConsumerWidget {
     final settingsList = ListView(
       children: [
         // General Section
-        _buildSectionHeader('general'.tr()),
-        ListTile(
-          leading: const Icon(Icons.language),
-          title: Text('language'.tr()),
-          subtitle: Text(_getLanguageName(currentLanguage)),
-          onTap: () => _showLanguageDialog(context),
-        ),
-        ListTile(
-          leading: const Icon(Icons.dark_mode),
-          title: Text('theme'.tr()),
-          subtitle: Text(_getThemeName(themeMode)),
-          onTap: () => _showThemeDialog(context, ref),
+        _buildCollapsibleSection(
+          title: 'general'.tr(),
+          icon: Icons.settings,
+          isExpanded: _generalExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _generalExpanded = expanded;
+            });
+          },
+          children: [
+            ListTile(
+              leading: const Icon(Icons.language),
+              title: Text('language'.tr()),
+              subtitle: Text(_getLanguageName(currentLanguage)),
+              onTap: () => _showLanguageDialog(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.dark_mode),
+              title: Text('theme'.tr()),
+              subtitle: Text(_getThemeName(themeMode)),
+              onTap: () => _showThemeDialog(context, ref),
+            ),
+          ],
         ),
 
         // Appearance Section
-        _buildSectionHeader('appearance'.tr()),
+        _buildCollapsibleSection(
+          title: 'appearance'.tr(),
+          icon: Icons.palette,
+          isExpanded: _appearanceExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _appearanceExpanded = expanded;
+            });
+          },
+          children: [
         ListTile(
           leading: const Icon(Icons.palette),
           title: Text('select_theme_color'.tr()),
@@ -1501,9 +1596,20 @@ class SettingsPage extends ConsumerWidget {
           subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
           onTap: () => _showHabitCheckboxStyleDialog(context, ref),
         ),
+          ],
+        ),
 
         // Display Section
-        _buildSectionHeader('display'.tr()),
+        _buildCollapsibleSection(
+          title: 'display'.tr(),
+          icon: Icons.display_settings,
+          isExpanded: _displayExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _displayExpanded = expanded;
+            });
+          },
+          children: [
         ListTile(
           leading: const Icon(Icons.calendar_today),
           title: Text('date_format'.tr()),
@@ -1542,9 +1648,20 @@ class SettingsPage extends ConsumerWidget {
               : null,
           onTap: () => _showModalTimelineDaysDialog(context, ref),
         ),
+          ],
+        ),
 
         // Display Preferences Section
-        _buildSectionHeader('display_preferences'.tr()),
+        _buildCollapsibleSection(
+          title: 'display_preferences'.tr(),
+          icon: Icons.tune,
+          isExpanded: _displayPreferencesExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _displayPreferencesExpanded = expanded;
+            });
+          },
+          children: [
         SwitchListTile(
           secondary: const Icon(Icons.border_color),
           title: Text('show_streak_borders'.tr()),
@@ -1703,9 +1820,20 @@ class SettingsPage extends ConsumerWidget {
             ref.invalidate(showStreakOnCardNotifierProvider);
           },
         ),
+          ],
+        ),
 
         // Notifications Section
-        _buildSectionHeader('notifications'.tr()),
+        _buildCollapsibleSection(
+          title: 'notifications'.tr(),
+          icon: Icons.notifications,
+          isExpanded: _notificationsExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _notificationsExpanded = expanded;
+            });
+          },
+          children: [
         SwitchListTile(
           secondary: const Icon(Icons.notifications),
           title: Text('enable_notifications'.tr()),
@@ -1716,20 +1844,44 @@ class SettingsPage extends ConsumerWidget {
             ref.invalidate(notificationsEnabledNotifierProvider);
           },
         ),
+          ],
+        ),
         // Tags Section
-        _buildSectionHeader('tags'.tr()),
+        _buildCollapsibleSection(
+          title: 'tags'.tr(),
+          icon: Icons.label,
+          isExpanded: _tagsExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _tagsExpanded = expanded;
+            });
+          },
+          children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: TagManagementWidget(),
         ),
+          ],
+        ),
         // Data & Export Section
-        _buildSectionHeader('data_export'.tr()),
+        _buildCollapsibleSection(
+          title: 'data_export'.tr(),
+          icon: Icons.folder,
+          isExpanded: _dataExportExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _dataExportExpanded = expanded;
+            });
+          },
+          children: [
         ListTile(
           leading: const Icon(Icons.file_download),
           title: Text('export_data'.tr()),
           subtitle: Text('export_habit_data_description'.tr()),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showExportDialog(context, ref),
+        ),
+          ],
         ),
       ],
     );
