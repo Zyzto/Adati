@@ -10,7 +10,7 @@ import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../providers/habit_providers.dart';
 import '../widgets/habit_timeline.dart';
 import 'habit_calendar_modal.dart';
-import 'checkbox_style_widget.dart';
+import 'checkbox_style.dart';
 import '../../settings/providers/settings_providers.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
 

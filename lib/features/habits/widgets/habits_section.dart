@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import '../../../../core/database/app_database.dart' as db;
 import 'habit_card.dart';
-import 'quick_actions_widget.dart';
+import 'quick_actions.dart';
 import 'habit_form_modal.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../settings/providers/settings_providers.dart';

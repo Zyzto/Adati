@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Shared icon list for habit and tag forms
-class FormIconConstants {
+class IconConstants {
   static final List<IconData> commonIcons = [
     // Basic & Common
     Icons.label,

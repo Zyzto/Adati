@@ -7,9 +7,9 @@ import '../../../../core/database/app_database.dart' as db;
 import '../../../../core/database/models/tracking_types.dart';
 import '../providers/habit_providers.dart';
 import 'tag_form_modal.dart';
-import 'form_icon_constants.dart';
-import 'color_picker_widget.dart';
-import 'icon_picker_widget.dart';
+import 'icon_constants.dart';
+import 'color_picker.dart';
+import 'icon_picker.dart';
 
 class HabitFormModal extends ConsumerStatefulWidget {
   final int? habitId;
@@ -33,7 +33,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  int _selectedColor = FormIconConstants.availableColors.first.toARGB32();
+  int _selectedColor = IconConstants.availableColors.first.toARGB32();
   String? _selectedIcon;
   Set<int> _selectedTagIds = {}; // Changed to Set for multiple tags
   // Habit type and tracking type

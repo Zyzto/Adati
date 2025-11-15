@@ -4,9 +4,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../core/database/app_database.dart' as db;
 import '../providers/habit_providers.dart';
-import 'form_icon_constants.dart';
-import 'color_picker_widget.dart';
-import 'icon_picker_widget.dart';
+import 'icon_constants.dart';
+import 'color_picker.dart';
+import 'icon_picker.dart';
 
 class TagFormModal extends ConsumerStatefulWidget {
   final int? tagId;
@@ -29,7 +29,7 @@ class TagFormModal extends ConsumerStatefulWidget {
 class _TagFormModalState extends ConsumerState<TagFormModal> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  int _selectedColor = FormIconConstants.availableColors.first.toARGB32();
+  int _selectedColor = IconConstants.availableColors.first.toARGB32();
   String? _selectedIcon;
 
   @override
