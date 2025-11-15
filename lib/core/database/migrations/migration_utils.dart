@@ -22,13 +22,5 @@ class MigrationUtils {
     }
   }
 
-  /// Calculate and update all streaks for all habits
-  /// Useful after migration to recalculate streaks
-  /// Note: This requires HabitRepository, so it's better to call
-  /// repository._updateStreak for each habit from outside this utility
-  static Future<void> recalculateAllStreaks(db.AppDatabase database) async {
-    // Placeholder - actual implementation would require HabitRepository
-    // which creates a circular dependency. Better to call from repository.
-  }
 }
 

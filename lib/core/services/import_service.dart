@@ -37,8 +37,13 @@ class ImportResult {
   }) : errors = errors ?? [],
        warnings = warnings ?? [];
 
-  bool get hasIssues => errors.isNotEmpty || warnings.isNotEmpty || 
-    habitsSkipped > 0 || entriesSkipped > 0 || streaksSkipped > 0 || settingsSkipped > 0;
+  bool get hasIssues =>
+      errors.isNotEmpty ||
+      warnings.isNotEmpty ||
+      habitsSkipped > 0 ||
+      entriesSkipped > 0 ||
+      streaksSkipped > 0 ||
+      settingsSkipped > 0;
 }
 
 class ImportService {
@@ -46,7 +51,7 @@ class ImportService {
     try {
       String dialogTitle = 'import_data'.tr();
       List<String> allowedExtensions = ['json', 'csv'];
-      
+
       if (importType != null) {
         if (importType == 'all') {
           dialogTitle = 'import_all_data_file_picker'.tr();
@@ -59,13 +64,13 @@ class ImportService {
           allowedExtensions = ['json']; // Only JSON for settings
         }
       }
-      
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: allowedExtensions,
         dialogTitle: dialogTitle,
       );
-      
+
       if (result != null && result.files.single.path != null) {
         return result.files.single.path;
       }
@@ -82,7 +87,7 @@ class ImportService {
     void Function(String message, double progress)? onProgress,
   ) async {
     final result = ImportResult(success: false, errors: [], warnings: []);
-    
+
     try {
       onProgress?.call('reading_file'.tr(), 0.1);
       final file = File(filePath);
@@ -93,7 +98,7 @@ class ImportService {
 
       final content = await file.readAsString();
       final isCSV = filePath.toLowerCase().endsWith('.csv');
-      
+
       if (isCSV) {
         return await _importFromCSV(repository, content, onProgress);
       } else {
@@ -112,7 +117,7 @@ class ImportService {
     void Function(String message, double progress)? onProgress,
   ) async {
     final result = ImportResult(success: false, errors: [], warnings: []);
-    
+
     try {
       onProgress?.call('reading_file'.tr(), 0.1);
       final file = File(filePath);
@@ -123,7 +128,7 @@ class ImportService {
 
       final content = await file.readAsString();
       final jsonData = jsonDecode(content) as Map<String, dynamic>;
-      
+
       // Validate file type
       if (jsonData['type'] != 'habits' && jsonData['habits'] == null) {
         result.errors.add('invalid_habits_file'.tr());
@@ -139,7 +144,7 @@ class ImportService {
 
       onProgress?.call('importing_habits'.tr(), 0.2);
       final idMap = <int, int>{}; // oldId -> newId
-      
+
       for (int i = 0; i < habitsData.length; i++) {
         final habitData = habitsData[i] as Map<String, dynamic>;
         final progress = 0.2 + (i / habitsData.length) * 0.8;
@@ -152,7 +157,7 @@ class ImportService {
         try {
           final oldId = habitData['id'] as int?;
           final newId = await _importHabit(repository, habitData);
-          
+
           if (oldId != null && newId != null) {
             idMap[oldId] = newId;
             result.habitsImported++;
@@ -180,7 +185,7 @@ class ImportService {
     void Function(String message, double progress)? onProgress,
   ) async {
     final result = ImportResult(success: false, errors: [], warnings: []);
-    
+
     try {
       onProgress?.call('reading_file'.tr(), 0.1);
       final file = File(filePath);
@@ -191,7 +196,7 @@ class ImportService {
 
       final content = await file.readAsString();
       final jsonData = jsonDecode(content) as Map<String, dynamic>;
-      
+
       // Validate file type
       if (jsonData['type'] != 'settings' && jsonData['settings'] == null) {
         result.errors.add('invalid_settings_file'.tr());
@@ -214,7 +219,7 @@ class ImportService {
         try {
           final key = entry.key;
           final value = entry.value;
-          
+
           // Skip internal keys that shouldn't be imported
           if (key == 'first_launch') {
             skipped++;
@@ -237,7 +242,9 @@ class ImportService {
           imported++;
         } catch (e) {
           skipped++;
-          result.errors.add('${'error_importing_setting'.tr()}: ${entry.key} - $e');
+          result.errors.add(
+            '${'error_importing_setting'.tr()}: ${entry.key} - $e',
+          );
         }
       }
 
@@ -258,105 +265,54 @@ class ImportService {
     void Function(String message, double progress)? onProgress,
   ) async {
     final result = ImportResult(success: false, errors: [], warnings: []);
-    
+
     try {
       final jsonData = jsonDecode(content) as Map<String, dynamic>;
-      
+
       // Check if it's a full export or habits-only
       final isHabitsOnly = jsonData['type'] == 'habits';
       final isSettingsOnly = jsonData['type'] == 'settings';
-      
+
       if (isSettingsOnly) {
         // This shouldn't happen, but handle it
         result.errors.add('use_settings_import'.tr());
         return result;
       }
 
-      onProgress?.call('importing_habits'.tr(), 0.1);
       final habitsData = jsonData['habits'] as List<dynamic>? ?? [];
       final idMap = <int, int>{}; // oldId -> newId
-      
-      // Import habits
-      for (int i = 0; i < habitsData.length; i++) {
-        final habitData = habitsData[i] as Map<String, dynamic>;
-        final progress = 0.1 + (i / habitsData.length) * 0.3;
-        final habitName = habitData['name']?.toString() ?? '?';
-        onProgress?.call(
-          'importing_habit'.tr(namedArgs: {'name': habitName}),
-          progress,
-        );
 
-        try {
-          final oldId = habitData['id'] as int?;
-          final newId = await _importHabit(repository, habitData);
-          
-          if (oldId != null && newId != null) {
-            idMap[oldId] = newId;
-            result.habitsImported++;
-          } else {
-            result.habitsSkipped++;
-            result.warnings.add('${'skipped_habit'.tr()}: $habitName');
-          }
-        } catch (e) {
-          result.habitsSkipped++;
-          result.errors.add('${'error_importing_habit'.tr()}: $habitName - $e');
-        }
-      }
+      await _importHabitsFromJSON(
+        repository,
+        habitsData,
+        idMap,
+        result,
+        onProgress,
+      );
 
       if (isHabitsOnly) {
         result.success = true;
         return result;
       }
 
-      // Import entries
-      onProgress?.call('importing_entries'.tr(), 0.4);
       final entriesData = jsonData['entries'] as List<dynamic>? ?? [];
-      
-      for (int i = 0; i < entriesData.length; i++) {
-        final entryData = entriesData[i] as Map<String, dynamic>;
-        final progress = 0.4 + (i / entriesData.length) * 0.3;
-        onProgress?.call('importing_entry'.tr(), progress);
-
-        try {
-          final oldHabitId = entryData['habitId'] as int?;
-          if (oldHabitId == null || !idMap.containsKey(oldHabitId)) {
-            result.entriesSkipped++;
-            continue;
-          }
-
-          final newHabitId = idMap[oldHabitId]!;
-          await _importEntry(repository, newHabitId, entryData);
-          result.entriesImported++;
-        } catch (e) {
-          result.entriesSkipped++;
-          result.errors.add('${'error_importing_entry'.tr()}: $e');
-        }
-      }
-
-      // Import streaks
-      onProgress?.call('importing_streaks'.tr(), 0.7);
       final streaksData = jsonData['streaks'] as List<dynamic>? ?? [];
-      
-      for (int i = 0; i < streaksData.length; i++) {
-        final streakData = streaksData[i] as Map<String, dynamic>;
-        final progress = 0.7 + (i / streaksData.length) * 0.3;
-        onProgress?.call('importing_streak'.tr(), progress);
 
-        try {
-          final oldHabitId = streakData['habitId'] as int?;
-          if (oldHabitId == null || !idMap.containsKey(oldHabitId)) {
-            result.streaksSkipped++;
-            continue;
-          }
+      await _importEntriesFromJSON(
+        repository,
+        entriesData,
+        idMap,
+        result,
+        onProgress,
+      );
 
-          final newHabitId = idMap[oldHabitId]!;
-          await _importStreak(repository, newHabitId, streakData);
-          result.streaksImported++;
-        } catch (e) {
-          result.streaksSkipped++;
-          result.errors.add('${'error_importing_streak'.tr()}: $e');
-        }
-      }
+      await _importStreaksFromJSON(
+        repository,
+        streaksData,
+        idMap,
+        result,
+        onProgress,
+      );
 
       result.success = true;
       return result;
@@ -373,7 +329,7 @@ class ImportService {
     void Function(String message, double progress)? onProgress,
   ) async {
     final result = ImportResult(success: false, errors: [], warnings: []);
-    
+
     try {
       final lines = content.split('\n');
       if (lines.isEmpty) {
@@ -382,63 +338,24 @@ class ImportService {
       }
 
       // Skip header
-      final dataLines = lines.skip(1).where((l) => l.trim().isNotEmpty).toList();
-      
+      final dataLines = lines
+          .skip(1)
+          .where((l) => l.trim().isNotEmpty)
+          .toList();
+
       onProgress?.call('parsing_csv'.tr(), 0.1);
       final habitMap = <String, int>{}; // habitName -> habitId
       final entriesByHabit = <String, List<Map<String, String>>>{};
 
       // Parse CSV
-      for (final line in dataLines) {
-        try {
-          final parts = _parseCSVLine(line);
-          if (parts.length < 2) continue;
-
-          final habitName = parts[0].replaceAll('"', '');
-          if (!habitMap.containsKey(habitName)) {
-            // Create habit if it doesn't exist
-            final habitId = await _createHabitFromName(repository, habitName);
-            habitMap[habitName] = habitId;
-            result.habitsImported++;
-          }
-
-          entriesByHabit.putIfAbsent(habitName, () => []).add({
-            'date': parts.length > 1 ? parts[1] : '',
-            'completed': parts.length > 2 ? parts[2] : 'No',
-            'notes': parts.length > 3 ? parts[3].replaceAll('""', '"') : '',
-          });
-        } catch (e) {
-          result.errors.add('${'error_parsing_csv_line'.tr()}: $e');
-        }
-      }
-
-      // Import entries
-      onProgress?.call('importing_entries'.tr(), 0.5);
-      int entryCount = 0;
-      for (final entry in entriesByHabit.entries) {
-        final habitId = habitMap[entry.key]!;
-        for (final entryData in entry.value) {
-          try {
-            if (entryData['date']?.isNotEmpty == true) {
-              final date = DateTime.parse(entryData['date']!);
-              final completed = entryData['completed']?.toLowerCase() == 'yes';
-              final notes = entryData['notes'];
-              
-              await repository.toggleCompletion(
-                habitId,
-                date,
-                completed,
-                notes: notes?.isEmpty == true ? null : notes,
-              );
-              entryCount++;
-            }
-          } catch (e) {
-            result.entriesSkipped++;
-            result.errors.add('${'error_importing_entry'.tr()}: $e');
-          }
-        }
-      }
-      result.entriesImported = entryCount;
+      await _parseAndImportCSV(
+        repository,
+        dataLines,
+        habitMap,
+        entriesByHabit,
+        result,
+        onProgress,
+      );
 
       result.success = true;
       return result;
@@ -449,11 +366,170 @@ class ImportService {
     }
   }
 
+  static Future<void> _importHabitsFromJSON(
+    HabitRepository repository,
+    List<dynamic> habitsData,
+    Map<int, int> idMap,
+    ImportResult result,
+    void Function(String message, double progress)? onProgress,
+  ) async {
+    onProgress?.call('importing_habits'.tr(), 0.1);
+
+    for (int i = 0; i < habitsData.length; i++) {
+      final habitData = habitsData[i] as Map<String, dynamic>;
+      final progress = 0.1 + (i / habitsData.length) * 0.3;
+      final habitName = habitData['name']?.toString() ?? '?';
+      onProgress?.call(
+        'importing_habit'.tr(namedArgs: {'name': habitName}),
+        progress,
+      );
+
+      try {
+        final oldId = habitData['id'] as int?;
+        final newId = await _importHabit(repository, habitData);
+
+        if (oldId != null && newId != null) {
+          idMap[oldId] = newId;
+          result.habitsImported++;
+        } else {
+          result.habitsSkipped++;
+          result.warnings.add('${'skipped_habit'.tr()}: $habitName');
+        }
+      } catch (e) {
+        result.habitsSkipped++;
+        result.errors.add('${'error_importing_habit'.tr()}: $habitName - $e');
+      }
+    }
+  }
+
+  static Future<void> _importEntriesFromJSON(
+    HabitRepository repository,
+    List<dynamic> entriesData,
+    Map<int, int> idMap,
+    ImportResult result,
+    void Function(String message, double progress)? onProgress,
+  ) async {
+    onProgress?.call('importing_entries'.tr(), 0.4);
+
+    for (int i = 0; i < entriesData.length; i++) {
+      final entryData = entriesData[i] as Map<String, dynamic>;
+      final progress = 0.4 + (i / entriesData.length) * 0.3;
+      onProgress?.call('importing_entry'.tr(), progress);
+
+      try {
+        final oldHabitId = entryData['habitId'] as int?;
+        if (oldHabitId == null || !idMap.containsKey(oldHabitId)) {
+          result.entriesSkipped++;
+          continue;
+        }
+
+        final newHabitId = idMap[oldHabitId]!;
+        await _importEntry(repository, newHabitId, entryData);
+        result.entriesImported++;
+      } catch (e) {
+        result.entriesSkipped++;
+        result.errors.add('${'error_importing_entry'.tr()}: $e');
+      }
+    }
+  }
+
+  static Future<void> _importStreaksFromJSON(
+    HabitRepository repository,
+    List<dynamic> streaksData,
+    Map<int, int> idMap,
+    ImportResult result,
+    void Function(String message, double progress)? onProgress,
+  ) async {
+    onProgress?.call('importing_streaks'.tr(), 0.7);
+
+    for (int i = 0; i < streaksData.length; i++) {
+      final streakData = streaksData[i] as Map<String, dynamic>;
+      final progress = 0.7 + (i / streaksData.length) * 0.3;
+      onProgress?.call('importing_streak'.tr(), progress);
+
+      try {
+        final oldHabitId = streakData['habitId'] as int?;
+        if (oldHabitId == null || !idMap.containsKey(oldHabitId)) {
+          result.streaksSkipped++;
+          continue;
+        }
+
+        final newHabitId = idMap[oldHabitId]!;
+        await _importStreak(repository, newHabitId, streakData);
+        result.streaksImported++;
+      } catch (e) {
+        result.streaksSkipped++;
+        result.errors.add('${'error_importing_streak'.tr()}: $e');
+      }
+    }
+  }
+
+  static Future<void> _parseAndImportCSV(
+    HabitRepository repository,
+    List<String> dataLines,
+    Map<String, int> habitMap,
+    Map<String, List<Map<String, String>>> entriesByHabit,
+    ImportResult result,
+    void Function(String message, double progress)? onProgress,
+  ) async {
+    // Parse CSV lines
+    for (final line in dataLines) {
+      try {
+        final parts = _parseCSVLine(line);
+        if (parts.length < 2) continue;
+
+        final habitName = parts[0].replaceAll('"', '');
+        if (!habitMap.containsKey(habitName)) {
+          // Create habit if it doesn't exist
+          final habitId = await _createHabitFromName(repository, habitName);
+          habitMap[habitName] = habitId;
+          result.habitsImported++;
+        }
+
+        entriesByHabit.putIfAbsent(habitName, () => []).add({
+          'date': parts.length > 1 ? parts[1] : '',
+          'completed': parts.length > 2 ? parts[2] : 'No',
+          'notes': parts.length > 3 ? parts[3].replaceAll('""', '"') : '',
+        });
+      } catch (e) {
+        result.errors.add('${'error_parsing_csv_line'.tr()}: $e');
+      }
+    }
+
+    // Import entries
+    onProgress?.call('importing_entries'.tr(), 0.5);
+    int entryCount = 0;
+    for (final entry in entriesByHabit.entries) {
+      final habitId = habitMap[entry.key]!;
+      for (final entryData in entry.value) {
+        try {
+          if (entryData['date']?.isNotEmpty == true) {
+            final date = DateTime.parse(entryData['date']!);
+            final completed = entryData['completed']?.toLowerCase() == 'yes';
+            final notes = entryData['notes'];
+
+            await repository.toggleCompletion(
+              habitId,
+              date,
+              completed,
+              notes: notes?.isEmpty == true ? null : notes,
+            );
+            entryCount++;
+          }
+        } catch (e) {
+          result.entriesSkipped++;
+          result.errors.add('${'error_importing_entry'.tr()}: $e');
+        }
+      }
+    }
+    result.entriesImported = entryCount;
+  }
+
   static List<String> _parseCSVLine(String line) {
     final parts = <String>[];
     var current = '';
     var inQuotes = false;
-    
+
     for (var i = 0; i < line.length; i++) {
       final char = line[i];
       if (char == '"') {
@@ -577,11 +653,17 @@ class ImportService {
       final companion = db.StreaksCompanion(
         habitId: drift.Value(habitId),
         combinedStreak: drift.Value(streakData['combinedStreak'] as int? ?? 0),
-        combinedLongestStreak: drift.Value(streakData['combinedLongestStreak'] as int? ?? 0),
+        combinedLongestStreak: drift.Value(
+          streakData['combinedLongestStreak'] as int? ?? 0,
+        ),
         goodStreak: drift.Value(streakData['goodStreak'] as int? ?? 0),
-        goodLongestStreak: drift.Value(streakData['goodLongestStreak'] as int? ?? 0),
+        goodLongestStreak: drift.Value(
+          streakData['goodLongestStreak'] as int? ?? 0,
+        ),
         badStreak: drift.Value(streakData['badStreak'] as int? ?? 0),
-        badLongestStreak: drift.Value(streakData['badLongestStreak'] as int? ?? 0),
+        badLongestStreak: drift.Value(
+          streakData['badLongestStreak'] as int? ?? 0,
+        ),
         currentStreak: drift.Value(streakData['currentStreak'] as int? ?? 0),
         longestStreak: drift.Value(streakData['longestStreak'] as int? ?? 0),
         lastUpdated: drift.Value(
@@ -598,4 +680,3 @@ class ImportService {
     }
   }
 }
-

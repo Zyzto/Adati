@@ -299,345 +299,13 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Basic Info Section
-                          _buildSectionHeader('basic_info'.tr()),
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: InputDecoration(
-                              labelText: 'habit_name'.tr(),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              prefixIcon: const Icon(Icons.label),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'please_enter_habit_name'.tr();
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _descriptionController,
-                            decoration: InputDecoration(
-                              labelText: 'habit_description'.tr(),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              prefixIcon: const Icon(Icons.description),
-                            ),
-                            maxLines: 3,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Habit Type Section
-                          _buildSectionHeader('habit_type'.tr()),
-                          SegmentedButton<HabitType>(
-                            segments: [
-                              ButtonSegment<HabitType>(
-                                value: HabitType.good,
-                                label: Text('good_habit'.tr()),
-                                icon: const Icon(Icons.thumb_up),
-                              ),
-                              ButtonSegment<HabitType>(
-                                value: HabitType.bad,
-                                label: Text('bad_habit'.tr()),
-                                icon: const Icon(Icons.thumb_down),
-                              ),
-                            ],
-                            selected: {_habitType},
-                            onSelectionChanged: (Set<HabitType> newSelection) {
-                              setState(() {
-                                _habitType = newSelection.first;
-                              });
-                            },
-                            showSelectedIcon: false,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Tracking Type Section
-                          _buildSectionHeader('tracking_type'.tr()),
-                          SegmentedButton<TrackingType>(
-                            segments: [
-                              ButtonSegment<TrackingType>(
-                                value: TrackingType.completed,
-                                label: Text('completed'.tr()),
-                                icon: const Icon(Icons.check_circle),
-                              ),
-                              ButtonSegment<TrackingType>(
-                                value: TrackingType.measurable,
-                                label: Text('measurable'.tr()),
-                                icon: const Icon(Icons.trending_up),
-                              ),
-                              ButtonSegment<TrackingType>(
-                                value: TrackingType.occurrences,
-                                label: Text('occurrences'.tr()),
-                                icon: const Icon(Icons.list),
-                              ),
-                            ],
-                            selected: {_trackingType},
-                            onSelectionChanged:
-                                (Set<TrackingType> newSelection) {
-                                  setState(() {
-                                    _trackingType = newSelection.first;
-                                  });
-                                },
-                            showSelectedIcon: false,
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Tracking Configuration Section
-                          if (_trackingType == TrackingType.measurable) ...[
-                            _buildSectionHeader('measurable_config'.tr()),
-                            TextFormField(
-                              controller: _unitController,
-                              decoration: InputDecoration(
-                                labelText: 'unit'.tr(),
-                                hintText: 'e.g., minutes, km, steps',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                prefixIcon: const Icon(Icons.straighten),
-                              ),
-                              onChanged: (value) {
-                                setState(() {});
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _goalValueController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: InputDecoration(
-                                labelText: 'goal_value'.tr(),
-                                hintText: 'e.g., 10, 5.5',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                prefixIcon: const Icon(Icons.flag),
-                              ),
-                              validator: (value) {
-                                if (value != null &&
-                                    value.trim().isNotEmpty &&
-                                    double.tryParse(value.trim()) == null) {
-                                  return 'please_enter_valid_number'.tr();
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            DropdownButtonFormField<GoalPeriod>(
-                              initialValue: _goalPeriod,
-                              decoration: InputDecoration(
-                                labelText: 'goal_period'.tr(),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                prefixIcon: const Icon(Icons.calendar_today),
-                              ),
-                              items: GoalPeriod.values.map((period) {
-                                return DropdownMenuItem<GoalPeriod>(
-                                  value: period,
-                                  child: Text(period.value.tr()),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _goalPeriod = value;
-                                  });
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 24),
-                          ] else if (_trackingType ==
-                              TrackingType.occurrences) ...[
-                            _buildSectionHeader('occurrences_config'.tr()),
-                            Text(
-                              'occurrence_names'.tr(),
-                              style: Theme.of(context).textTheme.titleSmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.7),
-                                  ),
-                            ),
-                            const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: _occurrenceNames.map((name) {
-                                return Chip(
-                                  label: Text(name),
-                                  onDeleted: () {
-                                    setState(() {
-                                      _occurrenceNames.remove(name);
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _occurrenceNameController,
-                                    decoration: InputDecoration(
-                                      labelText: 'add_occurrence'.tr(),
-                                      hintText: 'e.g., Fajr, Dhuhr, Asr',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      prefixIcon: const Icon(Icons.add),
-                                    ),
-                                    onFieldSubmitted: (value) {
-                                      if (value.trim().isNotEmpty &&
-                                          !_occurrenceNames.contains(
-                                            value.trim(),
-                                          )) {
-                                        setState(() {
-                                          _occurrenceNames.add(value.trim());
-                                          _occurrenceNameController.clear();
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle),
-                                  onPressed: () {
-                                    final value = _occurrenceNameController.text
-                                        .trim();
-                                    if (value.isNotEmpty &&
-                                        !_occurrenceNames.contains(value)) {
-                                      setState(() {
-                                        _occurrenceNames.add(value);
-                                        _occurrenceNameController.clear();
-                                      });
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-
-                          // Appearance Section
-                          _buildSectionHeader('appearance'.tr()),
-                          Text(
-                            'color'.tr(),
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.7),
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          ColorPickerWidget(
-                            selectedColor: _selectedColor,
-                            onColorSelected: (color) {
-                              setState(() => _selectedColor = color);
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'select_icon'.tr(),
-                            style: Theme.of(context).textTheme.titleSmall
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.7),
-                                ),
-                          ),
-                          const SizedBox(height: 12),
-                          IconPickerWidget(
-                            selectedIcon: _selectedIcon,
-                            onIconSelected: (icon) {
-                              setState(() => _selectedIcon = icon);
-                            },
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Tags Section
-                          _buildSectionHeader('tags'.tr()),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'select_tags'.tr(),
-                                  style: Theme.of(context).textTheme.titleSmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.7),
-                                      ),
-                                ),
-                              ),
-                              TextButton.icon(
-                                onPressed: () {
-                                  TagFormModal.show(context).then((_) {
-                                    // Refresh tags after creating
-                                    if (mounted) {
-                                      ref.invalidate(tagsProvider);
-                                    }
-                                  });
-                                },
-                                icon: const Icon(Icons.add, size: 18),
-                                label: Text('create_tag'.tr()),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          _buildTagSelector(tagsAsync),
-                          const SizedBox(height: 24),
-
-                          // Reminders Section
-                          _buildSectionHeader('reminders'.tr()),
-                          SwitchListTile(
-                            title: Text('enable_reminder'.tr()),
-                            subtitle: Text(
-                              'receive_reminder_notifications'.tr(),
-                            ),
-                            value: _reminderEnabled,
-                            onChanged: (value) {
-                              setState(() {
-                                _reminderEnabled = value;
-                                if (!value) {
-                                  _reminderDays.clear();
-                                }
-                              });
-                            },
-                          ),
-                          if (_reminderEnabled) ...[
-                            const SizedBox(height: 8),
-                            _buildReminderFrequencySelector(),
-                            const SizedBox(height: 16),
-                            _buildReminderDaySelector(),
-                            const SizedBox(height: 16),
-                            ListTile(
-                              leading: const Icon(Icons.access_time),
-                              title: Text('reminder_time'.tr()),
-                              subtitle: Text(
-                                _reminderTime.format(context),
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: _selectTime,
-                            ),
-                          ],
+                          _buildBasicInfoSection(),
+                          _buildHabitTypeSection(),
+                          _buildTrackingTypeSection(),
+                          _buildTrackingConfigurationSection(),
+                          _buildAppearanceSection(),
+                          _buildTagsSection(tagsAsync),
+                          _buildReminderSection(),
                           const SizedBox(height: 24),
 
                           // Save Button
@@ -674,6 +342,378 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildBasicInfoSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('basic_info'.tr()),
+        TextFormField(
+          controller: _nameController,
+          decoration: InputDecoration(
+            labelText: 'habit_name'.tr(),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.label),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'please_enter_habit_name'.tr();
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _descriptionController,
+          decoration: InputDecoration(
+            labelText: 'habit_description'.tr(),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.description),
+          ),
+          maxLines: 3,
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildHabitTypeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('habit_type'.tr()),
+        SegmentedButton<HabitType>(
+          segments: [
+            ButtonSegment<HabitType>(
+              value: HabitType.good,
+              label: Text('good_habit'.tr()),
+              icon: const Icon(Icons.thumb_up),
+            ),
+            ButtonSegment<HabitType>(
+              value: HabitType.bad,
+              label: Text('bad_habit'.tr()),
+              icon: const Icon(Icons.thumb_down),
+            ),
+          ],
+          selected: {_habitType},
+          onSelectionChanged: (Set<HabitType> newSelection) {
+            setState(() {
+              _habitType = newSelection.first;
+            });
+          },
+          showSelectedIcon: false,
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildTrackingTypeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('tracking_type'.tr()),
+        SegmentedButton<TrackingType>(
+          segments: [
+            ButtonSegment<TrackingType>(
+              value: TrackingType.completed,
+              label: Text('completed'.tr()),
+              icon: const Icon(Icons.check_circle),
+            ),
+            ButtonSegment<TrackingType>(
+              value: TrackingType.measurable,
+              label: Text('measurable'.tr()),
+              icon: const Icon(Icons.trending_up),
+            ),
+            ButtonSegment<TrackingType>(
+              value: TrackingType.occurrences,
+              label: Text('occurrences'.tr()),
+              icon: const Icon(Icons.list),
+            ),
+          ],
+          selected: {_trackingType},
+          onSelectionChanged: (Set<TrackingType> newSelection) {
+            setState(() {
+              _trackingType = newSelection.first;
+            });
+          },
+          showSelectedIcon: false,
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildTrackingConfigurationSection() {
+    if (_trackingType == TrackingType.measurable) {
+      return _buildMeasurableConfiguration();
+    } else if (_trackingType == TrackingType.occurrences) {
+      return _buildOccurrencesConfiguration();
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildMeasurableConfiguration() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('measurable_config'.tr()),
+        TextFormField(
+          controller: _unitController,
+          decoration: InputDecoration(
+            labelText: 'unit'.tr(),
+            hintText: 'e.g., minutes, km, steps',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.straighten),
+          ),
+          onChanged: (value) {
+            setState(() {});
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _goalValueController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: 'goal_value'.tr(),
+            hintText: 'e.g., 10, 5.5',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.flag),
+          ),
+          validator: (value) {
+            if (value != null &&
+                value.trim().isNotEmpty &&
+                double.tryParse(value.trim()) == null) {
+              return 'please_enter_valid_number'.tr();
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<GoalPeriod>(
+          initialValue: _goalPeriod,
+          decoration: InputDecoration(
+            labelText: 'goal_period'.tr(),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.calendar_today),
+          ),
+          items: GoalPeriod.values.map((period) {
+            return DropdownMenuItem<GoalPeriod>(
+              value: period,
+              child: Text(period.value.tr()),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _goalPeriod = value;
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildOccurrencesConfiguration() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('occurrences_config'.tr()),
+        Text(
+          'occurrence_names'.tr(),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _occurrenceNames.map((name) {
+            return Chip(
+              label: Text(name),
+              onDeleted: () {
+                setState(() {
+                  _occurrenceNames.remove(name);
+                });
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _occurrenceNameController,
+                decoration: InputDecoration(
+                  labelText: 'add_occurrence'.tr(),
+                  hintText: 'e.g., Fajr, Dhuhr, Asr',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.add),
+                ),
+                onFieldSubmitted: (value) {
+                  if (value.trim().isNotEmpty &&
+                      !_occurrenceNames.contains(value.trim())) {
+                    setState(() {
+                      _occurrenceNames.add(value.trim());
+                      _occurrenceNameController.clear();
+                    });
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.add_circle),
+              onPressed: () {
+                final value = _occurrenceNameController.text.trim();
+                if (value.isNotEmpty && !_occurrenceNames.contains(value)) {
+                  setState(() {
+                    _occurrenceNames.add(value);
+                    _occurrenceNameController.clear();
+                  });
+                }
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildAppearanceSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('appearance'.tr()),
+        Text(
+          'color'.tr(),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ColorPickerWidget(
+          selectedColor: _selectedColor,
+          onColorSelected: (color) {
+            setState(() => _selectedColor = color);
+          },
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'select_icon'.tr(),
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 12),
+        IconPickerWidget(
+          selectedIcon: _selectedIcon,
+          onIconSelected: (icon) {
+            setState(() => _selectedIcon = icon);
+          },
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildTagsSection(AsyncValue<List<db.Tag>> tagsAsync) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('tags'.tr()),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'select_tags'.tr(),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                TagFormModal.show(context).then((_) {
+                  // Refresh tags after creating
+                  if (mounted) {
+                    ref.invalidate(tagsProvider);
+                  }
+                });
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: Text('create_tag'.tr()),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _buildTagSelector(tagsAsync),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildReminderSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('reminders'.tr()),
+        SwitchListTile(
+          title: Text('enable_reminder'.tr()),
+          subtitle: Text('receive_reminder_notifications'.tr()),
+          value: _reminderEnabled,
+          onChanged: (value) {
+            setState(() {
+              _reminderEnabled = value;
+              if (!value) {
+                _reminderDays.clear();
+              }
+            });
+          },
+        ),
+        if (_reminderEnabled) ...[
+          const SizedBox(height: 8),
+          _buildReminderFrequencySelector(),
+          const SizedBox(height: 16),
+          _buildReminderDaySelector(),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: const Icon(Icons.access_time),
+            title: Text('reminder_time'.tr()),
+            subtitle: Text(
+              _reminderTime.format(context),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _selectTime,
+          ),
+        ],
+        const SizedBox(height: 24),
+      ],
     );
   }
 

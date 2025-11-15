@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../providers/habit_providers.dart';
 import '../providers/tracking_providers.dart';
 import '../widgets/habit_timeline.dart';
+import '../widgets/habit_form_modal.dart';
 
 class HabitDetailPage extends ConsumerWidget {
   final int habitId;
@@ -31,7 +31,7 @@ class HabitDetailPage extends ConsumerWidget {
                 final repository = ref.read(habitRepositoryProvider);
                 await repository.deleteHabit(habitId);
                 if (context.mounted) {
-                  context.pop();
+                  Navigator.pop(context);
                 }
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -58,7 +58,7 @@ class HabitDetailPage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () => context.push('/habits/$habitId/edit'),
+            onPressed: () => HabitFormModal.show(context, habitId: habitId),
           ),
           IconButton(
             icon: const Icon(Icons.delete),

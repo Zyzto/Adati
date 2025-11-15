@@ -178,13 +178,19 @@ lib/
 │
 └── features/                 # Feature modules
     ├── habits/              # Habit management
-    │   ├── data/            # Data layer (repositories)
-    │   ├── domain/          # Domain models
-    │   └── presentation/    # UI (pages, widgets, providers)
+    │   ├── habit_repository.dart  # Data layer (repository)
+    │   ├── pages/           # Page widgets
+    │   ├── providers/       # Riverpod providers
+    │   └── widgets/         # Reusable widgets
     ├── timeline/            # Timeline visualization
-    ├── tracking/            # Tracking logic
+    │   ├── pages/           # Timeline pages
+    │   └── widgets/         # Timeline widgets
     ├── settings/            # Settings page
-    └── main/                # Main shell/navigation
+    │   ├── pages/           # Settings pages
+    │   └── providers/       # Settings providers
+    └── onboarding/          # Onboarding flow
+        ├── pages/           # Onboarding pages
+        └── widgets/         # Onboarding widgets
 ```
 
 ## 🛠️ Technology Stack

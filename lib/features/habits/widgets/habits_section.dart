@@ -754,102 +754,110 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
           }
         });
       },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'layout_list',
-          child: Row(
-            children: [
-              Icon(
-                Icons.view_list,
-                size: 20,
-                color: _cardLayout == 'list'
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text('list_view'.tr()),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'layout_grid',
-          child: Row(
-            children: [
-              Icon(
-                Icons.grid_view,
-                size: 20,
-                color: _cardLayout == 'grid'
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text('grid_view'.tr()),
-            ],
-          ),
-        ),
-        const PopupMenuDivider(),
-        PopupMenuItem(
-          value: 'toggle_tags',
-          child: Row(
-            children: [
-              Icon(
-                Icons.label,
-                size: 20,
-                color: (sessionOptions.showTags ?? _showTags)
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                (sessionOptions.showTags ?? _showTags)
-                    ? 'hide_tags'.tr()
-                    : 'show_tags'.tr(),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'toggle_descriptions',
-          child: Row(
-            children: [
-              Icon(
-                Icons.description,
-                size: 20,
-                color: (sessionOptions.showDescriptions ?? _showDescriptions)
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                (sessionOptions.showDescriptions ?? _showDescriptions)
-                    ? 'hide_descriptions'.tr()
-                    : 'show_descriptions'.tr(),
-              ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'toggle_compact',
-          child: Row(
-            children: [
-              Icon(
-                Icons.view_compact,
-                size: 20,
-                color: (sessionOptions.compactCards ?? _compactCards)
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                (sessionOptions.compactCards ?? _compactCards)
-                    ? 'normal_cards'.tr()
-                    : 'compact_cards'.tr(),
-              ),
-            ],
-          ),
-        ),
-      ],
+      itemBuilder: (context) =>
+          _buildViewOptionsMenuItems(context, sessionOptions),
     );
+  }
+
+  List<PopupMenuEntry<String>> _buildViewOptionsMenuItems(
+    BuildContext context,
+    dynamic sessionOptions,
+  ) {
+    return [
+      PopupMenuItem(
+        value: 'layout_list',
+        child: Row(
+          children: [
+            Icon(
+              Icons.view_list,
+              size: 20,
+              color: _cardLayout == 'list'
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Text('list_view'.tr()),
+          ],
+        ),
+      ),
+      PopupMenuItem(
+        value: 'layout_grid',
+        child: Row(
+          children: [
+            Icon(
+              Icons.grid_view,
+              size: 20,
+              color: _cardLayout == 'grid'
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Text('grid_view'.tr()),
+          ],
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        value: 'toggle_tags',
+        child: Row(
+          children: [
+            Icon(
+              Icons.label,
+              size: 20,
+              color: (sessionOptions.showTags ?? _showTags)
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              (sessionOptions.showTags ?? _showTags)
+                  ? 'hide_tags'.tr()
+                  : 'show_tags'.tr(),
+            ),
+          ],
+        ),
+      ),
+      PopupMenuItem(
+        value: 'toggle_descriptions',
+        child: Row(
+          children: [
+            Icon(
+              Icons.description,
+              size: 20,
+              color: (sessionOptions.showDescriptions ?? _showDescriptions)
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              (sessionOptions.showDescriptions ?? _showDescriptions)
+                  ? 'hide_descriptions'.tr()
+                  : 'show_descriptions'.tr(),
+            ),
+          ],
+        ),
+      ),
+      PopupMenuItem(
+        value: 'toggle_compact',
+        child: Row(
+          children: [
+            Icon(
+              Icons.view_compact,
+              size: 20,
+              color: (sessionOptions.compactCards ?? _compactCards)
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              (sessionOptions.compactCards ?? _compactCards)
+                  ? 'normal_cards'.tr()
+                  : 'compact_cards'.tr(),
+            ),
+          ],
+        ),
+      ),
+    ];
   }
 
   Widget _buildQuickActionsToggle(BuildContext context) {

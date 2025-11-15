@@ -6,7 +6,6 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/app_scroll_behavior.dart';
 import 'core/services/preferences_service.dart';
 import 'features/habits/pages/habit_detail_page.dart';
-import 'features/habits/pages/habit_form_page.dart';
 import 'features/timeline/pages/day_detail_page.dart';
 import 'features/settings/pages/settings_page.dart';
 import 'features/settings/providers/settings_providers.dart';
@@ -35,21 +34,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/habits/new',
-        builder: (context, state) => const HabitFormPage(),
-      ),
-      GoRoute(
         path: '/habits/:id',
         builder: (context, state) {
           final id = int.parse(state.pathParameters['id']!);
           return HabitDetailPage(habitId: id);
-        },
-      ),
-      GoRoute(
-        path: '/habits/:id/edit',
-        builder: (context, state) {
-          final id = int.parse(state.pathParameters['id']!);
-          return HabitFormPage(habitId: id);
         },
       ),
       GoRoute(

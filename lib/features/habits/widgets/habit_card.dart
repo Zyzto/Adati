@@ -69,142 +69,13 @@ class HabitCard extends ConsumerWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(habit.name),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Quick action buttons (25%, 50%, 75%, 100%)
-                if (goalValue != null && goalValue > 0) ...[
-                  Text(
-                    'quick_actions'.tr(),
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildQuickActionButton(
-                        context,
-                        '25%',
-                        goalValue * 0.25,
-                        controller,
-                        setDialogState,
-                      ),
-                      _buildQuickActionButton(
-                        context,
-                        '50%',
-                        goalValue * 0.5,
-                        controller,
-                        setDialogState,
-                      ),
-                      _buildQuickActionButton(
-                        context,
-                        '75%',
-                        goalValue * 0.75,
-                        controller,
-                        setDialogState,
-                      ),
-                      _buildQuickActionButton(
-                        context,
-                        '100%',
-                        goalValue,
-                        controller,
-                        setDialogState,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                // Value input field with +/- buttons
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove),
-                      onPressed: () {
-                        final current =
-                            double.tryParse(controller.text.trim()) ?? 0.0;
-                        final step = goalValue != null && goalValue > 0
-                            ? goalValue / 20
-                            : 1.0; // 5% of goal or 1 unit
-                        final newValue = (current - step).clamp(
-                          0.0,
-                          double.infinity,
-                        );
-                        controller.text = newValue.toStringAsFixed(
-                          newValue % 1 == 0 ? 0 : 1,
-                        );
-                        setDialogState(() {});
-                      },
-                    ),
-                    Expanded(
-                      child: TextFormField(
-                        controller: controller,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        textAlign: TextAlign.center,
-                        decoration: InputDecoration(
-                          labelText: 'value'.tr(),
-                          suffixText: unit.isNotEmpty ? unit : null,
-                          border: const OutlineInputBorder(),
-                        ),
-                        onChanged: (_) => setDialogState(() {}),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add),
-                      onPressed: () {
-                        final current =
-                            double.tryParse(controller.text.trim()) ?? 0.0;
-                        final step = goalValue != null && goalValue > 0
-                            ? goalValue / 20
-                            : 1.0; // 5% of goal or 1 unit
-                        final newValue = current + step;
-                        controller.text = newValue.toStringAsFixed(
-                          newValue % 1 == 0 ? 0 : 1,
-                        );
-                        setDialogState(() {});
-                      },
-                    ),
-                  ],
-                ),
-                if (goalValue != null) ...[
-                  const SizedBox(height: 16),
-                  ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: controller,
-                    builder: (context, value, child) {
-                      final inputValue =
-                          double.tryParse(value.text.trim()) ?? currentValue;
-                      final percentage = (inputValue / goalValue * 100).clamp(
-                        0.0,
-                        double.infinity,
-                      );
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'progress'.tr(),
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          LinearProgressIndicator(
-                            value: percentage > 100 ? 1.0 : percentage / 100,
-                            backgroundColor: Colors.grey[300],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${inputValue.toStringAsFixed(1)} / ${goalValue.toStringAsFixed(1)} $unit (${percentage.toStringAsFixed(0)}%)',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
-              ],
-            ),
+          content: _buildMeasurableDialogContent(
+            context,
+            controller,
+            currentValue,
+            unit,
+            goalValue,
+            setDialogState,
           ),
           actions: [
             TextButton(
@@ -224,6 +95,194 @@ class HabitCard extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMeasurableDialogContent(
+    BuildContext context,
+    TextEditingController controller,
+    double currentValue,
+    String unit,
+    double? goalValue,
+    StateSetter setDialogState,
+  ) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (goalValue != null && goalValue > 0) ...[
+            _buildQuickActionsRow(
+              context,
+              controller,
+              goalValue,
+              setDialogState,
+            ),
+            const SizedBox(height: 16),
+          ],
+          _buildValueInputRow(
+            context,
+            controller,
+            unit,
+            goalValue,
+            setDialogState,
+          ),
+          if (goalValue != null) ...[
+            const SizedBox(height: 16),
+            _buildProgressIndicator(
+              context,
+              controller,
+              currentValue,
+              goalValue,
+              unit,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsRow(
+    BuildContext context,
+    TextEditingController controller,
+    double goalValue,
+    StateSetter setDialogState,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'quick_actions'.tr(),
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _buildQuickActionButton(
+              context,
+              '25%',
+              goalValue * 0.25,
+              controller,
+              setDialogState,
+            ),
+            _buildQuickActionButton(
+              context,
+              '50%',
+              goalValue * 0.5,
+              controller,
+              setDialogState,
+            ),
+            _buildQuickActionButton(
+              context,
+              '75%',
+              goalValue * 0.75,
+              controller,
+              setDialogState,
+            ),
+            _buildQuickActionButton(
+              context,
+              '100%',
+              goalValue,
+              controller,
+              setDialogState,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildValueInputRow(
+    BuildContext context,
+    TextEditingController controller,
+    String unit,
+    double? goalValue,
+    StateSetter setDialogState,
+  ) {
+    return Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.remove),
+          onPressed: () {
+            final current = double.tryParse(controller.text.trim()) ?? 0.0;
+            final step = goalValue != null && goalValue > 0
+                ? goalValue / 20
+                : 1.0;
+            final newValue = (current - step).clamp(0.0, double.infinity);
+            controller.text = newValue.toStringAsFixed(
+              newValue % 1 == 0 ? 0 : 1,
+            );
+            setDialogState(() {});
+          },
+        ),
+        Expanded(
+          child: TextFormField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              labelText: 'value'.tr(),
+              suffixText: unit.isNotEmpty ? unit : null,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (_) => setDialogState(() {}),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.add),
+          onPressed: () {
+            final current = double.tryParse(controller.text.trim()) ?? 0.0;
+            final step = goalValue != null && goalValue > 0
+                ? goalValue / 20
+                : 1.0;
+            final newValue = current + step;
+            controller.text = newValue.toStringAsFixed(
+              newValue % 1 == 0 ? 0 : 1,
+            );
+            setDialogState(() {});
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressIndicator(
+    BuildContext context,
+    TextEditingController controller,
+    double currentValue,
+    double goalValue,
+    String unit,
+  ) {
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, child) {
+        final inputValue = double.tryParse(value.text.trim()) ?? currentValue;
+        final percentage = (inputValue / goalValue * 100).clamp(
+          0.0,
+          double.infinity,
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'progress'.tr(),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: percentage > 100 ? 1.0 : percentage / 100,
+              backgroundColor: Colors.grey[300],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${inputValue.toStringAsFixed(1)} / ${goalValue.toStringAsFixed(1)} $unit (${percentage.toStringAsFixed(0)}%)',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -265,20 +324,7 @@ class HabitCard extends ConsumerWidget {
     }
 
     if (occurrenceNames.isEmpty) {
-      // No occurrences defined, show message
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('no_occurrences'.tr()),
-          content: Text('please_define_occurrences'.tr()),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('ok'.tr()),
-            ),
-          ],
-        ),
-      );
+      _showNoOccurrencesDialog(context);
       return;
     }
 
@@ -298,34 +344,11 @@ class HabitCard extends ConsumerWidget {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(habit.name),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'select_occurrences'.tr(),
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 12),
-                ...occurrenceNames.map((name) {
-                  final isSelected = selectedOccurrences.contains(name);
-                  return CheckboxListTile(
-                    title: Text(name),
-                    value: isSelected,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        if (value == true) {
-                          selectedOccurrences.add(name);
-                        } else {
-                          selectedOccurrences.remove(name);
-                        }
-                      });
-                    },
-                  );
-                }),
-              ],
-            ),
+          content: _buildOccurrencesDialogContent(
+            context,
+            occurrenceNames,
+            selectedOccurrences,
+            setDialogState,
           ),
           actions: [
             TextButton(
@@ -347,6 +370,59 @@ class HabitCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showNoOccurrencesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('no_occurrences'.tr()),
+        content: Text('please_define_occurrences'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('ok'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOccurrencesDialogContent(
+    BuildContext context,
+    List<String> occurrenceNames,
+    List<String> selectedOccurrences,
+    StateSetter setDialogState,
+  ) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'select_occurrences'.tr(),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 12),
+          ...occurrenceNames.map((name) {
+            final isSelected = selectedOccurrences.contains(name);
+            return CheckboxListTile(
+              title: Text(name),
+              value: isSelected,
+              onChanged: (value) {
+                setDialogState(() {
+                  if (value == true) {
+                    selectedOccurrences.add(name);
+                  } else {
+                    selectedOccurrences.remove(name);
+                  }
+                });
+              },
+            );
+          }),
+        ],
       ),
     );
   }
