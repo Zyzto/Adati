@@ -213,10 +213,75 @@ DEBUG_MODE=true
 ## 📝 Database Schema
 
 The app uses SQLite with the following main tables:
-- **habits**: Stores habit information (name, description, color, category)
-- **tracking_entries**: Daily completion records with optional notes
-- **streaks**: Calculated streak data for each habit
-- **categories**: Habit categories for organization
+- **habits**: Stores habit information (name, description, color, icon, type, tracking configuration)
+- **tracking_entries**: Daily tracking records with completion status, values, and occurrence data
+- **streaks**: Calculated streak data for each habit (combined, good, and bad streaks)
+- **tags**: Habit tags for organization (many-to-many relationship)
+- **habit_tags**: Junction table linking habits to tags
+
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    HABITS ||--o{ TRACKING_ENTRIES : "has"
+    HABITS ||--|| STREAKS : "has"
+    HABITS ||--o{ HABIT_TAGS : "has"
+    TAGS ||--o{ HABIT_TAGS : "has"
+    
+    HABITS {
+        int id PK
+        string name
+        string description
+        int color
+        string icon
+        int habitType "0=good, 1=bad"
+        string trackingType "completed, measurable, occurrences"
+        string unit "for measurable tracking"
+        real goalValue "for measurable tracking"
+        string goalPeriod "daily, weekly, monthly"
+        string occurrenceNames "JSON array for occurrences tracking"
+        bool reminderEnabled
+        string reminderTime "JSON format"
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    TRACKING_ENTRIES {
+        int habitId PK,FK
+        datetime date PK
+        bool completed
+        real value "for measurable tracking"
+        string occurrenceData "JSON array for occurrences tracking"
+        string notes
+    }
+    
+    STREAKS {
+        int id PK
+        int habitId FK "unique"
+        int combinedStreak "main streak shown on main page"
+        int combinedLongestStreak
+        int goodStreak "for good habits"
+        int goodLongestStreak
+        int badStreak "for bad habits (not doing bad habit)"
+        int badLongestStreak
+        int currentStreak "backward compatibility"
+        int longestStreak "backward compatibility"
+        datetime lastUpdated
+    }
+    
+    TAGS {
+        int id PK
+        string name
+        int color
+        string icon
+        datetime createdAt
+    }
+    
+    HABIT_TAGS {
+        int habitId PK,FK
+        int tagId PK,FK
+    }
+```
 
 ## 🌍 Localization
 

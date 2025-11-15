@@ -19,10 +19,17 @@ final habitsProvider = StreamProvider<List<db.Habit>>((ref) async* {
   }
 });
 
-final categoriesProvider = StreamProvider<List<db.Category>>((ref) async* {
+final tagsProvider = StreamProvider<List<db.Tag>>((ref) async* {
   final repository = ref.watch(habitRepositoryProvider);
-  await for (final categories in repository.watchAllCategories()) {
-    yield categories;
+  await for (final tags in repository.watchAllTags()) {
+    yield tags;
+  }
+});
+
+final habitTagsProvider = StreamProvider.family<List<db.Tag>, int>((ref, habitId) async* {
+  final repository = ref.watch(habitRepositoryProvider);
+  await for (final tags in repository.watchTagsForHabit(habitId)) {
+    yield tags;
   }
 });
 

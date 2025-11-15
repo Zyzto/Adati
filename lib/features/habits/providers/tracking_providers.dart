@@ -21,15 +21,21 @@ final streakProvider = StreamProvider.family<db.Streak?, int>((ref, habitId) asy
 final dayEntriesProvider =
     StreamProvider.family<Map<int, bool>, DateTime>((ref, date) async* {
   final repository = ref.watch(habitRepositoryProvider);
-  final habits = await ref.watch(habitsProvider.future);
+  final dateOnly = app_date_utils.DateUtils.getDateOnly(date);
   
-  final entries = <int, bool>{};
-  for (final habit in habits) {
-    final entry = await repository.getEntry(habit.id, date);
-    entries[habit.id] = entry?.completed ?? false;
+  // Watch for entry changes by date - this will update when any entry changes
+  await for (final entries in repository.watchEntriesByDate(dateOnly)) {
+    // Get all current habits
+    final habits = await ref.watch(habitsProvider.future);
+    final entriesMap = <int, bool>{};
+    
+    for (final habit in habits) {
+      final entry = entries.where((e) => e.habitId == habit.id).firstOrNull;
+      entriesMap[habit.id] = entry?.completed ?? false;
+    }
+    
+    yield entriesMap;
   }
-  
-  yield entries;
 });
 
 final todayEntryProvider = StreamProvider.family<bool, int>((ref, habitId) async* {
@@ -51,28 +57,41 @@ final todayEntryProvider = StreamProvider.family<bool, int>((ref, habitId) async
 
 final allStreaksProvider = StreamProvider<List<db.Streak>>((ref) async* {
   final repository = ref.watch(habitRepositoryProvider);
-  final habits = await ref.watch(habitsProvider.future);
   
-  final streaks = <db.Streak>[];
-  for (final habit in habits) {
-    final streak = await repository.getStreakByHabit(habit.id);
-    if (streak != null) {
-      streaks.add(streak);
-    }
-  }
-  
-  yield streaks;
-  
-  // Also watch for changes
+  // Watch for habit changes
   await for (final habits in repository.watchAllHabits()) {
-    final updatedStreaks = <db.Streak>[];
+    // Get initial streaks for all habits
+    final streaks = <db.Streak>[];
     for (final habit in habits) {
       final streak = await repository.getStreakByHabit(habit.id);
       if (streak != null) {
-        updatedStreaks.add(streak);
+        streaks.add(streak);
       }
     }
-    yield updatedStreaks;
+    yield List.from(streaks);
+    
+    // Watch individual streak streams for each habit
+    // When any streak updates (triggered by tracking entry changes), yield updated list
+    if (habits.isNotEmpty) {
+      // Watch the first habit's streak stream as a trigger
+      // When any habit's tracking changes, its streak updates, which triggers this
+      await for (final updatedStreak in repository.watchStreakByHabit(habits.first.id)) {
+        if (updatedStreak != null) {
+          // Recalculate all streaks when any streak changes
+          final updatedStreaks = <db.Streak>[];
+          for (final habit in habits) {
+            final streak = await repository.getStreakByHabit(habit.id);
+            if (streak != null) {
+              updatedStreaks.add(streak);
+            }
+          }
+          yield List.from(updatedStreaks);
+        }
+        // Break after first update to avoid too many recalculations
+        // The stream will restart when habits change
+        break;
+      }
+    }
   }
 });
 

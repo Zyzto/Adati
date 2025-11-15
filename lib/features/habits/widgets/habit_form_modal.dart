@@ -4,7 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../core/database/app_database.dart' as db;
+import '../../../../core/database/models/tracking_types.dart';
 import '../providers/habit_providers.dart';
+import 'tag_form_modal.dart';
+import 'form_icon_constants.dart';
+import 'color_picker_widget.dart';
+import 'icon_picker_widget.dart';
 
 class HabitFormModal extends ConsumerStatefulWidget {
   final int? habitId;
@@ -28,41 +33,24 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  int _selectedColor = Colors.deepPurple.toARGB32();
+  int _selectedColor = FormIconConstants.availableColors.first.toARGB32();
   String? _selectedIcon;
-  int? _selectedCategoryId;
+  Set<int> _selectedTagIds = {}; // Changed to Set for multiple tags
+  // Habit type and tracking type
+  HabitType _habitType = HabitType.good;
+  TrackingType _trackingType = TrackingType.completed;
+  // Measurable tracking configuration
+  final _unitController = TextEditingController();
+  final _goalValueController = TextEditingController();
+  GoalPeriod _goalPeriod = GoalPeriod.daily;
+  // Occurrences tracking configuration
+  final List<String> _occurrenceNames = [];
+  final _occurrenceNameController = TextEditingController();
+  // Reminders
   bool _reminderEnabled = false;
   String _reminderFrequency = 'daily'; // daily, weekly, monthly
   List<int> _reminderDays = []; // For weekly: 1-7 (Mon-Sun), For monthly: 1-31
   TimeOfDay _reminderTime = const TimeOfDay(hour: 9, minute: 0);
-
-  // Common Material Icons for habits
-  static final List<IconData> _commonIcons = [
-    Icons.fitness_center,
-    Icons.local_dining,
-    Icons.book,
-    Icons.water_drop,
-    Icons.bedtime,
-    Icons.self_improvement,
-    Icons.work,
-    Icons.school,
-    Icons.sports_soccer,
-    Icons.music_note,
-    Icons.movie,
-    Icons.games,
-    Icons.nature,
-    Icons.pets,
-    Icons.directions_walk,
-    Icons.directions_run,
-    Icons.bike_scooter,
-    Icons.self_improvement,
-    Icons.spa,
-    Icons.health_and_safety,
-    Icons.volunteer_activism,
-    Icons.family_restroom,
-    Icons.celebration,
-    Icons.star,
-  ];
 
   @override
   void initState() {
@@ -75,17 +63,40 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
   }
 
   Future<void> _loadHabit() async {
+    final repository = ref.read(habitRepositoryProvider);
     final habitAsync = ref.read(habitByIdProvider(widget.habitId!).future);
     final habit = await habitAsync;
     if (habit != null && mounted) {
+      // Load tags for this habit
+      final tags = await repository.getTagsForHabit(habit.id);
+
       setState(() {
         _nameController.text = habit.name;
         _descriptionController.text = habit.description ?? '';
         _selectedColor = habit.color;
         _selectedIcon = habit.icon;
-        _selectedCategoryId = habit.categoryId;
+        _selectedTagIds = tags.map((t) => t.id).toSet();
+        _habitType = HabitType.fromValue(habit.habitType);
+        _trackingType = TrackingType.fromValue(habit.trackingType);
+        // Load measurable configuration
+        _unitController.text = habit.unit ?? '';
+        _goalValueController.text = habit.goalValue?.toString() ?? '';
+        _goalPeriod = habit.goalPeriod != null
+            ? GoalPeriod.fromValue(habit.goalPeriod!)
+            : GoalPeriod.daily;
+        // Load occurrences configuration
+        if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
+          try {
+            _occurrenceNames.clear();
+            _occurrenceNames.addAll(
+              List<String>.from(jsonDecode(habit.occurrenceNames!)),
+            );
+          } catch (e) {
+            _occurrenceNames.clear();
+          }
+        }
         _reminderEnabled = habit.reminderEnabled;
-        
+
         // Parse reminder data
         if (habit.reminderTime != null && habit.reminderTime!.isNotEmpty) {
           try {
@@ -117,6 +128,9 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _unitController.dispose();
+    _goalValueController.dispose();
+    _occurrenceNameController.dispose();
     super.dispose();
   }
 
@@ -138,26 +152,45 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
     final repository = ref.read(habitRepositoryProvider);
     final now = DateTime.now();
 
-    final existingHabit = widget.habitId != null 
+    final existingHabit = widget.habitId != null
         ? await repository.getHabitById(widget.habitId!)
         : null;
-    
+
     // Build reminder data
     String? reminderTimeJson;
     if (_reminderEnabled) {
       final reminderData = {
         'frequency': _reminderFrequency,
         'days': _reminderDays,
-        'time': '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}',
+        'time':
+            '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}',
       };
       reminderTimeJson = jsonEncode(reminderData);
     }
-    
+
+    // Build tracking configuration
+    String? unit;
+    double? goalValue;
+    String? goalPeriod;
+    String? occurrenceNamesJson;
+
+    if (_trackingType == TrackingType.measurable) {
+      unit = _unitController.text.trim().isEmpty
+          ? null
+          : _unitController.text.trim();
+      goalValue = _goalValueController.text.trim().isEmpty
+          ? null
+          : double.tryParse(_goalValueController.text.trim());
+      goalPeriod = _goalPeriod.value;
+    } else if (_trackingType == TrackingType.occurrences) {
+      occurrenceNamesJson = _occurrenceNames.isEmpty
+          ? null
+          : jsonEncode(_occurrenceNames);
+    }
+
     final habitId = widget.habitId;
     final habit = db.HabitsCompanion(
-      id: habitId == null 
-          ? const drift.Value.absent() 
-          : drift.Value(habitId),
+      id: habitId == null ? const drift.Value.absent() : drift.Value(habitId),
       name: drift.Value(_nameController.text.trim()),
       description: _descriptionController.text.trim().isEmpty
           ? const drift.Value.absent()
@@ -166,9 +199,17 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
       icon: _selectedIcon == null
           ? const drift.Value.absent()
           : drift.Value(_selectedIcon!),
-      categoryId: _selectedCategoryId == null
+      habitType: drift.Value(_habitType.value),
+      trackingType: drift.Value(_trackingType.value),
+      unit: unit == null ? const drift.Value.absent() : drift.Value(unit),
+      goalValue:
+          goalValue == null ? const drift.Value.absent() : drift.Value(goalValue),
+      goalPeriod: goalPeriod == null
           ? const drift.Value.absent()
-          : drift.Value(_selectedCategoryId),
+          : drift.Value(goalPeriod),
+      occurrenceNames: occurrenceNamesJson == null
+          ? const drift.Value.absent()
+          : drift.Value(occurrenceNamesJson),
       reminderEnabled: drift.Value(_reminderEnabled),
       reminderTime: reminderTimeJson == null
           ? const drift.Value.absent()
@@ -179,10 +220,11 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
       updatedAt: drift.Value(now),
     );
 
+    final tagIds = _selectedTagIds.toList();
     if (widget.habitId == null) {
-      await repository.createHabit(habit);
+      await repository.createHabit(habit, tagIds: tagIds);
     } else {
-      await repository.updateHabit(habit);
+      await repository.updateHabit(habit, tagIds: tagIds);
     }
 
     if (mounted) {
@@ -192,8 +234,8 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriesAsync = ref.watch(categoriesProvider);
-    
+    final tagsAsync = ref.watch(tagsProvider);
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       minChildSize: 0.5,
@@ -219,15 +261,20 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                 ),
                 // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        widget.habitId == null ? 'new_habit'.tr() : 'edit_habit'.tr(),
+                        widget.habitId == null
+                            ? 'new_habit'.tr()
+                            : 'edit_habit'.tr(),
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -281,70 +328,279 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                             maxLines: 3,
                           ),
                           const SizedBox(height: 24),
-                          
+
+                          // Habit Type Section
+                          _buildSectionHeader('habit_type'.tr()),
+                          SegmentedButton<HabitType>(
+                            segments: [
+                              ButtonSegment<HabitType>(
+                                value: HabitType.good,
+                                label: Text('good_habit'.tr()),
+                                icon: const Icon(Icons.thumb_up),
+                              ),
+                              ButtonSegment<HabitType>(
+                                value: HabitType.bad,
+                                label: Text('bad_habit'.tr()),
+                                icon: const Icon(Icons.thumb_down),
+                              ),
+                            ],
+                            selected: {_habitType},
+                            onSelectionChanged: (Set<HabitType> newSelection) {
+                              setState(() {
+                                _habitType = newSelection.first;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Tracking Type Section
+                          _buildSectionHeader('tracking_type'.tr()),
+                          SegmentedButton<TrackingType>(
+                            segments: [
+                              ButtonSegment<TrackingType>(
+                                value: TrackingType.completed,
+                                label: Text('completed'.tr()),
+                                icon: const Icon(Icons.check_circle),
+                              ),
+                              ButtonSegment<TrackingType>(
+                                value: TrackingType.measurable,
+                                label: Text('measurable'.tr()),
+                                icon: const Icon(Icons.trending_up),
+                              ),
+                              ButtonSegment<TrackingType>(
+                                value: TrackingType.occurrences,
+                                label: Text('occurrences'.tr()),
+                                icon: const Icon(Icons.list),
+                              ),
+                            ],
+                            selected: {_trackingType},
+                            onSelectionChanged: (Set<TrackingType> newSelection) {
+                              setState(() {
+                                _trackingType = newSelection.first;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Tracking Configuration Section
+                          if (_trackingType == TrackingType.measurable) ...[
+                            _buildSectionHeader('measurable_config'.tr()),
+                            TextFormField(
+                              controller: _unitController,
+                              decoration: InputDecoration(
+                                labelText: 'unit'.tr(),
+                                hintText: 'e.g., minutes, km, steps',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                prefixIcon: const Icon(Icons.straighten),
+                              ),
+                              onChanged: (value) {
+                                setState(() {});
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _goalValueController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'goal_value'.tr(),
+                                hintText: 'e.g., 10, 5.5',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                prefixIcon: const Icon(Icons.flag),
+                              ),
+                              validator: (value) {
+                                if (value != null &&
+                                    value.trim().isNotEmpty &&
+                                    double.tryParse(value.trim()) == null) {
+                                  return 'please_enter_valid_number'.tr();
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<GoalPeriod>(
+                              initialValue: _goalPeriod,
+                              decoration: InputDecoration(
+                                labelText: 'goal_period'.tr(),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                prefixIcon: const Icon(Icons.calendar_today),
+                              ),
+                              items: GoalPeriod.values.map((period) {
+                                return DropdownMenuItem<GoalPeriod>(
+                                  value: period,
+                                  child: Text(period.value.tr()),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _goalPeriod = value;
+                                  });
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                          ] else if (_trackingType == TrackingType.occurrences) ...[
+                            _buildSectionHeader('occurrences_config'.tr()),
+                            Text(
+                              'occurrence_names'.tr(),
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.7),
+                                  ),
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _occurrenceNames.map((name) {
+                                return Chip(
+                                  label: Text(name),
+                                  onDeleted: () {
+                                    setState(() {
+                                      _occurrenceNames.remove(name);
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _occurrenceNameController,
+                                    decoration: InputDecoration(
+                                      labelText: 'add_occurrence'.tr(),
+                                      hintText: 'e.g., Fajr, Dhuhr, Asr',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      prefixIcon: const Icon(Icons.add),
+                                    ),
+                                    onFieldSubmitted: (value) {
+                                      if (value.trim().isNotEmpty &&
+                                          !_occurrenceNames.contains(value.trim())) {
+                                        setState(() {
+                                          _occurrenceNames.add(value.trim());
+                                          _occurrenceNameController.clear();
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle),
+                                  onPressed: () {
+                                    final value = _occurrenceNameController.text.trim();
+                                    if (value.isNotEmpty &&
+                                        !_occurrenceNames.contains(value)) {
+                                      setState(() {
+                                        _occurrenceNames.add(value);
+                                        _occurrenceNameController.clear();
+                                      });
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+
                           // Appearance Section
                           _buildSectionHeader('appearance'.tr()),
                           Text(
                             'color'.tr(),
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Colors.deepPurple,
-                              Colors.blue,
-                              Colors.green,
-                              Colors.orange,
-                              Colors.red,
-                              Colors.pink,
-                              Colors.teal,
-                              Colors.indigo,
-                            ].map((color) {
-                              return GestureDetector(
-                                onTap: () => setState(() => _selectedColor = color.toARGB32()),
-                                child: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: color,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _selectedColor == color.toARGB32()
-                                          ? Colors.black
-                                          : Colors.transparent,
-                                      width: 3,
-                                    ),
-                                  ),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.7),
                                 ),
-                              );
-                            }).toList(),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
+                          ColorPickerWidget(
+                            selectedColor: _selectedColor,
+                            onColorSelected: (color) {
+                              setState(() => _selectedColor = color);
+                            },
+                          ),
+                          const SizedBox(height: 20),
                           Text(
                             'select_icon'.tr(),
-                            style: Theme.of(context).textTheme.titleSmall,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.7),
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          IconPickerWidget(
+                            selectedIcon: _selectedIcon,
+                            onIconSelected: (icon) {
+                              setState(() => _selectedIcon = icon);
+                            },
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Tags Section
+                          _buildSectionHeader('tags'.tr()),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'select_tags'.tr(),
+                                  style: Theme.of(context).textTheme.titleSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () {
+                                  TagFormModal.show(context).then((_) {
+                                    // Refresh tags after creating
+                                    if (mounted) {
+                                      ref.invalidate(tagsProvider);
+                                    }
+                                  });
+                                },
+                                icon: const Icon(Icons.add, size: 18),
+                                label: Text('create_tag'.tr()),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 8),
-                          _buildIconPicker(),
+                          _buildTagSelector(tagsAsync),
                           const SizedBox(height: 24),
-                          
-                          // Organization Section
-                          _buildSectionHeader('organization'.tr()),
-                          Text(
-                            'select_categories'.tr(),
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          _buildCategoryTags(categoriesAsync),
-                          const SizedBox(height: 24),
-                          
+
                           // Reminders Section
                           _buildSectionHeader('reminders'.tr()),
                           SwitchListTile(
                             title: Text('enable_reminder'.tr()),
-                            subtitle: Text('receive_reminder_notifications'.tr()),
+                            subtitle: Text(
+                              'receive_reminder_notifications'.tr(),
+                            ),
                             value: _reminderEnabled,
                             onChanged: (value) {
                               setState(() {
@@ -373,21 +629,31 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                             ),
                           ],
                           const SizedBox(height: 24),
-                          
+
                           // Save Button
                           SizedBox(
                             width: double.infinity,
-                            child: ElevatedButton(
+                            child: FilledButton(
                               onPressed: _saveHabit,
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
+                                elevation: 0,
                               ),
-                              child: Text('save'.tr()),
+                              child: Text(
+                                'save'.tr(),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
@@ -407,145 +673,147 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-      ),
-    );
-  }
-
-  Widget _buildIconPicker() {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: GridView.builder(
-        padding: const EdgeInsets.all(8),
-        scrollDirection: Axis.horizontal,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 1,
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).colorScheme.primary,
         ),
-        itemCount: _commonIcons.length + 1, // +1 for "no icon" option
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            // "No icon" option
-            final isSelected = _selectedIcon == null;
-            return GestureDetector(
-              onTap: () => setState(() => _selectedIcon = null),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
-                    width: isSelected ? 2 : 1,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.block, size: 24),
-                    const SizedBox(height: 4),
-                    Text(
-                      'no_icon'.tr(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isSelected ? Theme.of(context).primaryColor : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          
-          final icon = _commonIcons[index - 1];
-          final iconCode = icon.codePoint.toString();
-          final isSelected = _selectedIcon == iconCode;
-          
-          return GestureDetector(
-            onTap: () => setState(() => _selectedIcon = iconCode),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isSelected 
-                    ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
-                    : Colors.transparent,
-                border: Border.all(
-                  color: isSelected ? Theme.of(context).primaryColor : Colors.grey[300]!,
-                  width: isSelected ? 2 : 1,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                icon,
-                color: isSelected ? Theme.of(context).primaryColor : Colors.grey[700],
-                size: 28,
-              ),
-            ),
-          );
-        },
       ),
     );
   }
 
-  Widget _buildCategoryTags(AsyncValue<List<db.Category>> categoriesAsync) {
-    return categoriesAsync.when(
-      data: (categories) {
-        if (categories.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(
-              'no_categories'.tr(),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
+  Widget _buildTagSelector(AsyncValue<List<db.Tag>> tagsAsync) {
+    return tagsAsync.when(
+      data: (tags) {
+        if (tags.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!, width: 1),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 20,
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'no_tags_available'.tr(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
+                ),
+              ],
             ),
           );
         }
-        
+
         return Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: categories.map((category) {
-            final isSelected = _selectedCategoryId == category.id;
+          children: tags.map((tag) {
+            final tagId = tag.id;
+            final isSelected = _selectedTagIds.contains(tagId);
             return FilterChip(
-              label: Text(category.name),
+              label: Text(tag.name),
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
-                  _selectedCategoryId = selected ? category.id : null;
+                  if (selected) {
+                    _selectedTagIds.add(tagId);
+                  } else {
+                    _selectedTagIds.remove(tagId);
+                  }
                 });
               },
-              avatar: category.icon != null
-                  ? Icon(
-                      IconData(
-                        int.parse(category.icon!),
-                        fontFamily: 'MaterialIcons',
+              avatar: tag.icon != null
+                  ? Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Color(tag.color).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      size: 18,
+                      child: Icon(
+                        IconData(
+                          int.parse(tag.icon!),
+                          fontFamily: 'MaterialIcons',
+                        ),
+                        size: 14,
+                        color: Color(tag.color),
+                      ),
                     )
-                  : null,
-              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-              checkmarkColor: Theme.of(context).primaryColor,
+                  : Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Color(tag.color).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+              selectedColor: Theme.of(
+                context,
+              ).colorScheme.secondary.withValues(alpha: 0.15),
+              checkmarkColor: Theme.of(context).colorScheme.secondary,
+              side: BorderSide(
+                color: isSelected
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.outlineVariant,
+                width: isSelected ? 1.5 : 1,
+              ),
+              labelStyle: TextStyle(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.onSurface,
+              ),
             );
           }).toList(),
         );
       },
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: const Center(child: CircularProgressIndicator()),
       ),
-      error: (_, _) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(
-          'error_loading_categories'.tr(),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.red,
+      error: (error, stack) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).colorScheme.errorContainer.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 20,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'error_loading_tags'.tr(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
+            ),
+          ],
         ),
       ),
     );
@@ -584,7 +852,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
     if (_reminderFrequency == 'daily') {
       return const SizedBox.shrink();
     }
-    
+
     if (_reminderFrequency == 'weekly') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -609,7 +877,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                 'sunday'.tr(),
               ];
               final isSelected = _reminderDays.contains(dayIndex);
-              
+
               return FilterChip(
                 label: Text(dayNames[index]),
                 selected: isSelected,
@@ -629,15 +897,12 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
         ],
       );
     }
-    
+
     // Monthly
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'select_days'.tr(),
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text('select_days'.tr(), style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -645,7 +910,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
           children: List.generate(31, (index) {
             final day = index + 1;
             final isSelected = _reminderDays.contains(day);
-            
+
             return FilterChip(
               label: Text('$day'),
               selected: isSelected,
@@ -666,4 +931,3 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
     );
   }
 }
-

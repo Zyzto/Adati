@@ -65,18 +65,28 @@ class TrackingEntryDao extends DatabaseAccessor<AppDatabase>
     final existing = await getEntry(habitId, date);
 
     if (existing != null) {
-      // Update existing entry, preserving the existing id
+      // Update existing entry
       await (update(db.trackingEntries)
             ..where((e) => e.habitId.equals(habitId) & e.date.equals(date)))
-          .write(entry.copyWith(id: Value(existing.id)));
+          .write(entry);
     } else {
-      // Insert new entry (id can be null since it's nullable now)
+      // Insert new entry
       await into(db.trackingEntries).insert(entry);
     }
   }
 
-  Future<int> deleteEntry(int id) =>
-      (delete(db.trackingEntries)..where((e) => e.id.equals(id))).go();
+  Future<int> deleteEntry(int habitId, DateTime date) {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    return (delete(db.trackingEntries)
+          ..where(
+            (e) =>
+                e.habitId.equals(habitId) &
+                e.date.isBiggerOrEqualValue(startOfDay) &
+                e.date.isSmallerThanValue(endOfDay),
+          ))
+        .go();
+  }
 
   Future<int> deleteEntriesByHabit(int habitId) => (delete(
     db.trackingEntries,

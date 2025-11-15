@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../habits/providers/habit_providers.dart';
+import '../../habits/providers/tracking_providers.dart';
 import '../../habits/widgets/habit_form_modal.dart';
 import '../../settings/providers/settings_providers.dart';
 import 'day_square.dart';
@@ -70,18 +71,12 @@ class CalendarGrid extends ConsumerWidget {
     return Wrap(
       spacing: 6,
       runSpacing: 6,
-      children: days.map((day) {
-        return FutureBuilder<Map<int, bool>>(
-          future: _getDayEntries(ref, day, habits),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return DaySquare(
-                date: day,
-                completed: false,
-              );
-            }
-
-            final entries = snapshot.data!;
+      children: days.map<Widget>((day) {
+        // Use provider to watch for changes reactively
+        final dayEntriesAsync = ref.watch(dayEntriesProvider(day));
+        
+        return dayEntriesAsync.when(
+          data: (entries) {
             final completedCount = entries.values.where((v) => v).length;
             final totalCount = entries.length;
             final completionRate = totalCount > 0 ? completedCount / totalCount : 0.0;
@@ -92,25 +87,17 @@ class CalendarGrid extends ConsumerWidget {
               onTap: null, // Disabled for now, might be used later
             );
           },
+          loading: () => DaySquare(
+            date: day,
+            completed: false,
+          ),
+          error: (_, _) => DaySquare(
+            date: day,
+            completed: false,
+          ),
         );
       }).toList(),
     );
-  }
-
-  Future<Map<int, bool>> _getDayEntries(
-    WidgetRef ref,
-    DateTime day,
-    List habits,
-  ) async {
-    final repository = ref.read(habitRepositoryProvider);
-    final entries = <int, bool>{};
-
-    for (final habit in habits) {
-      final entry = await repository.getEntry(habit.id, day);
-      entries[habit.id] = entry?.completed ?? false;
-    }
-
-    return entries;
   }
 }
 

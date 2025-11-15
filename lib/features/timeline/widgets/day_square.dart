@@ -66,10 +66,49 @@ class DaySquare extends ConsumerWidget {
     return Colors.green;
   }
 
+  Color? _getStreakBorderColor() {
+    if (streakLength == null || streakLength! == 0) {
+      return null;
+    }
+    
+    // Border color based on streak length
+    if (streakLength! >= 30) {
+      return Colors.purple; // Longest streaks - purple
+    } else if (streakLength! >= 14) {
+      return Colors.orange; // Medium streaks - orange
+    } else if (streakLength! >= 7) {
+      return Colors.amber; // Short streaks - amber
+    } else {
+      return Colors.green; // Very short streaks - green
+    }
+  }
+
   String _getTooltipMessage() {
     final dateStr = app_date_utils.DateUtils.formatDate(date);
     final status = completed ? 'completed'.tr() : 'not_completed'.tr();
-    return '$dateStr - $status';
+    final streakInfo = streakLength != null && streakLength! > 0
+        ? ' - ${'streak'.tr()}: $streakLength'
+        : '';
+    return '$dateStr - $status$streakInfo';
+  }
+
+  Border? _getBorder() {
+    final streakBorderColor = _getStreakBorderColor();
+    final isToday = app_date_utils.DateUtils.isToday(date);
+    
+    // Priority: Today > Streak (only for completed days with active streaks)
+    if (isToday) {
+      return Border.all(color: Colors.blue, width: 1.5);
+    } else if (streakBorderColor != null && completed && streakLength != null && streakLength! > 0) {
+      // Show streak border only for completed days with active streaks
+      return Border.all(
+        color: streakBorderColor,
+        width: streakLength! >= 7 ? 2 : 1.5,
+      );
+    }
+    
+    // Don't show week/month highlight borders - they were causing unwanted borders
+    return null;
   }
 
   @override
@@ -114,16 +153,7 @@ class DaySquare extends ConsumerWidget {
           decoration: BoxDecoration(
             color: _getColor(),
             borderRadius: BorderRadius.circular(2),
-            border: app_date_utils.DateUtils.isToday(date)
-                ? Border.all(color: Colors.blue, width: 1.5)
-                : (highlightWeek || highlightMonth
-                    ? Border.all(
-                        color: highlightWeek
-                            ? Colors.orange.withValues(alpha: 0.5)
-                            : Colors.blue.withValues(alpha: 0.3),
-                        width: 1,
-                      )
-                    : null),
+            border: _getBorder(),
           ),
         ),
       ),

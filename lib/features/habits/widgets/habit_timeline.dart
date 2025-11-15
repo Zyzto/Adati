@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../providers/tracking_providers.dart';
+import '../providers/habit_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
+import '../../../../core/database/models/tracking_types.dart';
 import '../../timeline/widgets/day_square.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
 
@@ -18,14 +20,23 @@ class HabitTimeline extends ConsumerWidget {
     this.daysToShow,
   });
 
-  Map<DateTime, int> _calculateStreaks(List<DateTime> days, Map<DateTime, bool> entriesMap) {
+  Map<DateTime, int> _calculateStreaks(
+    List<DateTime> days,
+    Map<DateTime, bool> entriesMap,
+    bool isGoodHabit,
+  ) {
     final streakMap = <DateTime, int>{};
     int currentStreak = 0;
     
-    // Calculate streaks going backwards from today
-    for (int i = days.length - 1; i >= 0; i--) {
+    // Calculate streaks going forward from oldest to newest
+    // For good habits: completed == true means success
+    // For bad habits: completed == false means success (not doing bad habit)
+    for (int i = 0; i < days.length; i++) {
       final day = days[i];
-      if (entriesMap[day] == true) {
+      final entryCompleted = entriesMap[day] ?? false;
+      final isSuccess = isGoodHabit ? entryCompleted : !entryCompleted;
+      
+      if (isSuccess) {
         currentStreak++;
         streakMap[day] = currentStreak;
       } else {
@@ -54,48 +65,67 @@ class HabitTimeline extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(trackingEntriesProvider(habitId));
+    final habitAsync = ref.watch(habitByIdProvider(habitId));
     final calculatedDaysToShow = daysToShow ?? (compact ? 30 : 100);
     final needsScroll = calculatedDaysToShow > 100;
 
-    return entriesAsync.when(
-      data: (entries) {
-        final days = app_date_utils.DateUtils.getLastNDays(calculatedDaysToShow);
-        final entriesMap = {
-          for (var entry in entries)
-            app_date_utils.DateUtils.getDateOnly(entry.date): entry.completed
-        };
-        
-        final streakMap = _calculateStreaks(days, entriesMap);
-
-        final timelineWidget = Wrap(
-          spacing: compact ? 4 : 6,
-          runSpacing: compact ? 4 : 6,
-          children: days.map((day) {
-            final completed = entriesMap[day] ?? false;
-            final streakLength = streakMap[day] ?? 0;
-            final isCurrentWeek = _isInCurrentWeek(day);
-            final isCurrentMonth = _isInCurrentMonth(day);
-            
-            return DaySquare(
-              date: day,
-              completed: completed,
-              size: compact ? 12 : null,
-              onTap: null,
-              streakLength: streakLength,
-              highlightWeek: isCurrentWeek,
-              highlightMonth: isCurrentMonth,
-            );
-          }).toList(),
-        );
-
-        if (needsScroll) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: timelineWidget,
-          );
+    return habitAsync.when(
+      data: (habit) {
+        if (habit == null) {
+          return const SizedBox.shrink();
         }
 
-        return timelineWidget;
+        final isGoodHabit = habit.habitType == HabitType.good.value;
+
+        return entriesAsync.when(
+          data: (entries) {
+            final days = app_date_utils.DateUtils.getLastNDays(calculatedDaysToShow);
+            final entriesMap = {
+              for (var entry in entries)
+                app_date_utils.DateUtils.getDateOnly(entry.date): entry.completed
+            };
+            
+            // Calculate streaks based on habit type
+            final streakMap = _calculateStreaks(days, entriesMap, isGoodHabit);
+
+            final timelineWidget = Wrap(
+              spacing: compact ? 4 : 6,
+              runSpacing: compact ? 4 : 6,
+              children: days.map((day) {
+                final entryCompleted = entriesMap[day] ?? false;
+                // For display: show completed for good habits, show "not done" for bad habits
+                final displayCompleted = isGoodHabit ? entryCompleted : !entryCompleted;
+                final streakLength = streakMap[day] ?? 0;
+                final isCurrentWeek = _isInCurrentWeek(day);
+                final isCurrentMonth = _isInCurrentMonth(day);
+                
+                return DaySquare(
+                  date: day,
+                  completed: displayCompleted,
+                  size: compact ? 12 : null,
+                  onTap: null,
+                  streakLength: streakLength,
+                  highlightWeek: isCurrentWeek,
+                  highlightMonth: isCurrentMonth,
+                );
+              }).toList(),
+            );
+
+            if (needsScroll) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: timelineWidget,
+              );
+            }
+
+            return timelineWidget;
+          },
+          loading: () => const SizedBox(
+            height: 50,
+            child: SkeletonTimeline(),
+          ),
+          error: (error, stack) => Text('${'error'.tr()}: $error'),
+        );
       },
       loading: () => const SizedBox(
         height: 50,

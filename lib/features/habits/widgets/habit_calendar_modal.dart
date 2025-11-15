@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../../core/database/app_database.dart' as db;
+import '../../../../core/database/models/tracking_types.dart';
 import '../providers/habit_providers.dart';
 import '../widgets/habit_timeline.dart';
 import '../widgets/habit_management_menu.dart';
@@ -760,14 +762,334 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
 
   Future<void> _toggleDay(DateTime day) async {
     final repository = ref.read(habitRepositoryProvider);
+    final habitAsync = ref.read(habitByIdProvider(widget.habitId).future);
+    final habit = await habitAsync;
+    if (habit == null) return;
+
     final dateOnly = app_date_utils.DateUtils.getDateOnly(day);
+    final trackingType = TrackingType.fromValue(habit.trackingType);
 
     // Get current status
     final entry = await repository.getEntry(widget.habitId, dateOnly);
     final isCompleted = entry?.completed ?? false;
 
-    // Toggle completion
-    await repository.toggleCompletion(widget.habitId, dateOnly, !isCompleted);
+    // Handle different tracking types
+    if (trackingType == TrackingType.completed) {
+      // Simple toggle for completed tracking
+      await repository.toggleCompletion(widget.habitId, dateOnly, !isCompleted);
+    } else if (trackingType == TrackingType.measurable) {
+      // For measurable, open input dialog
+      if (mounted) {
+        _showMeasurableInputDialog(context, day, entry, habit);
+      }
+    } else if (trackingType == TrackingType.occurrences) {
+      // For occurrences, open selection dialog
+      if (mounted) {
+        _showOccurrencesInputDialog(context, day, entry, habit);
+      }
+    }
+  }
+
+  void _showMeasurableInputDialog(
+    BuildContext context,
+    DateTime day,
+    db.TrackingEntry? entry,
+    db.Habit habit,
+  ) {
+    final repository = ref.read(habitRepositoryProvider);
+    final dateOnly = app_date_utils.DateUtils.getDateOnly(day);
+    final currentValue = entry?.value ?? 0.0;
+    final unit = habit.unit ?? '';
+    final goalValue = habit.goalValue;
+
+    final controller = TextEditingController(
+      text: currentValue > 0 ? currentValue.toString() : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(habit.name),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  app_date_utils.DateUtils.formatDate(dateOnly, format: 'MMMM d, yyyy'),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 16),
+                // Quick action buttons (25%, 50%, 75%, 100%)
+                if (goalValue != null && goalValue > 0) ...[
+                  Text(
+                    'quick_actions'.tr(),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildQuickActionButton(
+                        context,
+                        '25%',
+                        goalValue * 0.25,
+                        controller,
+                        setDialogState,
+                      ),
+                      _buildQuickActionButton(
+                        context,
+                        '50%',
+                        goalValue * 0.5,
+                        controller,
+                        setDialogState,
+                      ),
+                      _buildQuickActionButton(
+                        context,
+                        '75%',
+                        goalValue * 0.75,
+                        controller,
+                        setDialogState,
+                      ),
+                      _buildQuickActionButton(
+                        context,
+                        '100%',
+                        goalValue,
+                        controller,
+                        setDialogState,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                // Value input field with +/- buttons
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove),
+                      onPressed: () {
+                        final current = double.tryParse(controller.text.trim()) ?? 0.0;
+                        final step = goalValue != null && goalValue > 0
+                            ? goalValue / 20
+                            : 1.0;
+                        final newValue = (current - step).clamp(0.0, double.infinity);
+                        controller.text = newValue.toStringAsFixed(newValue % 1 == 0 ? 0 : 1);
+                        setDialogState(() {});
+                      },
+                    ),
+                    Expanded(
+                      child: TextFormField(
+                        controller: controller,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        textAlign: TextAlign.center,
+                        decoration: InputDecoration(
+                          labelText: 'value'.tr(),
+                          suffixText: unit.isNotEmpty ? unit : null,
+                          border: const OutlineInputBorder(),
+                        ),
+                        onChanged: (_) => setDialogState(() {}),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () {
+                        final current = double.tryParse(controller.text.trim()) ?? 0.0;
+                        final step = goalValue != null && goalValue > 0
+                            ? goalValue / 20
+                            : 1.0;
+                        final newValue = current + step;
+                        controller.text = newValue.toStringAsFixed(newValue % 1 == 0 ? 0 : 1);
+                        setDialogState(() {});
+                      },
+                    ),
+                  ],
+                ),
+                if (goalValue != null) ...[
+                  const SizedBox(height: 16),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: controller,
+                    builder: (context, value, child) {
+                      final inputValue = double.tryParse(value.text.trim()) ?? currentValue;
+                      final percentage = (inputValue / goalValue * 100).clamp(0.0, double.infinity);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'progress'.tr(),
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          LinearProgressIndicator(
+                            value: percentage > 100 ? 1.0 : percentage / 100,
+                            backgroundColor: Colors.grey[300],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${inputValue.toStringAsFixed(1)} / ${goalValue.toStringAsFixed(1)} $unit (${percentage.toStringAsFixed(0)}%)',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('cancel'.tr()),
+            ),
+            TextButton(
+              onPressed: () async {
+                final value = double.tryParse(controller.text.trim()) ?? 0.0;
+                await repository.trackMeasurable(
+                  widget.habitId,
+                  dateOnly,
+                  value,
+                  notes: entry?.notes,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('save'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton(
+    BuildContext context,
+    String label,
+    double value,
+    TextEditingController controller,
+    StateSetter setDialogState,
+  ) {
+    return OutlinedButton(
+      onPressed: () {
+        controller.text = value.toStringAsFixed(value % 1 == 0 ? 0 : 1);
+        setDialogState(() {});
+      },
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        minimumSize: const Size(60, 36),
+      ),
+      child: Text(label),
+    );
+  }
+
+  void _showOccurrencesInputDialog(
+    BuildContext context,
+    DateTime day,
+    db.TrackingEntry? entry,
+    db.Habit habit,
+  ) {
+    final repository = ref.read(habitRepositoryProvider);
+    final dateOnly = app_date_utils.DateUtils.getDateOnly(day);
+    
+    List<String> occurrenceNames = [];
+    if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
+      try {
+        occurrenceNames = List<String>.from(jsonDecode(habit.occurrenceNames!));
+      } catch (e) {
+        occurrenceNames = [];
+      }
+    }
+
+    if (occurrenceNames.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('no_occurrences'.tr()),
+          content: Text('please_define_occurrences'.tr()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('ok'.tr()),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    List<String> selectedOccurrences = [];
+    if (entry?.occurrenceData != null && entry!.occurrenceData!.isNotEmpty) {
+      try {
+        selectedOccurrences = List<String>.from(jsonDecode(entry.occurrenceData!));
+      } catch (e) {
+        selectedOccurrences = [];
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(habit.name),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  app_date_utils.DateUtils.formatDate(dateOnly, format: 'MMMM d, yyyy'),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'select_occurrences'.tr(),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 12),
+                ...occurrenceNames.map((name) {
+                  final isSelected = selectedOccurrences.contains(name);
+                  return CheckboxListTile(
+                    title: Text(name),
+                    value: isSelected,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        if (value == true) {
+                          selectedOccurrences.add(name);
+                        } else {
+                          selectedOccurrences.remove(name);
+                        }
+                      });
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('cancel'.tr()),
+            ),
+            TextButton(
+              onPressed: () async {
+                await repository.trackOccurrences(
+                  widget.habitId,
+                  dateOnly,
+                  selectedOccurrences,
+                  notes: entry?.notes,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('save'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

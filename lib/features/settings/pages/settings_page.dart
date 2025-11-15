@@ -8,6 +8,7 @@ import '../../../../core/database/app_database.dart' as db;
 import '../providers/settings_providers.dart';
 import '../../habits/widgets/checkbox_style_widget.dart';
 import '../../habits/providers/habit_providers.dart';
+import '../../habits/widgets/tag_management_widget.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -935,6 +936,12 @@ class SettingsPage extends ConsumerWidget {
             await notificationsNotifier.setNotificationsEnabled(value);
             ref.invalidate(notificationsEnabledNotifierProvider);
           },
+        ),
+        // Tags Section
+        _buildSectionHeader('tags'.tr()),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TagManagementWidget(),
         ),
         // Data & Export Section
         _buildSectionHeader('data_export'.tr()),

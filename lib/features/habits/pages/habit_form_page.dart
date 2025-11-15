@@ -20,7 +20,7 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   int _selectedColor = Colors.deepPurple.toARGB32();
-  int? _selectedCategoryId;
+  Set<int> _selectedTagIds = {};
 
   @override
   void initState() {
@@ -33,13 +33,19 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
   }
 
   Future<void> _loadHabit() async {
+    final repository = ref.read(habitRepositoryProvider);
     final habitAsync = ref.read(habitByIdProvider(widget.habitId!).future);
     final habit = await habitAsync;
     if (habit != null && mounted) {
-      _nameController.text = habit.name;
-      _descriptionController.text = habit.description ?? '';
-      _selectedColor = habit.color;
-      _selectedCategoryId = habit.categoryId;
+      // Load tags for this habit
+      final tags = await repository.getTagsForHabit(habit.id);
+      
+      setState(() {
+        _nameController.text = habit.name;
+        _descriptionController.text = habit.description ?? '';
+        _selectedColor = habit.color;
+        _selectedTagIds = tags.map((t) => t.id).toSet();
+      });
     }
   }
 
@@ -73,9 +79,6 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
       icon: existingHabit?.icon == null
           ? const drift.Value.absent()
           : drift.Value(existingHabit!.icon),
-      categoryId: _selectedCategoryId == null
-          ? const drift.Value.absent()
-          : drift.Value(_selectedCategoryId),
       reminderEnabled: drift.Value(existingHabit?.reminderEnabled ?? false),
       reminderTime: existingHabit?.reminderTime == null
           ? const drift.Value.absent()
@@ -86,10 +89,11 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
       updatedAt: drift.Value(now),
     );
 
+    final tagIds = _selectedTagIds.toList();
     if (widget.habitId == null) {
-      await repository.createHabit(habit);
+      await repository.createHabit(habit, tagIds: tagIds);
     } else {
-      await repository.updateHabit(habit);
+      await repository.updateHabit(habit, tagIds: tagIds);
     }
 
     if (mounted) {
@@ -173,7 +177,96 @@ class _HabitFormPageState extends ConsumerState<HabitFormPage> {
                 );
               }).toList(),
             ),
+            const SizedBox(height: 24),
+            Text(
+              'tags'.tr(),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            _buildTagSelector(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTagSelector() {
+    final tagsAsync = ref.watch(tagsProvider);
+    
+    return tagsAsync.when(
+      data: (tags) {
+        if (tags.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              'no_tags_available'.tr(),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+            ),
+          );
+        }
+        
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: tags.map((tag) {
+            final tagId = tag.id;
+            final isSelected = _selectedTagIds.contains(tagId);
+            return FilterChip(
+              label: Text(tag.name),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (selected) {
+                    _selectedTagIds.add(tagId);
+                  } else {
+                    _selectedTagIds.remove(tagId);
+                  }
+                });
+              },
+              avatar: tag.icon != null
+                  ? Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Color(tag.color).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Icon(
+                        IconData(
+                          int.parse(tag.icon!),
+                          fontFamily: 'MaterialIcons',
+                        ),
+                        size: 14,
+                        color: Color(tag.color),
+                      ),
+                    )
+                  : Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Color(tag.color).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.15),
+              checkmarkColor: Theme.of(context).primaryColor,
+            );
+          }).toList(),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, _) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          'error_loading_tags'.tr(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.red,
+              ),
         ),
       ),
     );
