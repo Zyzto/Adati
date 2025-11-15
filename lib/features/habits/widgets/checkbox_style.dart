@@ -19,16 +19,19 @@ Widget buildCheckboxWidget(
   final color = isCompleted ? Colors.green : Colors.grey;
   final iconSize = size * 0.9;
 
+  Widget checkboxWidget;
+
   switch (style) {
     case HabitCheckboxStyle.square:
-      return Icon(
+      checkboxWidget = Icon(
         isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
         color: color,
         size: size,
       );
+      break;
 
     case HabitCheckboxStyle.bordered:
-      return Container(
+      checkboxWidget = Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
@@ -42,42 +45,52 @@ Widget buildCheckboxWidget(
             ? Icon(Icons.check, color: color, size: iconSize)
             : null,
       );
+      break;
 
     case HabitCheckboxStyle.circle:
-      return Icon(
+      checkboxWidget = Icon(
         isCompleted ? Icons.check_circle : Icons.circle_outlined,
         color: color,
         size: size,
       );
+      break;
 
     case HabitCheckboxStyle.radio:
-      return Icon(
+      checkboxWidget = Icon(
         isCompleted ? Icons.radio_button_checked : Icons.radio_button_unchecked,
         color: color,
         size: size,
       );
+      break;
 
     case HabitCheckboxStyle.task:
-      return Icon(
+      checkboxWidget = Icon(
         isCompleted ? Icons.assignment_turned_in : Icons.assignment_outlined,
         color: color,
         size: size,
       );
+      break;
 
     case HabitCheckboxStyle.verified:
-      return Icon(
+      checkboxWidget = Icon(
         isCompleted ? Icons.verified : Icons.verified_outlined,
         color: color,
         size: size,
       );
+      break;
 
     case HabitCheckboxStyle.taskAlt:
-      return Icon(
+      checkboxWidget = Icon(
         isCompleted ? Icons.task_alt : Icons.task_outlined,
         color: color,
         size: size,
       );
+      break;
   }
+
+  // Return checkbox widget without hover effect
+  // Hover effect will be handled by the parent InkWell in habit_card.dart
+  return checkboxWidget;
 }
 
 HabitCheckboxStyle habitCheckboxStyleFromString(String? value) {

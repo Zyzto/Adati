@@ -801,6 +801,9 @@ class HabitCard extends ConsumerWidget {
                     builder: (context) => HabitCalendarModal(habitId: habit.id),
                   );
                 },
+                hoverColor: Colors.transparent,
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: _buildCardContent(context, ref),
@@ -832,6 +835,9 @@ class HabitCard extends ConsumerWidget {
                         button: true,
                         child: InkWell(
                           onTap: () => _toggleTodayCompletion(context, ref),
+                          hoverColor: Colors.transparent,
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
                           child: Container(
                             width: 96,
                             constraints: const BoxConstraints(minHeight: 44),
@@ -864,6 +870,9 @@ class HabitCard extends ConsumerWidget {
                       button: true,
                       child: InkWell(
                         onTap: () => _toggleTodayCompletion(context, ref),
+                        hoverColor: Colors.transparent,
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
                         child: Container(
                           width: 96,
                           constraints: const BoxConstraints(minHeight: 44),
