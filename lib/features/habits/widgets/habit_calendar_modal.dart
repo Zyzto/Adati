@@ -974,37 +974,47 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildQuickActionButton(
-                        context,
-                        '25%',
-                        goalValue * 0.25,
-                        controller,
-                        setDialogState,
+                      Expanded(
+                        child: _buildQuickActionButton(
+                          context,
+                          '25%',
+                          goalValue * 0.25,
+                          controller,
+                          setDialogState,
+                        ),
                       ),
-                      _buildQuickActionButton(
-                        context,
-                        '50%',
-                        goalValue * 0.5,
-                        controller,
-                        setDialogState,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildQuickActionButton(
+                          context,
+                          '50%',
+                          goalValue * 0.5,
+                          controller,
+                          setDialogState,
+                        ),
                       ),
-                      _buildQuickActionButton(
-                        context,
-                        '75%',
-                        goalValue * 0.75,
-                        controller,
-                        setDialogState,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildQuickActionButton(
+                          context,
+                          '75%',
+                          goalValue * 0.75,
+                          controller,
+                          setDialogState,
+                        ),
                       ),
-                      _buildQuickActionButton(
-                        context,
-                        '100%',
-                        goalValue,
-                        controller,
-                        setDialogState,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildQuickActionButton(
+                          context,
+                          '100%',
+                          goalValue,
+                          controller,
+                          setDialogState,
+                        ),
                       ),
                     ],
                   ),
@@ -1018,9 +1028,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                       onPressed: () {
                         final current =
                             double.tryParse(controller.text.trim()) ?? 0.0;
-                        final step = goalValue != null && goalValue > 0
-                            ? goalValue / 20
-                            : 1.0;
+                        final step = 1.0;
                         final newValue = (current - step).clamp(
                           0.0,
                           double.infinity,
@@ -1051,9 +1059,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                       onPressed: () {
                         final current =
                             double.tryParse(controller.text.trim()) ?? 0.0;
-                        final step = goalValue != null && goalValue > 0
-                            ? goalValue / 20
-                            : 1.0;
+                        final step = 1.0;
                         final newValue = current + step;
                         controller.text = newValue.toStringAsFixed(
                           newValue % 1 == 0 ? 0 : 1,
