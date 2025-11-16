@@ -1,0 +1,32 @@
+# Git attributes for security and file handling
+
+# Prevent accidental commits of sensitive files
+*.env filter=git-crypt diff=git-crypt
+*.env.* filter=git-crypt diff=git-crypt
+*.key filter=git-crypt diff=git-crypt
+*.pem filter=git-crypt diff=git-crypt
+*.p12 filter=git-crypt diff=git-crypt
+key.properties filter=git-crypt diff=git-crypt
+**/key.properties filter=git-crypt diff=git-crypt
+
+# Android signing files
+*.jks filter=git-crypt diff=git-crypt
+*.keystore filter=git-crypt diff=git-crypt
+
+# iOS certificates and provisioning profiles
+*.mobileprovision filter=git-crypt diff=git-crypt
+*.p12 filter=git-crypt diff=git-crypt
+
+# Firebase config files (if they contain secrets)
+# Uncomment if you use Firebase and want to encrypt these
+# **/google-services.json filter=git-crypt diff=git-crypt
+# **/GoogleService-Info.plist filter=git-crypt diff=git-crypt
+
+# Local properties
+local.properties filter=git-crypt diff=git-crypt
+**/local.properties filter=git-crypt diff=git-crypt
+
+# Note: git-crypt is optional. If you don't use git-crypt, these files
+# should still be in .gitignore. This .gitattributes file serves as
+# an additional layer of protection and documentation.
+

@@ -1,0 +1,9 @@
+# Example key.properties file for release signing
+# Copy this file to key.properties and fill in your actual values
+# DO NOT commit key.properties to version control!
+
+storeFile=../path/to/your/keystore.jks
+storePassword=your_store_password_here
+keyAlias=your_key_alias_here
+keyPassword=your_key_password_here
+

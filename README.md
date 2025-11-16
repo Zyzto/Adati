@@ -248,6 +248,7 @@ lib/
 ### 📚 Documentation
 
 - **[SERVICES.md](SERVICES.md)** - Comprehensive documentation for all services in the codebase, including usage examples and API reference
+- **[SECURITY.md](SECURITY.md)** - Security guidelines, best practices, and how to handle sensitive information
 
 ## 🛠️ Technology Stack
 
@@ -291,12 +292,16 @@ flutter analyze
 Create a `.env` file in the root directory for environment-specific configuration (optional):
 ```env
 # Example .env file
-DEBUG_MODE=true
+# GITHUB_TOKEN=your_github_token_here  # For sending logs to GitHub Issues
 ```
+
+**⚠️ Security Note**: The `.env` file is in `.gitignore` and should never be committed. See [SECURITY.md](SECURITY.md) for security best practices.
 
 ### CI/CD
 The project uses GitHub Actions for automated builds and releases:
 - Workflow file: `.github/workflows/release.yml`
+- For CI/CD, use GitHub Secrets to store sensitive values like `GITHUB_TOKEN`
+- See [SECURITY.md](SECURITY.md) for details on setting up GitHub Secrets
 - Triggers on version tags (v*) or manual dispatch
 - Builds for Android (APK/AAB), Linux (AppImage), and Windows (ZIP)
 - Automatically creates GitHub releases with artifacts

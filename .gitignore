@@ -48,6 +48,9 @@ app.*.map.json
 
 # Android related
 /android/local.properties
+/android/key.properties
+/android/*.jks
+/android/*.keystore
 /android/.gradle/
 /android/captures/
 /android/gradlew
@@ -106,6 +109,7 @@ app.*.map.json
 .env.local
 .env.*.local
 *.env
+!.env.example
 
 # Coverage
 coverage/
