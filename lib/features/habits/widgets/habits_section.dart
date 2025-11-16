@@ -29,6 +29,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
   bool _showTags = true;
   bool _showDescriptions = true;
   bool _compactCards = false;
+  bool _showTagFilter = true;
 
   @override
   void dispose() {
@@ -102,7 +103,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     ? _buildSearchBar(context, ref)
                     : const SizedBox.shrink(key: ValueKey('empty')),
               ),
-              _buildTagFilterRow(context, ref),
+              if (_showTagFilter) _buildTagFilterRow(context, ref),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 transitionBuilder: (child, animation) {
@@ -159,7 +160,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   ? _buildSearchBar(context, ref)
                   : const SizedBox.shrink(key: ValueKey('empty')),
             ),
-            _buildTagFilterRow(context, ref),
+            if (_showTagFilter) _buildTagFilterRow(context, ref),
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (child, animation) {
@@ -755,6 +756,9 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                 sessionOptions.copyWith(compactCards: _compactCards),
               );
               break;
+            case 'toggle_tag_filter':
+              _showTagFilter = !_showTagFilter;
+              break;
           }
         });
       },
@@ -862,6 +866,29 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                 (sessionOptions.compactCards ?? _compactCards)
                     ? 'normal_cards'.tr()
                     : 'compact_cards'.tr(),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const PopupMenuDivider(),
+      PopupMenuItem(
+        value: 'toggle_tag_filter',
+        child: Row(
+          children: [
+            Icon(
+              Icons.filter_alt,
+              size: 20,
+              color: _showTagFilter
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _showTagFilter
+                    ? 'hide_tag_filter'.tr()
+                    : 'show_tag_filter'.tr(),
               ),
             ),
           ],

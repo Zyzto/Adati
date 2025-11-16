@@ -392,6 +392,8 @@
   "grid_view": "Grid View",
   "show_tags": "Show Tags",
   "hide_tags": "Hide Tags",
+  "show_tag_filter": "Show Tag Filter",
+  "hide_tag_filter": "Hide Tag Filter",
   "show_descriptions": "Show Descriptions",
   "hide_descriptions": "Hide Descriptions",
   "normal_cards": "Normal Cards",

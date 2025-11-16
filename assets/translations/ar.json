@@ -392,6 +392,8 @@
   "grid_view": "عرض الشبكة",
   "show_tags": "إظهار العلامات",
   "hide_tags": "إخفاء العلامات",
+  "show_tag_filter": "إظهار فلتر العلامات",
+  "hide_tag_filter": "إخفاء فلتر العلامات",
   "show_descriptions": "إظهار الأوصاف",
   "hide_descriptions": "إخفاء الأوصاف",
   "normal_cards": "بطاقات عادية",
