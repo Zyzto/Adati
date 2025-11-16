@@ -265,6 +265,31 @@ lib/
 
 ## 🧪 Development
 
+### Debug Menu
+
+When running the app in **debug mode** (`flutter run` or debug builds), a debug menu button (🐛 bug icon) appears next to the settings button in the main timeline page. This menu provides quick access to debugging tools:
+
+#### Available Debug Tools
+
+1. **Log All Preferences** - Logs all stored preferences (keys and values) to the console
+2. **Log All Habits** - Logs detailed information about all habits (ID, name, type, color, icon)
+3. **Log All Tags** - Logs all tag data (ID, name, color)
+4. **Log All Entries** - Logs all tracking entries (habitId, date, completed status, notes)
+5. **Log All Streaks** - Logs all streak data (combined, good, bad, current, longest streaks)
+6. **Database Path** - Shows the database file location in a dialog (useful for manual database inspection)
+7. **Force Refresh** - Invalidates all providers to force a refresh of the UI
+8. **Performance Indicator** - Toggles a real-time FPS counter overlay in the top-right corner
+
+#### Using the Debug Menu
+
+1. Run the app in debug mode: `flutter run`
+2. Navigate to the main timeline page
+3. Look for the bug icon (🐛) in the app bar next to the settings button
+4. Tap the bug icon to open the debug menu
+5. Select any option to execute the debug action
+
+**Note**: The debug menu is **only available in debug mode** and will not appear in release builds. All logs are written using the app's logging system and can be viewed in the console or exported via the Settings → Advanced → Logs section.
+
 ### Running Tests
 ```bash
 flutter test
