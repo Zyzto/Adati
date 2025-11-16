@@ -469,7 +469,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('sort_by_name'.tr()),
+              Expanded(child: Text('sort_by_name'.tr())),
             ],
           ),
         ),
@@ -485,9 +485,9 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : null,
               ),
               const SizedBox(width: 12),
-              Text('sort_by_name_desc'.tr()),
+              Expanded(child: Text('sort_by_name_desc'.tr())),
               if (sortOrder == 'name_desc') ...[
-                const Spacer(),
+                const SizedBox(width: 8),
                 const Icon(Icons.check, size: 16),
               ],
             ],
@@ -505,7 +505,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('sort_by_streak'.tr()),
+              Expanded(child: Text('sort_by_streak'.tr())),
             ],
           ),
         ),
@@ -521,7 +521,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('sort_by_streak_desc'.tr()),
+              Expanded(child: Text('sort_by_streak_desc'.tr())),
             ],
           ),
         ),
@@ -537,7 +537,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('sort_by_created'.tr()),
+              Expanded(child: Text('sort_by_created'.tr())),
             ],
           ),
         ),
@@ -553,7 +553,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('sort_by_created_desc'.tr()),
+              Expanded(child: Text('sort_by_created_desc'.tr())),
             ],
           ),
         ),
@@ -571,7 +571,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('no_grouping'.tr()),
+              Expanded(child: Text('no_grouping'.tr())),
             ],
           ),
         ),
@@ -587,7 +587,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('group_by_type'.tr()),
+              Expanded(child: Text('group_by_type'.tr())),
             ],
           ),
         ),
@@ -605,7 +605,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('all_habits'.tr()),
+              Expanded(child: Text('all_habits'.tr())),
             ],
           ),
         ),
@@ -621,7 +621,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('good_habits_only'.tr()),
+              Expanded(child: Text('good_habits_only'.tr())),
             ],
           ),
         ),
@@ -637,7 +637,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              Text('bad_habits_only'.tr()),
+              Expanded(child: Text('bad_habits_only'.tr())),
             ],
           ),
         ),
@@ -780,7 +780,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
-            Text('list_view'.tr()),
+            Expanded(child: Text('list_view'.tr())),
           ],
         ),
       ),
@@ -796,7 +796,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
-            Text('grid_view'.tr()),
+            Expanded(child: Text('grid_view'.tr())),
           ],
         ),
       ),
@@ -813,10 +813,12 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
-            Text(
-              (sessionOptions.showTags ?? _showTags)
-                  ? 'hide_tags'.tr()
-                  : 'show_tags'.tr(),
+            Expanded(
+              child: Text(
+                (sessionOptions.showTags ?? _showTags)
+                    ? 'hide_tags'.tr()
+                    : 'show_tags'.tr(),
+              ),
             ),
           ],
         ),
@@ -833,10 +835,12 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
-            Text(
-              (sessionOptions.showDescriptions ?? _showDescriptions)
-                  ? 'hide_descriptions'.tr()
-                  : 'show_descriptions'.tr(),
+            Expanded(
+              child: Text(
+                (sessionOptions.showDescriptions ?? _showDescriptions)
+                    ? 'hide_descriptions'.tr()
+                    : 'show_descriptions'.tr(),
+              ),
             ),
           ],
         ),
@@ -853,10 +857,12 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 12),
-            Text(
-              (sessionOptions.compactCards ?? _compactCards)
-                  ? 'normal_cards'.tr()
-                  : 'compact_cards'.tr(),
+            Expanded(
+              child: Text(
+                (sessionOptions.compactCards ?? _compactCards)
+                    ? 'normal_cards'.tr()
+                    : 'compact_cards'.tr(),
+              ),
             ),
           ],
         ),
