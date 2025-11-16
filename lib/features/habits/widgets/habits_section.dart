@@ -301,95 +301,24 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           height: 40,
-          child: Row(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: tags.length,
-                  itemBuilder: (context, index) {
-                    final tag = tags[index];
-                    final isSelected = selectedTagIds.contains(tag.id);
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(tag.name),
-                        selected: isSelected,
-                        showCheckmark: false,
-                        onSelected: (selected) async {
-                          final newSelectedIds = Set<int>.from(selectedTagIds);
-                          if (selected) {
-                            newSelectedIds.add(tag.id);
-                          } else {
-                            newSelectedIds.remove(tag.id);
-                          }
-                          final tagIdsString = newSelectedIds.isEmpty
-                              ? null
-                              : newSelectedIds
-                                    .map((id) => id.toString())
-                                    .join(',');
-                          await filterByTagsNotifier.setHabitFilterByTags(
-                            tagIdsString,
-                          );
-                          ref.invalidate(habitFilterByTagsNotifierProvider);
-                        },
-                        selectedColor: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.15),
-                        checkmarkColor: Theme.of(context).colorScheme.primary,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              // "+" button to show all tags in popup menu
-              PopupMenuButton<db.Tag>(
-                icon: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 0.5),
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(
-                    Icons.add,
-                    size: 20,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                tooltip: 'more_tags'.tr(),
-                itemBuilder: (context) => tags.map((tag) {
-                  final isSelected = selectedTagIds.contains(tag.id);
-                  return PopupMenuItem<db.Tag>(
-                    value: tag,
-                    child: Row(
-                      children: [
-                        Checkbox(value: isSelected, onChanged: null),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(tag.name)),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onSelected: (tag) async {
-                  final newSelectedIds = Set<int>.from(selectedTagIds);
-                  if (selectedTagIds.contains(tag.id)) {
-                    newSelectedIds.remove(tag.id);
-                  } else {
-                    newSelectedIds.add(tag.id);
-                  }
-                  final tagIdsString = newSelectedIds.isEmpty
-                      ? null
-                      : newSelectedIds.map((id) => id.toString()).join(',');
-                  await filterByTagsNotifier.setHabitFilterByTags(tagIdsString);
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Calculate available width (accounting for "+" button if needed)
+              const buttonWidth = 40.0; // Width of the "+" button
+              final availableWidth = constraints.maxWidth;
+
+              // Build tags and measure their widths to determine overflow
+              return _TagOverflowDetector(
+                tags: tags,
+                selectedTagIds: selectedTagIds,
+                filterByTagsNotifier: filterByTagsNotifier,
+                availableWidth: availableWidth,
+                buttonWidth: buttonWidth,
+                onTagsChanged: () {
                   ref.invalidate(habitFilterByTagsNotifierProvider);
                 },
-              ),
-            ],
+              );
+            },
           ),
         );
       },
@@ -907,6 +836,338 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
         setState(() {
           _showQuickActions = !_showQuickActions;
         });
+      },
+    );
+  }
+}
+
+/// Widget that detects tag overflow and shows only visible tags with a "+" button for overflowed ones
+class _TagOverflowDetector extends StatefulWidget {
+  final List<db.Tag> tags;
+  final Set<int> selectedTagIds;
+  final dynamic filterByTagsNotifier;
+  final double availableWidth;
+  final double buttonWidth;
+  final VoidCallback onTagsChanged;
+
+  const _TagOverflowDetector({
+    required this.tags,
+    required this.selectedTagIds,
+    required this.filterByTagsNotifier,
+    required this.availableWidth,
+    required this.buttonWidth,
+    required this.onTagsChanged,
+  });
+
+  @override
+  State<_TagOverflowDetector> createState() => _TagOverflowDetectorState();
+}
+
+class _TagOverflowDetectorState extends State<_TagOverflowDetector> {
+  final GlobalKey _rowKey = GlobalKey();
+  bool _hasOverflow = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkOverflow();
+    });
+  }
+
+  @override
+  void didUpdateWidget(_TagOverflowDetector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tags.length != widget.tags.length ||
+        oldWidget.availableWidth != widget.availableWidth) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkOverflow();
+      });
+    }
+  }
+
+  void _checkOverflow() {
+    if (!mounted || _rowKey.currentContext == null) return;
+
+    final RenderBox? renderBox =
+        _rowKey.currentContext!.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final rowWidth = renderBox.size.width;
+    final availableWidthForTags = widget.availableWidth - widget.buttonWidth;
+    final hasOverflow = rowWidth > availableWidthForTags;
+
+    if (mounted) {
+      setState(() {
+        _hasOverflow = hasOverflow;
+      });
+    }
+  }
+
+  Widget _buildTagChip(db.Tag tag, bool isSelected, {bool isDisabled = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(tag.name, maxLines: 1),
+        selected: isSelected,
+        showCheckmark: false,
+        onSelected: isDisabled
+            ? null
+            : (selected) async {
+                final newSelectedIds = Set<int>.from(widget.selectedTagIds);
+                if (selected) {
+                  newSelectedIds.add(tag.id);
+                } else {
+                  newSelectedIds.remove(tag.id);
+                }
+                final tagIdsString = newSelectedIds.isEmpty
+                    ? null
+                    : newSelectedIds.map((id) => id.toString()).join(',');
+                await widget.filterByTagsNotifier.setHabitFilterByTags(
+                  tagIdsString,
+                );
+                widget.onTagsChanged();
+              },
+        selectedColor: Theme.of(
+          context,
+        ).colorScheme.primary.withValues(alpha: 0.15),
+        checkmarkColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  Widget _buildPlusButton() {
+    return PopupMenuButton<db.Tag>(
+      tooltip: 'more_tags'.tr(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.add, size: 18),
+      ),
+      itemBuilder: (context) {
+        if (widget.tags.isEmpty) {
+          return [
+            PopupMenuItem<db.Tag>(
+              enabled: false,
+              child: Text('no_more_tags'.tr()),
+            ),
+          ];
+        }
+
+        // Calculate which tags are visible and show only overflowed (hidden) ones
+        final availableWidthForTags =
+            widget.availableWidth - widget.buttonWidth - 8; // 8 for padding
+        List<db.Tag> overflowedTags = [];
+
+        if (_rowKey.currentContext != null) {
+          final RenderBox? renderBox =
+              _rowKey.currentContext!.findRenderObject() as RenderBox?;
+          if (renderBox != null) {
+            final rowWidth = renderBox.size.width;
+            if (rowWidth > availableWidthForTags && widget.tags.isNotEmpty) {
+              // Estimate how many tags fit in available width
+              // Each tag has padding (8px right) + chip width
+              // Rough estimate: average tag width based on total width
+              final averageTagWidth = rowWidth / widget.tags.length;
+              final estimatedVisibleCount =
+                  (availableWidthForTags / averageTagWidth).floor().clamp(
+                    0,
+                    widget.tags.length,
+                  );
+
+              // The last tag is disabled (partially visible, fading)
+              // So visible tags are from 0 to (estimatedVisibleCount - 1)
+              // The last tag (at length - 1) is the one that's fading/overflowing
+              // We want to show all tags that are not fully visible, including the last one
+
+              // Show tags starting from the estimated visible count
+              // This includes the last tag which is fading
+              final overflowStartIndex = estimatedVisibleCount.clamp(
+                0,
+                widget.tags.length,
+              );
+
+              if (overflowStartIndex < widget.tags.length) {
+                // Show all tags from overflowStartIndex onwards (including the last tag)
+                // But exclude the tag before the last one
+                final allOverflowed = widget.tags.sublist(overflowStartIndex);
+                if (allOverflowed.length > 1) {
+                  // Remove the second-to-last tag (the one before the last)
+                  overflowedTags = [
+                    ...allOverflowed.take(allOverflowed.length - 2),
+                    allOverflowed.last, // Keep the last tag (fading)
+                  ];
+                } else {
+                  // If only one or zero tags, just use what we have
+                  overflowedTags = allOverflowed;
+                }
+              }
+            }
+          }
+        }
+
+        // Fallback: if we couldn't calculate and there's overflow,
+        // show the last tag (which is the one that's fading/overflowing)
+        if (overflowedTags.isEmpty && _hasOverflow && widget.tags.isNotEmpty) {
+          // Show the last tag since it's the one that's overflowing
+          overflowedTags = [widget.tags.last];
+        }
+
+        if (overflowedTags.isEmpty) {
+          return [
+            PopupMenuItem<db.Tag>(
+              enabled: false,
+              child: Text('no_more_tags'.tr()),
+            ),
+          ];
+        }
+
+        return overflowedTags.map((tag) {
+          final isSelected = widget.selectedTagIds.contains(tag.id);
+          return PopupMenuItem<db.Tag>(
+            value: tag,
+            child: Row(
+              children: [
+                Checkbox(value: isSelected, onChanged: null),
+                const SizedBox(width: 8),
+                Expanded(child: Text(tag.name)),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      onSelected: (tag) async {
+        final newSelectedIds = Set<int>.from(widget.selectedTagIds);
+        if (widget.selectedTagIds.contains(tag.id)) {
+          newSelectedIds.remove(tag.id);
+        } else {
+          newSelectedIds.add(tag.id);
+        }
+        final tagIdsString = newSelectedIds.isEmpty
+            ? null
+            : newSelectedIds.map((id) => id.toString()).join(',');
+        await widget.filterByTagsNotifier.setHabitFilterByTags(tagIdsString);
+        widget.onTagsChanged();
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Calculate the width available for tags (excluding button and padding)
+        const buttonPadding = 8.0;
+        final availableWidthForTags = _hasOverflow
+            ? constraints.maxWidth - widget.buttonWidth - buttonPadding
+            : constraints.maxWidth;
+
+        // Get text direction for RTL support
+        // Check locale to determine if RTL (Arabic, Hebrew, etc.)
+        final locale = context.locale;
+        final isRTL =
+            locale.languageCode == 'ar' ||
+            locale.languageCode == 'he' ||
+            locale.languageCode == 'fa';
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Clip tags to available width and apply fade
+            ClipRect(
+              child: SizedBox(
+                width: availableWidthForTags,
+                child: ShaderMask(
+                  shaderCallback: (bounds) {
+                    // Fade from 80% to 100% of the available width
+                    // This creates a smooth fade starting before the edge
+                    // Respect RTL layout - fade should occur at the edge where button is
+                    if (isRTL) {
+                      // RTL: Button is on left, fade from right (opaque) to left (transparent at button)
+                      return LinearGradient(
+                        begin: Alignment.centerRight,
+                        end: Alignment.centerLeft,
+                        colors: [
+                          Colors.white,
+                          Colors.white,
+                          Colors.white.withValues(
+                            alpha: 0.0,
+                          ), // Fully transparent at left edge (button side)
+                        ],
+                        stops: const [
+                          0.0,
+                          0.8,
+                          1.0,
+                        ], // Fade in the last 20% (from left)
+                      ).createShader(bounds);
+                    } else {
+                      // LTR: Button is on right, fade from left (opaque) to right (transparent at button)
+                      return LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.white,
+                          Colors.white,
+                          Colors.white.withValues(
+                            alpha: 0.0,
+                          ), // Fully transparent at right edge (button side)
+                        ],
+                        stops: const [
+                          0.0,
+                          0.8,
+                          1.0,
+                        ], // Fade in the last 20% (from right)
+                      ).createShader(bounds);
+                    }
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    // Use NeverScrollableScrollPhysics to prevent scrolling but keep fade effect
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: IntrinsicWidth(
+                      // Ensures the Row takes only the space its children need
+                      child: Row(
+                        key: _rowKey,
+                        mainAxisSize:
+                            MainAxisSize.min, // Essential for IntrinsicWidth
+                        children: widget.tags.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final tag = entry.value;
+                          final isSelected = widget.selectedTagIds.contains(
+                            tag.id,
+                          );
+                          // Disable the last tag in the list if there's overflow
+                          final isLastTag = index == widget.tags.length - 1;
+                          final isDisabled = _hasOverflow && isLastTag;
+                          return _buildTagChip(
+                            tag,
+                            isSelected,
+                            isDisabled: isDisabled,
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // "+" button positioned at the end (right in LTR, left in RTL) when there's overflow
+            if (_hasOverflow)
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: _buildPlusButton(),
+                ),
+              ),
+          ],
+        );
       },
     );
   }
