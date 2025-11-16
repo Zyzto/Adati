@@ -181,16 +181,11 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release --no-tree-shake-icons
 
-      - name: Create ZIP archive
-        shell: powershell
-        run: |
-          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath adati-windows-x64.zip -Force
-
-      - name: Upload Windows build
+      - name: Upload Windows EXE
         uses: actions/upload-artifact@v4
         with:
-          name: windows-zip
-          path: adati-windows-x64.zip
+          name: windows-exe
+          path: build/windows/x64/runner/Release/adati.exe
           retention-days: 30
 
   create-release:
@@ -223,20 +218,29 @@ jobs:
         uses: actions/download-artifact@v4
         continue-on-error: true  # Continue even if some artifacts are missing
 
-      - name: Rename artifacts with version
+      - name: Extract and rename artifacts
         run: |
-          # Rename artifacts if they exist (some builds may have failed)
+          # Extract artifacts from their directories and rename with version
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          
+          # Android APK
           if [ -f android-apk/app-release.apk ]; then
-            mv android-apk/app-release.apk adati-${{ steps.version.outputs.VERSION }}-android.apk
+            cp android-apk/app-release.apk adati-${VERSION}-android.apk
           fi
+          
+          # Android AAB
           if [ -f android-aab/app-release.aab ]; then
-            mv android-aab/app-release.aab adati-${{ steps.version.outputs.VERSION }}-android.aab
+            cp android-aab/app-release.aab adati-${VERSION}-android.aab
           fi
+          
+          # Linux AppImage
           if [ -f linux-appimage/adati-x86_64.AppImage ]; then
-            mv linux-appimage/adati-x86_64.AppImage adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage
+            cp linux-appimage/adati-x86_64.AppImage adati-${VERSION}-linux-x86_64.AppImage
           fi
-          if [ -f windows-zip/adati-windows-x64.zip ]; then
-            mv windows-zip/adati-windows-x64.zip adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip
+          
+          # Windows EXE
+          if [ -f windows-exe/adati.exe ]; then
+            cp windows-exe/adati.exe adati-${VERSION}-windows-x64.exe
           fi
           
           # List what we have
@@ -246,40 +250,44 @@ jobs:
       - name: Check which artifacts exist
         id: artifacts
         run: |
-          ARTIFACTS=""
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          ARTIFACTS_LIST=()
           BODY_NOTES=""
           
-          if [ -f adati-${{ steps.version.outputs.VERSION }}-android.apk ]; then
-            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-android.apk"
-            BODY_NOTES="$BODY_NOTES\n- **Android APK**: \`adati-${{ steps.version.outputs.VERSION }}-android.apk\`"
+          if [ -f adati-${VERSION}-android.apk ]; then
+            ARTIFACTS_LIST+=("adati-${VERSION}-android.apk")
+            BODY_NOTES="${BODY_NOTES}- **Android APK**: \`adati-${VERSION}-android.apk\`"$'\n'
           fi
           
-          if [ -f adati-${{ steps.version.outputs.VERSION }}-android.aab ]; then
-            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-android.aab"
-            BODY_NOTES="$BODY_NOTES\n- **Android App Bundle**: \`adati-${{ steps.version.outputs.VERSION }}-android.aab\`"
+          if [ -f adati-${VERSION}-android.aab ]; then
+            ARTIFACTS_LIST+=("adati-${VERSION}-android.aab")
+            BODY_NOTES="${BODY_NOTES}- **Android App Bundle**: \`adati-${VERSION}-android.aab\`"$'\n'
           fi
           
-          if [ -f adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage ]; then
-            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage"
-            BODY_NOTES="$BODY_NOTES\n- **Linux AppImage**: \`adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage\`"
+          if [ -f adati-${VERSION}-linux-x86_64.AppImage ]; then
+            ARTIFACTS_LIST+=("adati-${VERSION}-linux-x86_64.AppImage")
+            BODY_NOTES="${BODY_NOTES}- **Linux AppImage**: \`adati-${VERSION}-linux-x86_64.AppImage\`"$'\n'
           fi
           
-          if [ -f adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip ]; then
-            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip"
-            BODY_NOTES="$BODY_NOTES\n- **Windows**: \`adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip\`"
+          if [ -f adati-${VERSION}-windows-x64.exe ]; then
+            ARTIFACTS_LIST+=("adati-${VERSION}-windows-x64.exe")
+            BODY_NOTES="${BODY_NOTES}- **Windows**: \`adati-${VERSION}-windows-x64.exe\`"$'\n'
           fi
           
-          if [ -z "$ARTIFACTS" ]; then
+          if [ ${#ARTIFACTS_LIST[@]} -eq 0 ]; then
             echo "ERROR: No artifacts found to upload!"
             exit 1
           fi
           
+          # Join artifacts with spaces for the files parameter
+          ARTIFACTS_STRING=$(IFS=' '; echo "${ARTIFACTS_LIST[*]}")
+          
           echo "artifacts<<EOF" >> $GITHUB_OUTPUT
-          echo "$ARTIFACTS" >> $GITHUB_OUTPUT
+          echo "$ARTIFACTS_STRING" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           
           echo "body_notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$BODY_NOTES" >> $GITHUB_OUTPUT
+          echo -n "$BODY_NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
@@ -292,12 +300,11 @@ jobs:
             
             ### Downloads
             ${{ steps.artifacts.outputs.body_notes }}
-            
             ### Installation
             
             - **Android**: Install the APK directly or use the App Bundle for Google Play
             - **Linux**: Make the AppImage executable (`chmod +x adati-*.AppImage`) and run it
-            - **Windows**: Extract the ZIP and run `adati.exe`
+            - **Windows**: Download and run `adati.exe` directly
             
             **Note**: Some platforms may have failed to build. Only successfully built artifacts are included.
           files: ${{ steps.artifacts.outputs.artifacts }}
