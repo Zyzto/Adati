@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'  # Triggers on tags like v0.1.0, v1.0.0, etc.
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      version:
+        description: 'Version number (e.g., 0.1.0)'
+        required: true
+        type: string
 
 jobs:
   build-android:
@@ -95,12 +101,25 @@ jobs:
       - name: Copy Linux build to AppDir
         run: |
           cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
-          # Copy icon if it exists
+          # Copy icon - try linux/runner/assets first, fallback to assets/icon.png
           if [ -f linux/runner/assets/icon.png ]; then
+            ICON_SOURCE="linux/runner/assets/icon.png"
+          elif [ -f assets/icon.png ]; then
+            ICON_SOURCE="assets/icon.png"
+          else
+            echo "Warning: No icon found, creating placeholder"
+            # Create a minimal placeholder icon if none exists
+            convert -size 256x256 xc:transparent AppDir/adati.png 2>/dev/null || \
+            python3 -c "from PIL import Image; Image.new('RGBA', (256, 256), (0,0,0,0)).save('AppDir/adati.png')" 2>/dev/null || \
+            echo "Could not create placeholder icon"
+            ICON_SOURCE=""
+          fi
+          if [ -n "$ICON_SOURCE" ]; then
             # Copy to standard location
-            cp linux/runner/assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/adati.png
+            cp "$ICON_SOURCE" AppDir/usr/share/icons/hicolor/256x256/apps/adati.png
             # Also copy to AppDir root (required by appimagetool)
-            cp linux/runner/assets/icon.png AppDir/adati.png
+            cp "$ICON_SOURCE" AppDir/adati.png
+            echo "Icon copied from $ICON_SOURCE"
           fi
           # Create desktop entry in usr/share/applications
           cat > AppDir/usr/share/applications/adati.desktop << EOF
@@ -115,6 +134,19 @@ jobs:
           EOF
           # Also create desktop entry at AppDir root (required by appimagetool)
           cp AppDir/usr/share/applications/adati.desktop AppDir/adati.desktop
+
+      - name: Verify AppDir structure
+        run: |
+          echo "Checking AppDir contents:"
+          ls -la AppDir/ | head -10
+          echo "Checking for icon:"
+          ls -la AppDir/adati.png 2>/dev/null || echo "ERROR: adati.png not found in AppDir root!"
+          echo "Checking for desktop file:"
+          ls -la AppDir/adati.desktop 2>/dev/null || echo "ERROR: adati.desktop not found in AppDir root!"
+          if [ ! -f AppDir/adati.png ]; then
+            echo "ERROR: Icon file is required but missing!"
+            exit 1
+          fi
 
       - name: Create AppImage
         run: |
@@ -171,12 +203,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get version from tag
+      - name: Get version from tag or input
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            # Manual trigger - use input version
+            VERSION="${{ github.event.inputs.version }}"
+            TAG="v$VERSION"
+          else
+            # Tag trigger - extract from ref
+            VERSION=${GITHUB_REF#refs/tags/v}
+            TAG=${GITHUB_REF#refs/tags/}
+          fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "TAG=$TAG" >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
