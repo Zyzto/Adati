@@ -99,7 +99,7 @@ jobs:
           if [ -f linux/runner/assets/icon.png ]; then
             cp linux/runner/assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/adati.png
           fi
-          # Create desktop entry
+          # Create desktop entry in usr/share/applications
           cat > AppDir/usr/share/applications/adati.desktop << EOF
           [Desktop Entry]
           Type=Application
@@ -110,6 +110,8 @@ jobs:
           Categories=Utility;
           StartupNotify=true
           EOF
+          # Also create desktop entry at AppDir root (required by appimagetool)
+          cp AppDir/usr/share/applications/adati.desktop AppDir/adati.desktop
 
       - name: Create AppImage
         run: |
