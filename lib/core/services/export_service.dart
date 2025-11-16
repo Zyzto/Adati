@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../database/app_database.dart' as db;
-import 'logging_service.dart';
+import 'log_helper.dart';
 import 'preferences_service.dart';
 
 class ExportService {
@@ -12,6 +12,7 @@ class ExportService {
     List<db.TrackingEntry> entries,
     List<db.Streak> streaks,
   ) async {
+    Log.info('exportToCSV(habits=${habits.length}, entries=${entries.length}, streaks=${streaks.length})');
     try {
       final buffer = StringBuffer();
       
@@ -77,13 +78,13 @@ class ExportService {
         // Write to the selected path
         final file = await File(result).create(recursive: true);
         await file.writeAsString(buffer.toString());
-        LoggingService.info('Exported data to: $result');
+        Log.info('Exported data to: $result');
         return result;
       }
       
       return null;
     } catch (e) {
-      LoggingService.error('Error exporting to CSV: $e');
+      Log.error('Error exporting to CSV: $e');
       return null;
     }
   }
@@ -148,13 +149,13 @@ class ExportService {
       if (result != null) {
         final file = await File(result).create(recursive: true);
         await file.writeAsString(jsonString);
-        LoggingService.info('Exported data to: $result');
+        Log.info('Exported data to: $result');
         return result;
       }
       
       return null;
     } catch (e) {
-      LoggingService.error('Error exporting to JSON: $e');
+      Log.error('Error exporting to JSON: $e');
       return null;
     }
   }
@@ -197,13 +198,13 @@ class ExportService {
       if (result != null) {
         final file = await File(result).create(recursive: true);
         await file.writeAsString(jsonString);
-        LoggingService.info('Exported habits to: $result');
+        Log.info('Exported habits to: $result');
         return result;
       }
       
       return null;
     } catch (e) {
-      LoggingService.error('Error exporting habits: $e');
+      Log.error('Error exporting habits: $e');
       return null;
     }
   }
@@ -243,13 +244,13 @@ class ExportService {
       if (result != null) {
         final file = await File(result).create(recursive: true);
         await file.writeAsString(jsonString);
-        LoggingService.info('Exported settings to: $result');
+        Log.info('Exported settings to: $result');
         return result;
       }
       
       return null;
     } catch (e) {
-      LoggingService.error('Error exporting settings: $e');
+      Log.error('Error exporting settings: $e');
       return null;
     }
   }

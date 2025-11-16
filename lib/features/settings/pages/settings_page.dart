@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/import_service.dart';
+import '../../../../core/services/logging_service.dart';
 import '../../../../core/database/app_database.dart' as db;
 import '../providers/settings_providers.dart';
 import '../../habits/widgets/checkbox_style.dart';
@@ -46,8 +47,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _generalExpanded = PreferencesService.getSettingsGeneralExpanded();
       _appearanceExpanded = PreferencesService.getSettingsAppearanceExpanded();
       _displayExpanded = PreferencesService.getSettingsDisplayExpanded();
-      _displayPreferencesExpanded = PreferencesService.getSettingsDisplayPreferencesExpanded();
-      _notificationsExpanded = PreferencesService.getSettingsNotificationsExpanded();
+      _displayPreferencesExpanded =
+          PreferencesService.getSettingsDisplayPreferencesExpanded();
+      _notificationsExpanded =
+          PreferencesService.getSettingsNotificationsExpanded();
       _tagsExpanded = PreferencesService.getSettingsTagsExpanded();
       _dataExportExpanded = PreferencesService.getSettingsDataExportExpanded();
       _advancedExpanded = PreferencesService.getSettingsAdvancedExpanded();
@@ -67,7 +70,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         await PreferencesService.setSettingsDisplayExpanded(expanded);
         break;
       case 'displayPreferences':
-        await PreferencesService.setSettingsDisplayPreferencesExpanded(expanded);
+        await PreferencesService.setSettingsDisplayPreferencesExpanded(
+          expanded,
+        );
         break;
       case 'notifications':
         await PreferencesService.setSettingsNotificationsExpanded(expanded);
@@ -103,10 +108,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Try url_launcher first, with Linux fallback using xdg-open
     try {
       final uri = Uri.parse(urlString);
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
       return; // Success, exit early
     } on PlatformException {
       // If url_launcher fails on Linux, try xdg-open directly
@@ -122,46 +124,96 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // Other errors, fall through to error handling
     }
 
-      // If all methods failed, show error message with copy option
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('could_not_open_link'.tr(namedArgs: {'url': urlString})),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'copy'.tr(),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: urlString));
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('url_copied_to_clipboard'.tr()),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              },
-            ),
+    // If all methods failed, show error message with copy option
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'could_not_open_link'.tr(namedArgs: {'url': urlString}),
           ),
-        );
-      }
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'copy'.tr(),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: urlString));
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('url_copied_to_clipboard'.tr()),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+      );
+    }
   }
 
   void _showLibrariesDialog(BuildContext context) {
     final packages = [
-      {'name': 'flutter_riverpod', 'version': '^3.0.1', 'description': 'State management'},
-      {'name': 'go_router', 'version': '^17.0.0', 'description': 'Navigation & routing'},
-      {'name': 'easy_localization', 'version': '^3.0.7', 'description': 'Localization & i18n'},
+      {
+        'name': 'flutter_riverpod',
+        'version': '^3.0.1',
+        'description': 'State management',
+      },
+      {
+        'name': 'go_router',
+        'version': '^17.0.0',
+        'description': 'Navigation & routing',
+      },
+      {
+        'name': 'easy_localization',
+        'version': '^3.0.7',
+        'description': 'Localization & i18n',
+      },
       {'name': 'drift', 'version': '^2.18.0', 'description': 'Database ORM'},
-      {'name': 'shared_preferences', 'version': '^2.3.3', 'description': 'Local storage'},
-      {'name': 'file_picker', 'version': '^10.3.6', 'description': 'File handling'},
-      {'name': 'url_launcher', 'version': '^6.3.1', 'description': 'URL launching'},
-      {'name': 'flutter_local_notifications', 'version': '^19.5.0', 'description': 'Notifications'},
-      {'name': 'animations', 'version': '^2.1.0', 'description': 'UI animations'},
-      {'name': 'skeletonizer', 'version': '^2.1.0+1', 'description': 'Loading skeletons'},
-      {'name': 'package_info_plus', 'version': '^9.0.0', 'description': 'App information'},
-      {'name': 'intl', 'version': '^0.20.2', 'description': 'Internationalization'},
-      {'name': 'timezone', 'version': '^0.10.1', 'description': 'Timezone support'},
+      {
+        'name': 'shared_preferences',
+        'version': '^2.3.3',
+        'description': 'Local storage',
+      },
+      {
+        'name': 'file_picker',
+        'version': '^10.3.6',
+        'description': 'File handling',
+      },
+      {
+        'name': 'url_launcher',
+        'version': '^6.3.1',
+        'description': 'URL launching',
+      },
+      {
+        'name': 'flutter_local_notifications',
+        'version': '^19.5.0',
+        'description': 'Notifications',
+      },
+      {
+        'name': 'animations',
+        'version': '^2.1.0',
+        'description': 'UI animations',
+      },
+      {
+        'name': 'skeletonizer',
+        'version': '^2.1.0+1',
+        'description': 'Loading skeletons',
+      },
+      {
+        'name': 'package_info_plus',
+        'version': '^9.0.0',
+        'description': 'App information',
+      },
+      {
+        'name': 'intl',
+        'version': '^0.20.2',
+        'description': 'Internationalization',
+      },
+      {
+        'name': 'timezone',
+        'version': '^0.10.1',
+        'description': 'Timezone support',
+      },
       {'name': 'easy_logger', 'version': '^0.0.2', 'description': 'Logging'},
     ];
 
@@ -182,8 +234,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   package['name'] as String,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: Text('${package['version']} - ${package['description']}'),
-                onTap: () => _launchUrl('https://pub.dev/packages/${package['name']}'),
+                subtitle: Text(
+                  '${package['version']} - ${package['description']}',
+                ),
+                onTap: () =>
+                    _launchUrl('https://pub.dev/packages/${package['name']}'),
                 trailing: const Icon(Icons.open_in_new, size: 16),
               );
             },
@@ -211,9 +266,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               Text(
                 'license_title'.tr(),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Text(
@@ -223,9 +278,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: 16),
               Text(
                 'you_are_free_to'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('• ${'license_share'.tr()}'),
@@ -233,9 +288,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: 16),
               Text(
                 'under_following_terms'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('• ${'license_attribution'.tr()}'),
@@ -243,7 +298,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               Text('• ${'license_sharealike'.tr()}'),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => _launchUrl('https://creativecommons.org/licenses/by-nc-sa/4.0/'),
+                onPressed: () => _launchUrl(
+                  'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+                ),
                 child: Text('view_license'.tr()),
               ),
             ],
@@ -271,9 +328,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               Text(
                 'terms_and_conditions'.tr(),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Text(
@@ -283,18 +340,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: 16),
               Text(
                 '1. ${'usage_license_section'.tr()}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('usage_license_text'.tr()),
               const SizedBox(height: 16),
               Text(
                 '2. ${'usage_usage_section'.tr()}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('• ${'usage_personal'.tr()}'),
@@ -303,9 +360,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: 16),
               Text(
                 '3. ${'usage_limitations_section'.tr()}',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('• ${'usage_no_commercial'.tr()}'),
@@ -336,34 +393,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               Text(
                 'privacy_policy'.tr(),
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Text(
                 'privacy_data_storage'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('privacy_data_storage_text'.tr()),
               const SizedBox(height: 16),
               Text(
                 'privacy_data_collection'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('privacy_data_collection_text'.tr()),
               const SizedBox(height: 16),
               Text(
                 'privacy_permissions'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('• ${'privacy_notifications'.tr()}'),
@@ -372,9 +429,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: 16),
               Text(
                 'privacy_your_rights'.tr(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text('privacy_your_rights_text'.tr()),
@@ -552,18 +609,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('export_success'.tr()),
-                action: SnackBarAction(
-                  label: 'ok'.tr(),
-                  onPressed: () {},
-                ),
+                action: SnackBarAction(label: 'ok'.tr(), onPressed: () {}),
               ),
             );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('export_cancelled'.tr()),
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('export_cancelled'.tr())));
           }
         }
       } catch (e) {
@@ -590,18 +642,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('export_success'.tr()),
-                action: SnackBarAction(
-                  label: 'ok'.tr(),
-                  onPressed: () {},
-                ),
+                action: SnackBarAction(label: 'ok'.tr(), onPressed: () {}),
               ),
             );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('export_cancelled'.tr()),
-              ),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('export_cancelled'.tr())));
           }
         }
       } catch (e) {
@@ -620,33 +667,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Handle all data export (with format selection)
     if (exportType == 'all') {
       final repository = ref.read(habitRepositoryProvider);
-      
+
       // Show loading
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
-      
+
       try {
         // Fetch all data
         final habits = await repository.getAllHabits();
         final entries = <db.TrackingEntry>[];
         final streaks = <db.Streak>[];
-        
+
         for (final habit in habits) {
           final habitEntries = await repository.getEntriesByHabit(habit.id);
           entries.addAll(habitEntries);
-          
+
           final streak = await repository.getStreakByHabit(habit.id);
           if (streak != null) {
             streaks.add(streak);
           }
         }
-        
+
         if (context.mounted) {
           Navigator.pop(context); // Close loading
-          
+
           // Show format selection
           final format = await showDialog<String>(
             context: context,
@@ -677,31 +724,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
           );
-          
+
           if (format != null && context.mounted) {
             String? filePath;
             if (format == 'csv') {
-              filePath = await ExportService.exportToCSV(habits, entries, streaks);
+              filePath = await ExportService.exportToCSV(
+                habits,
+                entries,
+                streaks,
+              );
             } else {
-              filePath = await ExportService.exportToJSON(habits, entries, streaks);
+              filePath = await ExportService.exportToJSON(
+                habits,
+                entries,
+                streaks,
+              );
             }
-            
+
             if (context.mounted) {
               if (filePath != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('export_success'.tr()),
-                    action: SnackBarAction(
-                      label: 'ok'.tr(),
-                      onPressed: () {},
-                    ),
+                    action: SnackBarAction(label: 'ok'.tr(), onPressed: () {}),
                   ),
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('export_cancelled'.tr()),
-                  ),
+                  SnackBar(content: Text('export_cancelled'.tr())),
                 );
               }
             }
@@ -767,7 +817,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Show progress dialog with ValueNotifier for updates
     final progressNotifier = ValueNotifier<double>(0.0);
     final messageNotifier = ValueNotifier<String>('starting_import'.tr());
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -781,7 +831,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(value: progress > 0 ? progress : null),
+                    CircularProgressIndicator(
+                      value: progress > 0 ? progress : null,
+                    ),
                     const SizedBox(height: 16),
                     Text(message),
                   ],
@@ -798,31 +850,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     try {
       if (importType == 'all') {
-        result = await ImportService.importAllData(
-          repository,
-          filePath,
-          (message, prog) {
-            messageNotifier.value = message;
-            progressNotifier.value = prog;
-          },
-        );
+        result = await ImportService.importAllData(repository, filePath, (
+          message,
+          prog,
+        ) {
+          messageNotifier.value = message;
+          progressNotifier.value = prog;
+        });
       } else if (importType == 'habits') {
-        result = await ImportService.importHabitsOnly(
-          repository,
-          filePath,
-          (message, prog) {
-            messageNotifier.value = message;
-            progressNotifier.value = prog;
-          },
-        );
+        result = await ImportService.importHabitsOnly(repository, filePath, (
+          message,
+          prog,
+        ) {
+          messageNotifier.value = message;
+          progressNotifier.value = prog;
+        });
       } else {
-        result = await ImportService.importSettings(
-          filePath,
-          (message, prog) {
-            messageNotifier.value = message;
-            progressNotifier.value = prog;
-          },
-        );
+        result = await ImportService.importSettings(filePath, (message, prog) {
+          messageNotifier.value = message;
+          progressNotifier.value = prog;
+        });
       }
     } catch (e) {
       result = ImportResult(
@@ -852,7 +899,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(result.success ? 'import_success'.tr() : 'import_failed'.tr()),
+              child: Text(
+                result.success ? 'import_success'.tr() : 'import_failed'.tr(),
+              ),
             ),
           ],
         ),
@@ -862,21 +911,53 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (result.habitsImported > 0)
-                _buildResultRow('habits_imported'.tr(), result.habitsImported, true),
+                _buildResultRow(
+                  'habits_imported'.tr(),
+                  result.habitsImported,
+                  true,
+                ),
               if (result.habitsSkipped > 0)
-                _buildResultRow('habits_skipped'.tr(), result.habitsSkipped, false),
+                _buildResultRow(
+                  'habits_skipped'.tr(),
+                  result.habitsSkipped,
+                  false,
+                ),
               if (result.entriesImported > 0)
-                _buildResultRow('entries_imported'.tr(), result.entriesImported, true),
+                _buildResultRow(
+                  'entries_imported'.tr(),
+                  result.entriesImported,
+                  true,
+                ),
               if (result.entriesSkipped > 0)
-                _buildResultRow('entries_skipped'.tr(), result.entriesSkipped, false),
+                _buildResultRow(
+                  'entries_skipped'.tr(),
+                  result.entriesSkipped,
+                  false,
+                ),
               if (result.streaksImported > 0)
-                _buildResultRow('streaks_imported'.tr(), result.streaksImported, true),
+                _buildResultRow(
+                  'streaks_imported'.tr(),
+                  result.streaksImported,
+                  true,
+                ),
               if (result.streaksSkipped > 0)
-                _buildResultRow('streaks_skipped'.tr(), result.streaksSkipped, false),
+                _buildResultRow(
+                  'streaks_skipped'.tr(),
+                  result.streaksSkipped,
+                  false,
+                ),
               if (result.settingsImported > 0)
-                _buildResultRow('settings_imported'.tr(), result.settingsImported, true),
+                _buildResultRow(
+                  'settings_imported'.tr(),
+                  result.settingsImported,
+                  true,
+                ),
               if (result.settingsSkipped > 0)
-                _buildResultRow('settings_skipped'.tr(), result.settingsSkipped, false),
+                _buildResultRow(
+                  'settings_skipped'.tr(),
+                  result.settingsSkipped,
+                  false,
+                ),
               if (result.warnings.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -886,10 +967,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                ...result.warnings.map((w) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text('• $w', style: theme.textTheme.bodySmall),
-                )),
+                ...result.warnings.map(
+                  (w) => Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text('• $w', style: theme.textTheme.bodySmall),
+                  ),
+                ),
               ],
               if (result.errors.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -900,10 +983,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                ...result.errors.map((e) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text('• $e', style: theme.textTheme.bodySmall),
-                )),
+                ...result.errors.map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text('• $e', style: theme.textTheme.bodySmall),
+                  ),
+                ),
               ],
             ],
           ),
@@ -939,21 +1024,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Future<void> _showDatabaseStatsDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showDatabaseStatsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final repository = ref.read(habitRepositoryProvider);
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
-    
+
     try {
       final stats = await repository.getDatabaseStats();
-      
+
       if (context.mounted) {
         Navigator.pop(context); // Close loading
-        
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -1006,7 +1094,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Future<void> _showResetHabitsDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showResetHabitsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1028,16 +1119,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (confirmed == true && context.mounted) {
       final repository = ref.read(habitRepositoryProvider);
-      
+
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
-      
+
       try {
         await repository.deleteAllHabits();
-        
+
         if (context.mounted) {
           Navigator.pop(context); // Close loading
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1061,7 +1152,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  Future<void> _showResetSettingsDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showResetSettingsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1087,13 +1181,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
-      
+
       try {
         final success = await PreferencesService.resetAllSettings();
-        
+
         if (context.mounted) {
           Navigator.pop(context); // Close loading
-          
+
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -1124,7 +1218,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  Future<void> _showClearAllDataDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showClearAllDataDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1146,17 +1243,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (confirmed == true && context.mounted) {
       final repository = ref.read(habitRepositoryProvider);
-      
+
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
-      
+
       try {
         await repository.deleteAllData();
         await PreferencesService.resetAllSettings();
-        
+
         if (context.mounted) {
           Navigator.pop(context); // Close loading
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1228,16 +1325,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (confirmed == true && context.mounted) {
       final repository = ref.read(habitRepositoryProvider);
-      
+
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
-      
+
       try {
         await repository.vacuumDatabase();
-        
+
         if (context.mounted) {
           Navigator.pop(context); // Close loading
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1246,6 +1343,317 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               backgroundColor: Colors.green,
             ),
           );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _showLogsDialog(BuildContext context, WidgetRef ref) async {
+    // Get log file size
+    final logSize = await LoggingService.getLogFileSize();
+    final crashLogSize = await LoggingService.getCrashLogFileSize();
+    final totalSize = logSize + crashLogSize;
+    final sizeInMB = (totalSize / (1024 * 1024)).toStringAsFixed(2);
+
+    // Get last crash info
+    final lastCrashTime = LoggingService.getLastCrashTime();
+    final lastCrashSummary = LoggingService.getLastCrashSummary();
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('logs'.tr()),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Log file size
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: Text('log_file_size'.tr()),
+                subtitle: Text(
+                  'log_file_size_mb'.tr(namedArgs: {'size': sizeInMB}),
+                ),
+                dense: true,
+              ),
+              const Divider(),
+
+              // Last crash info
+              if (lastCrashTime != null) ...[
+                ListTile(
+                  leading: const Icon(Icons.error_outline, color: Colors.red),
+                  title: Text('last_crash'.tr()),
+                  subtitle: Text(
+                    '${DateFormat('yyyy-MM-dd HH:mm:ss').format(lastCrashTime)}\n${lastCrashSummary ?? ''}',
+                  ),
+                  dense: true,
+                ),
+                const Divider(),
+              ] else ...[
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  title: Text('no_crashes'.tr()),
+                  dense: true,
+                ),
+                const Divider(),
+              ],
+
+              // Action buttons
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.maxFinite,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _downloadLogs(context);
+                  },
+                  icon: const Icon(Icons.download),
+                  label: Text('download_logs'.tr()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.maxFinite,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _clearLogs(context);
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text('clear_logs'.tr()),
+                  style: ElevatedButton.styleFrom(foregroundColor: Colors.red),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.maxFinite,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _sendLogsToGitHub(context);
+                  },
+                  icon: const Icon(Icons.send),
+                  label: Text('send_logs_to_github'.tr()),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('close'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _downloadLogs(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final filePath = await LoggingService.exportLogs();
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+
+        if (filePath != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('logs_downloaded_successfully'.tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: ${'failed_to_export_logs'.tr()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'error'.tr()}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _clearLogs(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('clear_logs'.tr()),
+        content: Text('clear_logs_confirmation'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('clear'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      try {
+        final success = await LoggingService.clearLogs();
+
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('logs_cleared_successfully'.tr()),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${'error'.tr()}: ${'failed_to_clear_logs'.tr()}',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _sendLogsToGitHub(BuildContext context) async {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('send_logs_to_github'.tr()),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                  labelText: 'github_issue_title'.tr(),
+                  hintText: 'github_issue_title_hint'.tr(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(
+                  labelText: 'github_issue_description'.tr(),
+                  hintText: 'github_issue_description_hint'.tr(),
+                ),
+                maxLines: 4,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('send_logs'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      if (titleController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('please_enter_issue_title'.tr()),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      try {
+        final success = await LoggingService.sendLogsToGitHub(
+          titleController.text.trim(),
+          descriptionController.text.trim(),
+        );
+
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading
+
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('logs_sent_successfully'.tr()),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${'error'.tr()}: ${'failed_to_send_logs'.tr()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       } catch (e) {
         if (context.mounted) {
@@ -1326,9 +1734,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             child: isExpanded
-                ? Column(
-                    children: children,
-                  )
+                ? Column(children: children)
                 : const SizedBox.shrink(),
           ),
         ],
@@ -1814,7 +2220,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ref.invalidate(timelineDaysNotifierProvider);
   }
 
-  Future<void> _revertModalTimelineDays(BuildContext context, WidgetRef ref) async {
+  Future<void> _revertModalTimelineDays(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final notifier = ref.read(modalTimelineDaysNotifierProvider);
     await notifier.setModalTimelineDays(defaultModalTimelineDays);
     ref.invalidate(modalTimelineDaysNotifierProvider);
@@ -2565,59 +2974,59 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('appearance', expanded);
           },
           children: [
-        ListTile(
-          leading: const Icon(Icons.palette),
-          title: Text('select_theme_color'.tr()),
-          trailing: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Color(themeColor),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).dividerColor,
-                width: 1.5,
+            ListTile(
+              leading: const Icon(Icons.palette),
+              title: Text('select_theme_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(themeColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
               ),
+              onTap: () => _showThemeColorDialog(context, ref),
             ),
-          ),
-          onTap: () => _showThemeColorDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.style),
-          title: Text('card_style'.tr()),
-          subtitle: Text(
-            '${'elevation'.tr()}: ${cardElevation.toStringAsFixed(1)}, ${'border_radius'.tr()}: ${cardBorderRadius.toStringAsFixed(1)}',
-          ),
-          trailing:
-              (cardElevation != defaultCardElevation ||
-                  cardBorderRadius != defaultCardBorderRadius)
-              ? IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'reset_to_default'.tr(),
-                  onPressed: () => _revertCardStyle(context, ref),
-                )
-              : null,
-          onTap: () => _showCardStyleDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.square),
-          title: Text('day_square_size'.tr()),
-          subtitle: Text(_getDaySquareSizeName(daySquareSize)),
-          trailing: daySquareSize != defaultDaySquareSize
-              ? IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'reset_to_default'.tr(),
-                  onPressed: () => _revertDaySquareSize(context, ref),
-                )
-              : null,
-          onTap: () => _showDaySquareSizeDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.check_box),
-          title: Text('habit_checkbox_style'.tr()),
-          subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
-          onTap: () => _showHabitCheckboxStyleDialog(context, ref),
-        ),
+            ListTile(
+              leading: const Icon(Icons.style),
+              title: Text('card_style'.tr()),
+              subtitle: Text(
+                '${'elevation'.tr()}: ${cardElevation.toStringAsFixed(1)}, ${'border_radius'.tr()}: ${cardBorderRadius.toStringAsFixed(1)}',
+              ),
+              trailing:
+                  (cardElevation != defaultCardElevation ||
+                      cardBorderRadius != defaultCardBorderRadius)
+                  ? IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'reset_to_default'.tr(),
+                      onPressed: () => _revertCardStyle(context, ref),
+                    )
+                  : null,
+              onTap: () => _showCardStyleDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.square),
+              title: Text('day_square_size'.tr()),
+              subtitle: Text(_getDaySquareSizeName(daySquareSize)),
+              trailing: daySquareSize != defaultDaySquareSize
+                  ? IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'reset_to_default'.tr(),
+                      onPressed: () => _revertDaySquareSize(context, ref),
+                    )
+                  : null,
+              onTap: () => _showDaySquareSizeDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.check_box),
+              title: Text('habit_checkbox_style'.tr()),
+              subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
+              onTap: () => _showHabitCheckboxStyleDialog(context, ref),
+            ),
           ],
         ),
 
@@ -2633,44 +3042,44 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('display', expanded);
           },
           children: [
-        ListTile(
-          leading: const Icon(Icons.calendar_today),
-          title: Text('date_format'.tr()),
-          subtitle: Text(_getDateFormatName(dateFormat)),
-          onTap: () => _showDateFormatDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.view_week),
-          title: Text('first_day_of_week'.tr()),
-          subtitle: Text(_getFirstDayOfWeekName(firstDayOfWeek)),
-          onTap: () => _showFirstDayOfWeekDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.calendar_view_week),
-          title: Text('timeline_days'.tr()),
-          subtitle: Text('$timelineDays ${'days'.tr()}'),
-          trailing: timelineDays != defaultTimelineDays
-              ? IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'reset_to_default'.tr(),
-                  onPressed: () => _revertTimelineDays(context, ref),
-                )
-              : null,
-          onTap: () => _showTimelineDaysDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.view_timeline),
-          title: Text('modal_timeline_days'.tr()),
-          subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
-          trailing: modalTimelineDays != defaultModalTimelineDays
-              ? IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'reset_to_default'.tr(),
-                  onPressed: () => _revertModalTimelineDays(context, ref),
-                )
-              : null,
-          onTap: () => _showModalTimelineDaysDialog(context, ref),
-        ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text('date_format'.tr()),
+              subtitle: Text(_getDateFormatName(dateFormat)),
+              onTap: () => _showDateFormatDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.view_week),
+              title: Text('first_day_of_week'.tr()),
+              subtitle: Text(_getFirstDayOfWeekName(firstDayOfWeek)),
+              onTap: () => _showFirstDayOfWeekDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_view_week),
+              title: Text('timeline_days'.tr()),
+              subtitle: Text('$timelineDays ${'days'.tr()}'),
+              trailing: timelineDays != defaultTimelineDays
+                  ? IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'reset_to_default'.tr(),
+                      onPressed: () => _revertTimelineDays(context, ref),
+                    )
+                  : null,
+              onTap: () => _showTimelineDaysDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.view_timeline),
+              title: Text('modal_timeline_days'.tr()),
+              subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
+              trailing: modalTimelineDays != defaultModalTimelineDays
+                  ? IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'reset_to_default'.tr(),
+                      onPressed: () => _revertModalTimelineDays(context, ref),
+                    )
+                  : null,
+              onTap: () => _showModalTimelineDaysDialog(context, ref),
+            ),
           ],
         ),
 
@@ -2686,164 +3095,168 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('displayPreferences', expanded);
           },
           children: [
-        SwitchListTile(
-          secondary: const Icon(Icons.border_color),
-          title: Text('show_streak_borders'.tr()),
-          subtitle: Text('show_streak_borders_description'.tr()),
-          value: showStreakBorders,
-          onChanged: (value) async {
-            final notifier = ref.read(showStreakBordersNotifierProvider);
-            await notifier.setShowStreakBorders(value);
-            ref.invalidate(showStreakBordersNotifierProvider);
-          },
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.compress),
-          title: Text('timeline_compact_mode'.tr()),
-          subtitle: Text('timeline_compact_mode_description'.tr()),
-          value: timelineCompactMode,
-          onChanged: (value) async {
-            final notifier = ref.read(timelineCompactModeNotifierProvider);
-            await notifier.setTimelineCompactMode(value);
-            ref.invalidate(timelineCompactModeNotifierProvider);
-          },
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.highlight),
-          title: Text('show_week_month_highlights'.tr()),
-          subtitle: Text('show_week_month_highlights_description'.tr()),
-          value: showWeekMonthHighlights,
-          onChanged: (value) async {
-            final notifier = ref.read(showWeekMonthHighlightsNotifierProvider);
-            await notifier.setShowWeekMonthHighlights(value);
-            ref.invalidate(showWeekMonthHighlightsNotifierProvider);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.space_bar),
-          title: Text('timeline_spacing'.tr()),
-          subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
-          onTap: () => _showTimelineSpacingDialog(context, ref),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.numbers),
-          title: Text('show_streak_numbers'.tr()),
-          subtitle: Text('show_streak_numbers_description'.tr()),
-          value: showStreakNumbers,
-          onChanged: (value) async {
-            final notifier = ref.read(showStreakNumbersNotifierProvider);
-            await notifier.setShowStreakNumbers(value);
-            ref.invalidate(showStreakNumbersNotifierProvider);
-          },
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.description),
-          title: Text('show_descriptions'.tr()),
-          subtitle: Text('show_descriptions_description'.tr()),
-          value: showDescriptions,
-          onChanged: (value) async {
-            final notifier = ref.read(showDescriptionsNotifierProvider);
-            await notifier.setShowDescriptions(value);
-            ref.invalidate(showDescriptionsNotifierProvider);
-          },
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.view_compact),
-          title: Text('compact_cards'.tr()),
-          subtitle: Text('compact_cards_description'.tr()),
-          value: compactCards,
-          onChanged: (value) async {
-            final notifier = ref.read(compactCardsNotifierProvider);
-            await notifier.setCompactCards(value);
-            ref.invalidate(compactCardsNotifierProvider);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.image),
-          title: Text('icon_size'.tr()),
-          subtitle: Text(_getIconSizeName(iconSize)),
-          onTap: () => _showIconSizeDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.trending_up),
-          title: Text('progress_indicator_style'.tr()),
-          subtitle: Text(_getProgressIndicatorStyleName(progressIndicatorStyle)),
-          onTap: () => _showProgressIndicatorStyleDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.palette),
-          title: Text('completion_color'.tr()),
-          trailing: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Color(completionColor),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).dividerColor,
-                width: 1.5,
-              ),
+            SwitchListTile(
+              secondary: const Icon(Icons.border_color),
+              title: Text('show_streak_borders'.tr()),
+              subtitle: Text('show_streak_borders_description'.tr()),
+              value: showStreakBorders,
+              onChanged: (value) async {
+                final notifier = ref.read(showStreakBordersNotifierProvider);
+                await notifier.setShowStreakBorders(value);
+                ref.invalidate(showStreakBordersNotifierProvider);
+              },
             ),
-          ),
-          onTap: () => _showCompletionColorDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.color_lens),
-          title: Text('streak_color_scheme'.tr()),
-          subtitle: Text(_getStreakColorSchemeName(streakColorScheme)),
-          onTap: () => _showStreakColorSchemeDialog(context, ref),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.percent),
-          title: Text('show_percentage'.tr()),
-          subtitle: Text('show_percentage_description'.tr()),
-          value: showPercentage,
-          onChanged: (value) async {
-            final notifier = ref.read(showPercentageNotifierProvider);
-            await notifier.setShowPercentage(value);
-            ref.invalidate(showPercentageNotifierProvider);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.text_fields),
-          title: Text('font_size_scale'.tr()),
-          subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
-          onTap: () => _showFontSizeScaleDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.format_line_spacing),
-          title: Text('card_spacing'.tr()),
-          subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
-          onTap: () => _showCardSpacingDialog(context, ref),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.bar_chart),
-          title: Text('show_statistics_card'.tr()),
-          subtitle: Text('show_statistics_card_description'.tr()),
-          value: showStatisticsCard,
-          onChanged: (value) async {
-            final notifier = ref.read(showStatisticsCardNotifierProvider);
-            await notifier.setShowStatisticsCard(value);
-            ref.invalidate(showStatisticsCardNotifierProvider);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.home),
-          title: Text('default_view'.tr()),
-          subtitle: Text(_getDefaultViewName(defaultView)),
-          onTap: () => _showDefaultViewDialog(context, ref),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.local_fire_department),
-          title: Text('show_streak_on_card'.tr()),
-          subtitle: Text('show_streak_on_card_description'.tr()),
-          value: showStreakOnCard,
-          onChanged: (value) async {
-            final notifier = ref.read(showStreakOnCardNotifierProvider);
-            await notifier.setShowStreakOnCard(value);
-            ref.invalidate(showStreakOnCardNotifierProvider);
-          },
-        ),
+            SwitchListTile(
+              secondary: const Icon(Icons.compress),
+              title: Text('timeline_compact_mode'.tr()),
+              subtitle: Text('timeline_compact_mode_description'.tr()),
+              value: timelineCompactMode,
+              onChanged: (value) async {
+                final notifier = ref.read(timelineCompactModeNotifierProvider);
+                await notifier.setTimelineCompactMode(value);
+                ref.invalidate(timelineCompactModeNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.highlight),
+              title: Text('show_week_month_highlights'.tr()),
+              subtitle: Text('show_week_month_highlights_description'.tr()),
+              value: showWeekMonthHighlights,
+              onChanged: (value) async {
+                final notifier = ref.read(
+                  showWeekMonthHighlightsNotifierProvider,
+                );
+                await notifier.setShowWeekMonthHighlights(value);
+                ref.invalidate(showWeekMonthHighlightsNotifierProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.space_bar),
+              title: Text('timeline_spacing'.tr()),
+              subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
+              onTap: () => _showTimelineSpacingDialog(context, ref),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.numbers),
+              title: Text('show_streak_numbers'.tr()),
+              subtitle: Text('show_streak_numbers_description'.tr()),
+              value: showStreakNumbers,
+              onChanged: (value) async {
+                final notifier = ref.read(showStreakNumbersNotifierProvider);
+                await notifier.setShowStreakNumbers(value);
+                ref.invalidate(showStreakNumbersNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.description),
+              title: Text('show_descriptions'.tr()),
+              subtitle: Text('show_descriptions_description'.tr()),
+              value: showDescriptions,
+              onChanged: (value) async {
+                final notifier = ref.read(showDescriptionsNotifierProvider);
+                await notifier.setShowDescriptions(value);
+                ref.invalidate(showDescriptionsNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.view_compact),
+              title: Text('compact_cards'.tr()),
+              subtitle: Text('compact_cards_description'.tr()),
+              value: compactCards,
+              onChanged: (value) async {
+                final notifier = ref.read(compactCardsNotifierProvider);
+                await notifier.setCompactCards(value);
+                ref.invalidate(compactCardsNotifierProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: Text('icon_size'.tr()),
+              subtitle: Text(_getIconSizeName(iconSize)),
+              onTap: () => _showIconSizeDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.trending_up),
+              title: Text('progress_indicator_style'.tr()),
+              subtitle: Text(
+                _getProgressIndicatorStyleName(progressIndicatorStyle),
+              ),
+              onTap: () => _showProgressIndicatorStyleDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.palette),
+              title: Text('completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(completionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.color_lens),
+              title: Text('streak_color_scheme'.tr()),
+              subtitle: Text(_getStreakColorSchemeName(streakColorScheme)),
+              onTap: () => _showStreakColorSchemeDialog(context, ref),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.percent),
+              title: Text('show_percentage'.tr()),
+              subtitle: Text('show_percentage_description'.tr()),
+              value: showPercentage,
+              onChanged: (value) async {
+                final notifier = ref.read(showPercentageNotifierProvider);
+                await notifier.setShowPercentage(value);
+                ref.invalidate(showPercentageNotifierProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: Text('font_size_scale'.tr()),
+              subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
+              onTap: () => _showFontSizeScaleDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.format_line_spacing),
+              title: Text('card_spacing'.tr()),
+              subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
+              onTap: () => _showCardSpacingDialog(context, ref),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.bar_chart),
+              title: Text('show_statistics_card'.tr()),
+              subtitle: Text('show_statistics_card_description'.tr()),
+              value: showStatisticsCard,
+              onChanged: (value) async {
+                final notifier = ref.read(showStatisticsCardNotifierProvider);
+                await notifier.setShowStatisticsCard(value);
+                ref.invalidate(showStatisticsCardNotifierProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: Text('default_view'.tr()),
+              subtitle: Text(_getDefaultViewName(defaultView)),
+              onTap: () => _showDefaultViewDialog(context, ref),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.local_fire_department),
+              title: Text('show_streak_on_card'.tr()),
+              subtitle: Text('show_streak_on_card_description'.tr()),
+              value: showStreakOnCard,
+              onChanged: (value) async {
+                final notifier = ref.read(showStreakOnCardNotifierProvider);
+                await notifier.setShowStreakOnCard(value);
+                ref.invalidate(showStreakOnCardNotifierProvider);
+              },
+            ),
           ],
         ),
 
@@ -2859,16 +3272,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('notifications', expanded);
           },
           children: [
-        SwitchListTile(
-          secondary: const Icon(Icons.notifications),
-          title: Text('enable_notifications'.tr()),
-          subtitle: Text('receive_habit_reminders'.tr()),
-          value: notificationsEnabled,
-          onChanged: (value) async {
-            await notificationsNotifier.setNotificationsEnabled(value);
-            ref.invalidate(notificationsEnabledNotifierProvider);
-          },
-        ),
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications),
+              title: Text('enable_notifications'.tr()),
+              subtitle: Text('receive_habit_reminders'.tr()),
+              value: notificationsEnabled,
+              onChanged: (value) async {
+                await notificationsNotifier.setNotificationsEnabled(value);
+                ref.invalidate(notificationsEnabledNotifierProvider);
+              },
+            ),
           ],
         ),
         // Tags Section
@@ -2883,10 +3296,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('tags', expanded);
           },
           children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: TagManagementWidget(),
-        ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TagManagementWidget(),
+            ),
           ],
         ),
         // Data & Export Section
@@ -2901,20 +3314,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('dataExport', expanded);
           },
           children: [
-        ListTile(
-          leading: const Icon(Icons.file_download),
-          title: Text('export_data'.tr()),
-          subtitle: Text('export_habit_data_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showExportDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.file_upload),
-          title: Text('import_data'.tr()),
-          subtitle: Text('import_data_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showImportDialog(context, ref),
-        ),
+            ListTile(
+              leading: const Icon(Icons.file_download),
+              title: Text('export_data'.tr()),
+              subtitle: Text('export_habit_data_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showExportDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_upload),
+              title: Text('import_data'.tr()),
+              subtitle: Text('import_data_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showImportDialog(context, ref),
+            ),
           ],
         ),
 
@@ -2930,48 +3343,55 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('advanced', expanded);
           },
           children: [
-        ListTile(
-          leading: const Icon(Icons.info_outline),
-          title: Text('database_statistics'.tr()),
-          subtitle: Text('view_database_stats'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showDatabaseStatsDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.delete_sweep),
-          title: Text('reset_all_habits'.tr()),
-          subtitle: Text('reset_all_habits_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showResetHabitsDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.settings_backup_restore),
-          title: Text('reset_all_settings'.tr()),
-          subtitle: Text('reset_all_settings_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showResetSettingsDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.delete_forever),
-          title: Text('clear_all_data'.tr()),
-          subtitle: Text('clear_all_data_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showClearAllDataDialog(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.cleaning_services),
-          title: Text('optimize_database'.tr()),
-          subtitle: Text('optimize_database_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _optimizeDatabase(context, ref),
-        ),
-        ListTile(
-          leading: const Icon(Icons.school),
-          title: Text('return_to_onboarding'.tr()),
-          subtitle: Text('return_to_onboarding_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _returnToOnboarding(context),
-        ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text('database_statistics'.tr()),
+              subtitle: Text('view_database_stats'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showDatabaseStatsDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_sweep),
+              title: Text('reset_all_habits'.tr()),
+              subtitle: Text('reset_all_habits_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showResetHabitsDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_backup_restore),
+              title: Text('reset_all_settings'.tr()),
+              subtitle: Text('reset_all_settings_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showResetSettingsDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_forever),
+              title: Text('clear_all_data'.tr()),
+              subtitle: Text('clear_all_data_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showClearAllDataDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cleaning_services),
+              title: Text('optimize_database'.tr()),
+              subtitle: Text('optimize_database_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _optimizeDatabase(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.description),
+              title: Text('logs'.tr()),
+              subtitle: Text('logs_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showLogsDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.school),
+              title: Text('return_to_onboarding'.tr()),
+              subtitle: Text('return_to_onboarding_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _returnToOnboarding(context),
+            ),
           ],
         ),
 
@@ -2987,105 +3407,109 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('about', expanded);
           },
           children: [
-        FutureBuilder<PackageInfo?>(
-          future: _getPackageInfo(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return ListTile(
-                leading: const CircularProgressIndicator(),
-                title: Text('loading'.tr()),
-              );
-            }
-            
-            // Use fallback values if PackageInfo fails (e.g., on Linux)
-            final packageInfo = snapshot.data;
-            final appName = packageInfo?.appName ?? 'Adati';
-            final version = packageInfo?.version ?? '0.1.0';
-            final buildNumber = packageInfo?.buildNumber ?? '1';
-            final packageName = packageInfo?.packageName ?? 'adati';
-            
-            return Column(
-              children: [
-        ListTile(
-          leading: const Icon(Icons.apps),
-          title: Text('app_name'.tr()),
-          subtitle: Text(appName),
-        ),
-        ListTile(
-          leading: const Icon(Icons.tag),
-          title: Text('version'.tr()),
-          subtitle: Text('$version ($buildNumber)'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.description),
-          title: Text('description'.tr()),
-          subtitle: Text('app_description'.tr()),
-        ),
-        ListTile(
-          leading: const Icon(Icons.code),
-          title: Text('package_name'.tr()),
-          subtitle: Text(packageName),
-        ),
-        ListTile(
-          leading: const Icon(Icons.person),
-          title: Text('developer'.tr()),
-          subtitle: const Text('Zyzto'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.code_off),
-          title: Text('open_source_libraries'.tr()),
-          subtitle: Text('open_source_libraries_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showLibrariesDialog(context),
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.gavel),
-          title: Text('license'.tr()),
-          subtitle: Text('license_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showLicenseDialog(context),
-        ),
-        ListTile(
-          leading: const Icon(Icons.description_outlined),
-          title: Text('usage_rights'.tr()),
-          subtitle: Text('usage_rights_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showUsageRightsDialog(context),
-        ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip),
-          title: Text('privacy_policy'.tr()),
-          subtitle: Text('privacy_policy_description'.tr()),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => _showPrivacyPolicyDialog(context),
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.link),
-          title: Text('github'.tr()),
-          subtitle: Text('view_source_code_on_github'.tr()),
-          trailing: const Icon(Icons.open_in_new),
-          onTap: () => _launchUrl('https://github.com/Zyzto/Adati'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.bug_report),
-          title: Text('report_issue'.tr()),
-          subtitle: Text('report_issue_description'.tr()),
-          trailing: const Icon(Icons.open_in_new),
-          onTap: () => _launchUrl('https://github.com/Zyzto/Adati/issues/new'),
-        ),
-        ListTile(
-          leading: const Icon(Icons.lightbulb_outline),
-          title: Text('suggest_feature'.tr()),
-          subtitle: Text('suggest_feature_description'.tr()),
-          trailing: const Icon(Icons.open_in_new),
-          onTap: () => _launchUrl('https://github.com/Zyzto/Adati/issues/new?template=feature_request.md'),
-        ),
-              ],
-            );
-          },
-        ),
+            FutureBuilder<PackageInfo?>(
+              future: _getPackageInfo(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return ListTile(
+                    leading: const CircularProgressIndicator(),
+                    title: Text('loading'.tr()),
+                  );
+                }
+
+                // Use fallback values if PackageInfo fails (e.g., on Linux)
+                final packageInfo = snapshot.data;
+                final appName = packageInfo?.appName ?? 'Adati';
+                final version = packageInfo?.version ?? '0.1.0';
+                final buildNumber = packageInfo?.buildNumber ?? '1';
+                final packageName = packageInfo?.packageName ?? 'adati';
+
+                return Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.apps),
+                      title: Text('app_name'.tr()),
+                      subtitle: Text(appName),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.tag),
+                      title: Text('version'.tr()),
+                      subtitle: Text('$version ($buildNumber)'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.description),
+                      title: Text('description'.tr()),
+                      subtitle: Text('app_description'.tr()),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.code),
+                      title: Text('package_name'.tr()),
+                      subtitle: Text(packageName),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.person),
+                      title: Text('developer'.tr()),
+                      subtitle: const Text('Zyzto'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.code_off),
+                      title: Text('open_source_libraries'.tr()),
+                      subtitle: Text('open_source_libraries_description'.tr()),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showLibrariesDialog(context),
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.gavel),
+                      title: Text('license'.tr()),
+                      subtitle: Text('license_description'.tr()),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showLicenseDialog(context),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.description_outlined),
+                      title: Text('usage_rights'.tr()),
+                      subtitle: Text('usage_rights_description'.tr()),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showUsageRightsDialog(context),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.privacy_tip),
+                      title: Text('privacy_policy'.tr()),
+                      subtitle: Text('privacy_policy_description'.tr()),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showPrivacyPolicyDialog(context),
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.link),
+                      title: Text('github'.tr()),
+                      subtitle: Text('view_source_code_on_github'.tr()),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () => _launchUrl('https://github.com/Zyzto/Adati'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.bug_report),
+                      title: Text('report_issue'.tr()),
+                      subtitle: Text('report_issue_description'.tr()),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () => _launchUrl(
+                        'https://github.com/Zyzto/Adati/issues/new',
+                      ),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.lightbulb_outline),
+                      title: Text('suggest_feature'.tr()),
+                      subtitle: Text('suggest_feature_description'.tr()),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () => _launchUrl(
+                        'https://github.com/Zyzto/Adati/issues/new?template=feature_request.md',
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ],

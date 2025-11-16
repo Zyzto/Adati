@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/log_helper.dart';
 
 class AppTheme {
   // Helper method to get font family based on locale
@@ -18,6 +19,7 @@ class AppTheme {
     double? cardBorderRadius,
     Locale? locale,
   }) {
+    Log.debug('AppTheme.lightTheme(seedColor=$seedColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, locale=${locale?.languageCode})');
     final baseSeedColor = seedColor ?? Colors.deepPurple;
     final colorScheme = ColorScheme.fromSeed(
       seedColor: baseSeedColor,
@@ -108,6 +110,7 @@ class AppTheme {
     double? cardBorderRadius,
     Locale? locale,
   }) {
+    Log.debug('AppTheme.darkTheme(seedColor=$seedColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, locale=${locale?.languageCode})');
     final baseSeedColor = seedColor ?? Colors.deepPurple;
     final colorScheme = ColorScheme.fromSeed(
       seedColor: baseSeedColor,

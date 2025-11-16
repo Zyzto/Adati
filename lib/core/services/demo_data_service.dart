@@ -5,7 +5,7 @@ import '../database/app_database.dart' as db;
 import '../database/models/tracking_types.dart';
 import '../utils/date_utils.dart' as app_date_utils;
 import '../../features/habits/habit_repository.dart';
-import 'logging_service.dart';
+import 'log_helper.dart';
 
 class DemoDataService {
   static String get _demoTagName => 'demo'.tr();
@@ -33,10 +33,11 @@ class DemoDataService {
 
   /// Load demo data into the app
   static Future<void> loadDemoData(HabitRepository repository) async {
+    Log.info('loadDemoData() called');
     try {
       // Check if demo data already exists
       if (await hasDemoData(repository)) {
-        LoggingService.info('Demo data already exists, skipping creation');
+        Log.info('Demo data already exists, skipping creation');
         return;
       }
 
@@ -201,9 +202,9 @@ class DemoDataService {
         }
       }
 
-      LoggingService.info('Demo data loaded successfully');
+      Log.info('Demo data loaded successfully');
     } catch (e, stackTrace) {
-      LoggingService.error('Error loading demo data', e, stackTrace);
+      Log.error('Error loading demo data', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
@@ -229,9 +230,9 @@ class DemoDataService {
       // Delete demo tag
       await repository.deleteTag(demoTag.id);
 
-      LoggingService.info('Demo data deleted successfully');
+      Log.info('Demo data deleted successfully');
     } catch (e, stackTrace) {
-      LoggingService.error('Error deleting demo data', e, stackTrace);
+      Log.error('Error deleting demo data', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

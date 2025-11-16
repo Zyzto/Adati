@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import '../services/loggable_mixin.dart';
 
 /// Custom scroll behavior that enables mouse drag support on desktop platforms.
 ///
@@ -15,14 +16,21 @@ import 'package:flutter/gestures.dart';
 /// - Trackpad gestures support
 ///
 /// This is applied globally to the app via [MaterialApp.scrollBehavior].
-class AppScrollBehavior extends MaterialScrollBehavior {
+class AppScrollBehavior extends MaterialScrollBehavior with Loggable {
+  AppScrollBehavior() {
+    logDebug('AppScrollBehavior initialized');
+  }
+
   @override
-  Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.stylus,
-        PointerDeviceKind.invertedStylus,
-        PointerDeviceKind.trackpad,
-      };
+  Set<PointerDeviceKind> get dragDevices {
+    logDebug('AppScrollBehavior.dragDevices accessed');
+    return {
+      PointerDeviceKind.touch,
+      PointerDeviceKind.mouse,
+      PointerDeviceKind.stylus,
+      PointerDeviceKind.invertedStylus,
+      PointerDeviceKind.trackpad,
+    };
+  }
 }
 

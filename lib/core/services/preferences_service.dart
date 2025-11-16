@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/logging_service.dart';
+import 'log_helper.dart';
 
 class PreferencesService {
   static const String _keyThemeMode = 'theme_mode';
@@ -56,7 +56,7 @@ class PreferencesService {
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
-    LoggingService.info('PreferencesService initialized');
+    Log.info('PreferencesService initialized');
   }
 
   static SharedPreferences get prefs {
@@ -70,28 +70,46 @@ class PreferencesService {
   static Future<bool> resetAllSettings() async {
     try {
       await prefs.clear();
-      LoggingService.info('All settings reset to defaults');
+      Log.info('All settings reset to defaults');
       return true;
     } catch (e) {
-      LoggingService.error('Error resetting settings: $e');
+      Log.error('Error resetting settings: $e');
       return false;
     }
   }
 
   // Theme mode
-  static String? getThemeMode() => prefs.getString(_keyThemeMode);
-  static Future<bool> setThemeMode(String mode) =>
-      prefs.setString(_keyThemeMode, mode);
+  static String? getThemeMode() {
+    final mode = prefs.getString(_keyThemeMode);
+    Log.debug('getThemeMode() = $mode');
+    return mode;
+  }
+  static Future<bool> setThemeMode(String mode) async {
+    Log.info('setThemeMode(mode=$mode)');
+    return prefs.setString(_keyThemeMode, mode);
+  }
 
   // Language
-  static String? getLanguage() => prefs.getString(_keyLanguage);
-  static Future<bool> setLanguage(String language) =>
-      prefs.setString(_keyLanguage, language);
+  static String? getLanguage() {
+    final lang = prefs.getString(_keyLanguage);
+    Log.debug('getLanguage() = $lang');
+    return lang;
+  }
+  static Future<bool> setLanguage(String language) async {
+    Log.info('setLanguage(language=$language)');
+    return prefs.setString(_keyLanguage, language);
+  }
 
   // First launch
-  static bool isFirstLaunch() => prefs.getBool(_keyFirstLaunch) ?? true;
-  static Future<bool> setFirstLaunch(bool value) =>
-      prefs.setBool(_keyFirstLaunch, value);
+  static bool isFirstLaunch() {
+    final value = prefs.getBool(_keyFirstLaunch) ?? true;
+    Log.debug('isFirstLaunch() = $value');
+    return value;
+  }
+  static Future<bool> setFirstLaunch(bool value) async {
+    Log.info('setFirstLaunch(value=$value)');
+    return prefs.setBool(_keyFirstLaunch, value);
+  }
 
   // Timeline days
   static int getTimelineDays() => prefs.getInt(_keyTimelineDays) ?? 100;
@@ -133,10 +151,15 @@ class PreferencesService {
       prefs.setInt(_keyFirstDayOfWeek, day);
 
   // Notifications enabled
-  static bool getNotificationsEnabled() =>
-      prefs.getBool(_keyNotificationsEnabled) ?? true;
-  static Future<bool> setNotificationsEnabled(bool enabled) =>
-      prefs.setBool(_keyNotificationsEnabled, enabled);
+  static bool getNotificationsEnabled() {
+    final value = prefs.getBool(_keyNotificationsEnabled) ?? true;
+    Log.debug('getNotificationsEnabled() = $value');
+    return value;
+  }
+  static Future<bool> setNotificationsEnabled(bool enabled) async {
+    Log.info('setNotificationsEnabled(enabled=$enabled)');
+    return prefs.setBool(_keyNotificationsEnabled, enabled);
+  }
 
   // Habit checkbox style (default: square)
   static String getHabitCheckboxStyle() =>

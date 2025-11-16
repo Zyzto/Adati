@@ -477,5 +477,36 @@
   "radio": "راديو",
   "task": "مهمة",
   "verified": "متحقق",
-  "task_alt": "مهمة بديلة"
+  "task_alt": "مهمة بديلة",
+  "logs": "السجلات",
+  "logs_description": "عرض وإدارة سجلات التطبيق",
+  "log_file_size": "حجم ملف السجل",
+  "log_file_size_mb": "{size} ميجابايت",
+  "@log_file_size_mb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "download_logs": "تحميل السجلات",
+  "clear_logs": "مسح السجلات",
+  "clear_logs_confirmation": "هل أنت متأكد من أنك تريد مسح جميع السجلات؟ لا يمكن التراجع عن هذا الإجراء.",
+  "send_logs_to_github": "إرسال السجلات إلى GitHub",
+  "github_issue_title": "عنوان المشكلة",
+  "github_issue_title_hint": "أدخل عنوانًا لمشكلة GitHub",
+  "github_issue_description": "الوصف",
+  "github_issue_description_hint": "صف المشكلة أو ما كنت تفعله عندما حدثت",
+  "send_logs": "إرسال السجلات",
+  "logs_sent_successfully": "تم إرسال السجلات إلى GitHub بنجاح",
+  "logs_cleared_successfully": "تم مسح السجلات بنجاح",
+  "logs_downloaded_successfully": "تم تحميل السجلات بنجاح",
+  "last_crash": "آخر تعطل",
+  "no_crashes": "لا توجد تعطلات مسجلة",
+  "failed_to_export_logs": "فشل تصدير السجلات",
+  "failed_to_clear_logs": "فشل مسح السجلات",
+  "failed_to_send_logs": "فشل إرسال السجلات إلى GitHub",
+  "please_enter_issue_title": "يرجى إدخال عنوان المشكلة",
+  "close": "إغلاق",
+  "clear": "مسح"
 }

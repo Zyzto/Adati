@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:drift/wasm.dart';
-import '../services/logging_service.dart';
+import '../services/log_helper.dart';
 
 LazyDatabase openConnection() {
-  LoggingService.info('Using WasmDatabase (WebAssembly)');
+  Log.info('Using WasmDatabase (WebAssembly)');
   return LazyDatabase(() async {
     final result = await WasmDatabase.open(
       databaseName: 'adati',

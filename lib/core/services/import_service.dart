@@ -5,7 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import '../database/app_database.dart' as db;
-import 'logging_service.dart';
+import 'log_helper.dart';
 import 'preferences_service.dart';
 import '../../features/habits/habit_repository.dart';
 
@@ -76,7 +76,9 @@ class ImportService {
       }
       return null;
     } catch (e) {
-      LoggingService.error('Error picking import file: $e');
+      Log.error(
+        'Error picking import file: $e',
+      );
       return null;
     }
   }
@@ -86,6 +88,9 @@ class ImportService {
     String filePath,
     void Function(String message, double progress)? onProgress,
   ) async {
+    Log.info(
+      'importAllData(filePath=$filePath)',
+    );
     final result = ImportResult(success: false, errors: [], warnings: []);
 
     try {
@@ -105,7 +110,9 @@ class ImportService {
         return await _importFromJSON(repository, content, onProgress);
       }
     } catch (e) {
-      LoggingService.error('Error importing all data: $e');
+      Log.error(
+        'Error importing all data: $e',
+      );
       result.errors.add('${'import_error'.tr()}: $e');
       return result;
     }
@@ -116,6 +123,9 @@ class ImportService {
     String filePath,
     void Function(String message, double progress)? onProgress,
   ) async {
+    Log.info(
+      'importHabitsOnly(filePath=$filePath)',
+    );
     final result = ImportResult(success: false, errors: [], warnings: []);
 
     try {
@@ -174,7 +184,9 @@ class ImportService {
       result.success = true;
       return result;
     } catch (e) {
-      LoggingService.error('Error importing habits: $e');
+      Log.error(
+        'Error importing habits: $e',
+      );
       result.errors.add('${'import_error'.tr()}: $e');
       return result;
     }
@@ -253,7 +265,9 @@ class ImportService {
       result.success = true;
       return result;
     } catch (e) {
-      LoggingService.error('Error importing settings: $e');
+      Log.error(
+        'Error importing settings: $e',
+      );
       result.errors.add('${'import_error'.tr()}: $e');
       return result;
     }
@@ -317,7 +331,9 @@ class ImportService {
       result.success = true;
       return result;
     } catch (e) {
-      LoggingService.error('Error importing from JSON: $e');
+      Log.error(
+        'Error importing from JSON: $e',
+      );
       result.errors.add('${'import_error'.tr()}: $e');
       return result;
     }
@@ -360,7 +376,9 @@ class ImportService {
       result.success = true;
       return result;
     } catch (e) {
-      LoggingService.error('Error importing from CSV: $e');
+      Log.error(
+        'Error importing from CSV: $e',
+      );
       result.errors.add('${'import_error'.tr()}: $e');
       return result;
     }
@@ -606,7 +624,9 @@ class ImportService {
 
       return await repository.createHabit(companion);
     } catch (e) {
-      LoggingService.error('Error importing habit: $e');
+      Log.error(
+        'Error importing habit: $e',
+      );
       rethrow;
     }
   }
@@ -639,7 +659,9 @@ class ImportService {
 
       await repository.insertOrUpdateEntry(companion);
     } catch (e) {
-      LoggingService.error('Error importing entry: $e');
+      Log.error(
+        'Error importing entry: $e',
+      );
       rethrow;
     }
   }
@@ -675,7 +697,9 @@ class ImportService {
 
       await repository.insertOrUpdateStreak(companion);
     } catch (e) {
-      LoggingService.error('Error importing streak: $e');
+      Log.error(
+        'Error importing streak: $e',
+      );
       rethrow;
     }
   }

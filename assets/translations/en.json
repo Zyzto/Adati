@@ -477,5 +477,36 @@
   "radio": "Radio",
   "task": "Task",
   "verified": "Verified",
-  "task_alt": "Task Alt"
+  "task_alt": "Task Alt",
+  "logs": "Logs",
+  "logs_description": "View and manage application logs",
+  "log_file_size": "Log File Size",
+  "log_file_size_mb": "{size} MB",
+  "@log_file_size_mb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "download_logs": "Download Logs",
+  "clear_logs": "Clear Logs",
+  "clear_logs_confirmation": "Are you sure you want to clear all logs? This action cannot be undone.",
+  "send_logs_to_github": "Send Logs to GitHub",
+  "github_issue_title": "Issue Title",
+  "github_issue_title_hint": "Enter a title for the GitHub issue",
+  "github_issue_description": "Description",
+  "github_issue_description_hint": "Describe the issue or what you were doing when it occurred",
+  "send_logs": "Send Logs",
+  "logs_sent_successfully": "Logs sent to GitHub successfully",
+  "logs_cleared_successfully": "Logs cleared successfully",
+  "logs_downloaded_successfully": "Logs downloaded successfully",
+  "last_crash": "Last Crash",
+  "no_crashes": "No crashes recorded",
+  "failed_to_export_logs": "Failed to export logs",
+  "failed_to_clear_logs": "Failed to clear logs",
+  "failed_to_send_logs": "Failed to send logs to GitHub",
+  "please_enter_issue_title": "Please enter an issue title",
+  "close": "Close",
+  "clear": "Clear"
 }

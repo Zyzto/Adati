@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:easy_localization/easy_localization.dart';
-import '../services/logging_service.dart';
+import 'log_helper.dart';
 import 'platform_utils.dart';
 
 class NotificationService {
@@ -14,7 +14,7 @@ class NotificationService {
 
   static Future<void> init() async {
     if (kIsWeb) {
-      LoggingService.info('NotificationService skipped on web');
+      Log.info('NotificationService skipped on web');
       _initialized = true;
       return;
     }
@@ -22,7 +22,7 @@ class NotificationService {
     // Skip notifications on desktop platforms (Linux, Windows, macOS)
     // as they may not be fully supported
     if (isDesktop) {
-      LoggingService.info('NotificationService skipped on desktop platform');
+      Log.info('NotificationService skipped on desktop platform');
       _initialized = true;
       return;
     }
@@ -48,12 +48,12 @@ class NotificationService {
       );
 
       _initialized = true;
-      LoggingService.info('NotificationService initialized');
+      Log.info('NotificationService initialized');
     } catch (e, stackTrace) {
-      LoggingService.error(
+      Log.error(
         'Failed to initialize NotificationService',
-        e,
-        stackTrace,
+        error: e,
+        stackTrace: stackTrace,
       );
       _initialized = false;
       // Don't throw - allow app to continue without notifications
@@ -61,7 +61,7 @@ class NotificationService {
   }
 
   static void _onNotificationTapped(NotificationResponse response) {
-    LoggingService.info('Notification tapped: ${response.payload}');
+    Log.info('Notification tapped: ${response.payload}');
   }
 
   static Future<bool> requestPermissions() async {
@@ -84,10 +84,10 @@ class NotificationService {
 
       return android ?? ios ?? false;
     } catch (e, stackTrace) {
-      LoggingService.error(
+      Log.error(
         'Failed to request notification permissions',
-        e,
-        stackTrace,
+        error: e,
+        stackTrace: stackTrace,
       );
       return false;
     }
@@ -101,7 +101,7 @@ class NotificationService {
     String? payload,
   }) async {
     if (kIsWeb || _notifications == null || !_initialized || isDesktop) {
-      LoggingService.info('Notifications not available on this platform');
+      Log.info('Notifications not available on this platform');
       return;
     }
 
@@ -126,7 +126,7 @@ class NotificationService {
         payload: payload,
       );
     } catch (e, stackTrace) {
-      LoggingService.error('Failed to schedule notification', e, stackTrace);
+      Log.error('Failed to schedule notification', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -137,7 +137,7 @@ class NotificationService {
     try {
       await _notifications!.cancel(id);
     } catch (e, stackTrace) {
-      LoggingService.error('Failed to cancel notification', e, stackTrace);
+      Log.error('Failed to cancel notification', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -148,7 +148,7 @@ class NotificationService {
     try {
       await _notifications!.cancelAll();
     } catch (e, stackTrace) {
-      LoggingService.error('Failed to cancel all notifications', e, stackTrace);
+      Log.error('Failed to cancel all notifications', error: e, stackTrace: stackTrace);
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_scroll_behavior.dart';
 import 'core/services/preferences_service.dart';
+import 'core/services/log_helper.dart';
 import 'features/habits/pages/habit_detail_page.dart';
 import 'features/timeline/pages/day_detail_page.dart';
 import 'features/settings/pages/settings_page.dart';
@@ -14,6 +15,7 @@ import 'features/onboarding/pages/onboarding_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final isFirstLaunch = PreferencesService.isFirstLaunch();
+  Log.debug('Router initialized, first launch: $isFirstLaunch');
   return GoRouter(
     initialLocation: isFirstLaunch ? '/onboarding' : '/timeline',
     routes: [
@@ -58,6 +60,10 @@ class App extends ConsumerWidget {
     final themeColor = ref.watch(themeColorProvider);
     final cardElevation = ref.watch(cardElevationProvider);
     final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
+
+    Log.debug(
+      'App build: themeMode=$themeMode, themeColor=$themeColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius',
+    );
 
     return MaterialApp.router(
       title: 'app_name'.tr(),

@@ -7,9 +7,10 @@ import 'package:adati/core/database/daos/tracking_entry_dao.dart';
 import 'package:adati/core/database/daos/streak_dao.dart';
 import 'package:adati/core/database/models/tracking_types.dart';
 import 'package:adati/core/utils/date_utils.dart' as app_date_utils;
+import 'package:adati/core/services/loggable_mixin.dart';
 import 'package:drift/drift.dart' as drift;
 
-class HabitRepository {
+class HabitRepository with Loggable {
   final db.AppDatabase _db;
   late final HabitDao _habitDao;
   late final TagDao _tagDao;
@@ -18,6 +19,7 @@ class HabitRepository {
   late final StreakDao _streakDao;
 
   HabitRepository(this._db) {
+    logDebug('HabitRepository initialized');
     _habitDao = HabitDao(_db);
     _tagDao = TagDao(_db);
     _habitTagDao = HabitTagDao(_db);
@@ -33,25 +35,50 @@ class HabitRepository {
   Future<db.Habit?> getHabitById(int id) => _habitDao.getHabitById(id);
 
   Future<int> createHabit(db.HabitsCompanion habit, {List<int>? tagIds}) async {
-    final habitId = await _habitDao.insertHabit(habit);
-    if (tagIds != null && tagIds.isNotEmpty) {
-      await _habitTagDao.setHabitTags(habitId, tagIds);
+    logInfo('createHabit(name=${habit.name.value}, tagIds=$tagIds)');
+    try {
+      final habitId = await _habitDao.insertHabit(habit);
+      if (tagIds != null && tagIds.isNotEmpty) {
+        await _habitTagDao.setHabitTags(habitId, tagIds);
+      }
+      logInfo('createHabit() created habit with id=$habitId');
+      return habitId;
+    } catch (e, stackTrace) {
+      logError('createHabit() failed', error: e, stackTrace: stackTrace);
+      rethrow;
     }
-    return habitId;
   }
 
   Future<bool> updateHabit(
     db.HabitsCompanion habit, {
     List<int>? tagIds,
   }) async {
-    final result = await _habitDao.updateHabit(habit);
-    if (tagIds != null && habit.id.present) {
-      await _habitTagDao.setHabitTags(habit.id.value, tagIds);
+    final id = habit.id.value;
+    logInfo('updateHabit(id=$id, tagIds=$tagIds)');
+    try {
+      final result = await _habitDao.updateHabit(habit);
+      if (tagIds != null && habit.id.present) {
+        await _habitTagDao.setHabitTags(habit.id.value, tagIds);
+      }
+      logInfo('updateHabit(id=$id) updated successfully');
+      return result;
+    } catch (e, stackTrace) {
+      logError('updateHabit(id=$id) failed', error: e, stackTrace: stackTrace);
+      rethrow;
     }
-    return result;
   }
 
-  Future<int> deleteHabit(int id) => _habitDao.deleteHabit(id);
+  Future<int> deleteHabit(int id) async {
+    logInfo('deleteHabit(id=$id)');
+    try {
+      final result = await _habitDao.deleteHabit(id);
+      logInfo('deleteHabit(id=$id) deleted successfully');
+      return result;
+    } catch (e, stackTrace) {
+      logError('deleteHabit(id=$id) failed', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
 
   // Tags
   Stream<List<db.Tag>> watchAllTags() => _tagDao.watchAllTags();
@@ -100,16 +127,23 @@ class HabitRepository {
     bool completed, {
     String? notes,
   }) async {
-    final dateOnly = app_date_utils.DateUtils.getDateOnly(date);
-    final companion = db.TrackingEntriesCompanion(
-      habitId: drift.Value(habitId),
-      date: drift.Value(dateOnly),
-      completed: drift.Value(completed),
-      notes: notes == null ? const drift.Value.absent() : drift.Value(notes),
-    );
-    await _trackingEntryDao.insertOrUpdateEntry(companion);
-    await _updateStreak(habitId);
-    return true;
+    logInfo('toggleCompletion(habitId=$habitId, date=$date, completed=$completed)');
+    try {
+      final dateOnly = app_date_utils.DateUtils.getDateOnly(date);
+      final companion = db.TrackingEntriesCompanion(
+        habitId: drift.Value(habitId),
+        date: drift.Value(dateOnly),
+        completed: drift.Value(completed),
+        notes: notes == null ? const drift.Value.absent() : drift.Value(notes),
+      );
+      await _trackingEntryDao.insertOrUpdateEntry(companion);
+      await _updateStreak(habitId);
+      logInfo('toggleCompletion() completed successfully');
+      return true;
+    } catch (e, stackTrace) {
+      logError('toggleCompletion() failed', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   /// Track measurable value for a habit

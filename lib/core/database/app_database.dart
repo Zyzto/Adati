@@ -4,14 +4,16 @@ import 'models/tracking_entries.dart';
 import 'models/streaks.dart';
 import 'models/tags.dart';
 import 'models/habit_tags.dart';
-import '../services/logging_service.dart';
+import '../services/loggable_mixin.dart';
 import 'database_connection.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: [Habits, TrackingEntries, Streaks, Tags, HabitTags])
-class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(openConnection());
+class AppDatabase extends _$AppDatabase with Loggable {
+  AppDatabase() : super(openConnection()) {
+    logDebug('AppDatabase initialized');
+  }
 
   @override
   int get schemaVersion => 4;
@@ -21,10 +23,10 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
-        LoggingService.info('Database created');
+        logInfo('Database created');
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        LoggingService.info('Database upgraded from $from to $to');
+        logInfo('Database upgraded from $from to $to');
 
         if (from < 2) {
           // Migration 1->2: Make tracking_entries.id nullable
@@ -47,9 +49,7 @@ class AppDatabase extends _$AppDatabase {
             
             ALTER TABLE tracking_entries_new RENAME TO tracking_entries;
             ''');
-          LoggingService.info(
-            'Migration 1->2: Made tracking_entries.id nullable',
-          );
+          logInfo('Migration 1->2: Made tracking_entries.id nullable');
         }
 
         if (from < 3) {
@@ -92,9 +92,7 @@ class AppDatabase extends _$AppDatabase {
             -- Note: We keep categories table for now to avoid breaking existing code
             -- It can be removed in a future migration if needed
             ''');
-          LoggingService.info(
-            'Migration 2->3: Converted categories to tags system',
-          );
+          logInfo('Migration 2->3: Converted categories to tags system');
         }
 
         if (from < 4) {
@@ -190,9 +188,7 @@ class AppDatabase extends _$AppDatabase {
             DROP TABLE streaks;
             ALTER TABLE streaks_new RENAME TO streaks;
             ''');
-          LoggingService.info(
-            'Migration 3->4: Removed unused components and added new tracking system',
-          );
+          logInfo('Migration 3->4: Removed unused components and added new tracking system');
         }
       },
     );
