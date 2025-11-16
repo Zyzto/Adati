@@ -3449,7 +3449,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ListTile(
                       leading: const Icon(Icons.person),
                       title: Text('developer'.tr()),
-                      subtitle: const Text('Zyzto'),
+                      subtitle: const Text('Shenepoy'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.code_off),

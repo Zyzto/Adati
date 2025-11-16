@@ -384,7 +384,7 @@
   "privacy_permissions": "Permissions",
   "privacy_notifications": "Notifications: Used only to send habit reminders you configure",
   "privacy_file_access": "File Access: Used only for importing/exporting your data",
-  "privacy_network": "Network: Not used - this app works completely offline",
+  "privacy_network": "Network: Only used when you explicitly choose to send logs to GitHub for bug reporting. The app works completely offline otherwise.",
   "privacy_your_rights": "Your Rights",
   "privacy_your_rights_text": "You have full control over your data. You can export, import, or delete all your data at any time through the app settings.",
   "app_description": "A habit tracker app with timeline visualization.",
