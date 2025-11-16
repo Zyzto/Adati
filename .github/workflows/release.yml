@@ -126,7 +126,9 @@ jobs:
           [Desktop Entry]
           Type=Application
           Name=Adati
+          Name[ar]=عادتي
           Comment=A habit tracker app with timeline visualization
+          Comment[ar]=تطبيق لتتبع العادات مع تصور الجدول الزمني
           Exec=adati
           Icon=adati
           Categories=Utility;

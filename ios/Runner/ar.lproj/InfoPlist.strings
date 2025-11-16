@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  Runner
+
+  Created for Adati app localization.
+*/
+
+CFBundleDisplayName = "عادتي";
+CFBundleName = "عادتي";
+
