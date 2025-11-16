@@ -253,6 +253,7 @@
   "bad_habits_only": "Bad Habits Only",
   "filter_by_tags": "Filter by Tags",
   "more_tags": "More Tags",
+  "no_more_tags": "No more tags",
   "apply": "Apply",
   "export_all_data": "Export All Data",
   "export_all_data_description": "Export habits, entries, streaks, and tracking data",
