@@ -1610,24 +1610,10 @@ class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.local_fire_department,
-                    size: 11,
-                    color: colorScheme.onSecondary,
-                  ),
-                  if (widget.streakLength > 9)
-                    Text(
-                      '${widget.streakLength}',
-                      style: TextStyle(
-                        color: colorScheme.onSecondary,
-                        fontSize: 7,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
+              child: Icon(
+                Icons.local_fire_department,
+                size: 11,
+                color: colorScheme.onSecondary,
               ),
             ),
           ),
