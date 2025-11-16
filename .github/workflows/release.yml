@@ -196,6 +196,7 @@ jobs:
   create-release:
     name: Create Release
     needs: [build-android, build-linux, build-windows]
+    if: always()  # Run even if some builds fail
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -220,13 +221,66 @@ jobs:
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true  # Continue even if some artifacts are missing
 
       - name: Rename artifacts with version
         run: |
-          mv android-apk/app-release.apk adati-${{ steps.version.outputs.VERSION }}-android.apk
-          mv android-aab/app-release.aab adati-${{ steps.version.outputs.VERSION }}-android.aab
-          mv linux-appimage/adati-x86_64.AppImage adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage
-          mv windows-zip/adati-windows-x64.zip adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip
+          # Rename artifacts if they exist (some builds may have failed)
+          if [ -f android-apk/app-release.apk ]; then
+            mv android-apk/app-release.apk adati-${{ steps.version.outputs.VERSION }}-android.apk
+          fi
+          if [ -f android-aab/app-release.aab ]; then
+            mv android-aab/app-release.aab adati-${{ steps.version.outputs.VERSION }}-android.aab
+          fi
+          if [ -f linux-appimage/adati-x86_64.AppImage ]; then
+            mv linux-appimage/adati-x86_64.AppImage adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage
+          fi
+          if [ -f windows-zip/adati-windows-x64.zip ]; then
+            mv windows-zip/adati-windows-x64.zip adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip
+          fi
+          
+          # List what we have
+          echo "Available artifacts:"
+          ls -lh adati-* 2>/dev/null || echo "No artifacts found"
+
+      - name: Check which artifacts exist
+        id: artifacts
+        run: |
+          ARTIFACTS=""
+          BODY_NOTES=""
+          
+          if [ -f adati-${{ steps.version.outputs.VERSION }}-android.apk ]; then
+            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-android.apk"
+            BODY_NOTES="$BODY_NOTES\n- **Android APK**: \`adati-${{ steps.version.outputs.VERSION }}-android.apk\`"
+          fi
+          
+          if [ -f adati-${{ steps.version.outputs.VERSION }}-android.aab ]; then
+            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-android.aab"
+            BODY_NOTES="$BODY_NOTES\n- **Android App Bundle**: \`adati-${{ steps.version.outputs.VERSION }}-android.aab\`"
+          fi
+          
+          if [ -f adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage ]; then
+            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage"
+            BODY_NOTES="$BODY_NOTES\n- **Linux AppImage**: \`adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage\`"
+          fi
+          
+          if [ -f adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip ]; then
+            ARTIFACTS="$ARTIFACTS adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip"
+            BODY_NOTES="$BODY_NOTES\n- **Windows**: \`adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip\`"
+          fi
+          
+          if [ -z "$ARTIFACTS" ]; then
+            echo "ERROR: No artifacts found to upload!"
+            exit 1
+          fi
+          
+          echo "artifacts<<EOF" >> $GITHUB_OUTPUT
+          echo "$ARTIFACTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "body_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$BODY_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -237,22 +291,16 @@ jobs:
             ## Release ${{ steps.version.outputs.VERSION }}
             
             ### Downloads
-            
-            - **Android APK**: `adati-${{ steps.version.outputs.VERSION }}-android.apk`
-            - **Android App Bundle**: `adati-${{ steps.version.outputs.VERSION }}-android.aab`
-            - **Linux AppImage**: `adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage`
-            - **Windows**: `adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip`
+            ${{ steps.artifacts.outputs.body_notes }}
             
             ### Installation
             
             - **Android**: Install the APK directly or use the App Bundle for Google Play
             - **Linux**: Make the AppImage executable (`chmod +x adati-*.AppImage`) and run it
             - **Windows**: Extract the ZIP and run `adati.exe`
-          files: |
-            adati-${{ steps.version.outputs.VERSION }}-android.apk
-            adati-${{ steps.version.outputs.VERSION }}-android.aab
-            adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage
-            adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip
+            
+            **Note**: Some platforms may have failed to build. Only successfully built artifacts are included.
+          files: ${{ steps.artifacts.outputs.artifacts }}
           draft: false
           prerelease: false
 
