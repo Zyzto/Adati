@@ -308,6 +308,7 @@ class HabitSortOrderNotifier {
 }
 
 final habitSortOrderNotifierProvider = Provider<HabitSortOrderNotifier>((ref) {
+  ref.keepAlive(); // Keep provider alive across app restarts
   return HabitSortOrderNotifier();
 });
 

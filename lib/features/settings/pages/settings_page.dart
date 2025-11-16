@@ -1,9 +1,12 @@
+import 'dart:io' show Platform, Process;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:animations/animations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/import_service.dart';
@@ -82,6 +85,66 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         await PreferencesService.setSettingsAboutExpanded(expanded);
         break;
     }
+  }
+
+  /// Get package info with error handling for Linux compatibility
+  Future<PackageInfo?> _getPackageInfo() async {
+    try {
+      return await PackageInfo.fromPlatform();
+    } catch (e) {
+      // Fallback for Linux when /proc/self/exe is not available
+      // Return null and use fallback values in the UI
+      return null;
+    }
+  }
+
+  /// Launch a URL in the default browser
+  Future<void> _launchUrl(String urlString) async {
+    // Try url_launcher first, with Linux fallback using xdg-open
+    try {
+      final uri = Uri.parse(urlString);
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      return; // Success, exit early
+    } on PlatformException {
+      // If url_launcher fails on Linux, try xdg-open directly
+      if (Platform.isLinux) {
+        try {
+          await Process.run('xdg-open', [urlString]);
+          return; // Success with xdg-open
+        } catch (e) {
+          // xdg-open also failed, fall through to error handling
+        }
+      }
+    } catch (e) {
+      // Other errors, fall through to error handling
+    }
+
+      // If all methods failed, show error message with copy option
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('could_not_open_link'.tr(namedArgs: {'url': urlString})),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'copy'.tr(),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: urlString));
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('url_copied_to_clipboard'.tr()),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        );
+      }
   }
 
   // Helper method to build radio list item
@@ -2680,27 +2743,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('about', expanded);
           },
           children: [
-        FutureBuilder<PackageInfo>(
-          future: PackageInfo.fromPlatform(),
+        FutureBuilder<PackageInfo?>(
+          future: _getPackageInfo(),
           builder: (context, snapshot) {
-            if (!snapshot.hasData) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const ListTile(
                 leading: CircularProgressIndicator(),
                 title: Text('Loading...'),
               );
             }
-            final packageInfo = snapshot.data!;
+            
+            // Use fallback values if PackageInfo fails (e.g., on Linux)
+            final packageInfo = snapshot.data;
+            final appName = packageInfo?.appName ?? 'Adati';
+            final version = packageInfo?.version ?? '0.1.0';
+            final buildNumber = packageInfo?.buildNumber ?? '1';
+            final packageName = packageInfo?.packageName ?? 'adati';
+            
             return Column(
               children: [
         ListTile(
           leading: const Icon(Icons.apps),
           title: Text('app_name'.tr()),
-          subtitle: Text(packageInfo.appName),
+          subtitle: Text(appName),
         ),
         ListTile(
           leading: const Icon(Icons.tag),
           title: Text('version'.tr()),
-          subtitle: Text('${packageInfo.version} (${packageInfo.buildNumber})'),
+          subtitle: Text('$version ($buildNumber)'),
         ),
         ListTile(
           leading: const Icon(Icons.description),
@@ -2710,7 +2780,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.code),
           title: Text('package_name'.tr()),
-          subtitle: Text(packageInfo.packageName),
+          subtitle: Text(packageName),
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.link),
+          title: Text('github'.tr()),
+          subtitle: Text('view_source_code_on_github'.tr()),
+          trailing: const Icon(Icons.open_in_new),
+          onTap: () => _launchUrl('https://github.com/Zyzto/Adati'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.bug_report),
+          title: Text('report_issue'.tr()),
+          subtitle: Text('report_issue_description'.tr()),
+          trailing: const Icon(Icons.open_in_new),
+          onTap: () => _launchUrl('https://github.com/Zyzto/Adati/issues/new'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.lightbulb_outline),
+          title: Text('suggest_feature'.tr()),
+          subtitle: Text('suggest_feature_description'.tr()),
+          trailing: const Icon(Icons.open_in_new),
+          onTap: () => _launchUrl('https://github.com/Zyzto/Adati/issues/new?template=feature_request.md'),
         ),
               ],
             );

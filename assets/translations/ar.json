@@ -369,5 +369,21 @@
   "return_to_onboarding": "العودة إلى الشاشة التمهيدية",
   "return_to_onboarding_description": "إظهار شاشة التعريف بالتطبيق مرة أخرى",
   "return_to_onboarding_confirmation": "سيأخذك هذا إلى شاشة التعريف بالتطبيق. يمكنك استكشاف ميزات التطبيق واختيار تجربة البيانات التجريبية أو استيراد البيانات أو البدء من جديد.",
-  "continue": "متابعة"
+  "continue": "متابعة",
+  "github": "GitHub",
+  "view_source_code_on_github": "عرض الكود المصدري على GitHub",
+  "report_issue": "الإبلاغ عن مشكلة",
+  "report_issue_description": "الإبلاغ عن خطأ أو مشكلة",
+  "suggest_feature": "اقتراح ميزة",
+  "suggest_feature_description": "شارك أفكارك واقتراحاتك",
+  "could_not_open_link": "تعذر فتح الرابط. يرجى زيارة: {url}",
+  "@could_not_open_link": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "url_copied_to_clipboard": "تم نسخ الرابط إلى الحافظة",
+  "copy": "نسخ"
 }

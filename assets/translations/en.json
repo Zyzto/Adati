@@ -369,5 +369,21 @@
   "return_to_onboarding": "Return to Onboarding",
   "return_to_onboarding_description": "Show the onboarding screen again",
   "return_to_onboarding_confirmation": "This will take you back to the onboarding screen. You can explore the app features and choose to try demo data, import data, or start fresh.",
-  "continue": "Continue"
+  "continue": "Continue",
+  "github": "GitHub",
+  "view_source_code_on_github": "View source code on GitHub",
+  "report_issue": "Report Issue",
+  "report_issue_description": "Report a bug or problem",
+  "suggest_feature": "Suggest Feature",
+  "suggest_feature_description": "Share your ideas and suggestions",
+  "could_not_open_link": "Could not open link. Please visit: {url}",
+  "@could_not_open_link": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "url_copied_to_clipboard": "URL copied to clipboard",
+  "copy": "Copy"
 }
