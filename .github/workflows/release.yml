@@ -32,10 +32,10 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Build App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -76,13 +76,15 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Linux
-        run: flutter build linux --release
+        run: flutter build linux --release --no-tree-shake-icons
 
       - name: Install AppImageTool
         run: |
           wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
-          sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
+          # Extract AppImage to avoid FUSE requirement
+          ./appimagetool-x86_64.AppImage --appimage-extract
+          sudo mv squashfs-root /opt/appimagetool
 
       - name: Create AppDir structure
         run: |
@@ -111,7 +113,7 @@ jobs:
 
       - name: Create AppImage
         run: |
-          ARCH=x86_64 appimagetool AppDir adati-x86_64.AppImage
+          ARCH=x86_64 /opt/appimagetool/AppRun AppDir adati-x86_64.AppImage
 
       - name: Upload AppImage
         uses: actions/upload-artifact@v4
@@ -131,7 +133,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
+          cache: false
 
       - name: Get dependencies
         run: flutter pub get
@@ -140,7 +142,7 @@ jobs:
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Windows
-        run: flutter build windows --release
+        run: flutter build windows --release --no-tree-shake-icons
 
       - name: Create ZIP archive
         shell: powershell
