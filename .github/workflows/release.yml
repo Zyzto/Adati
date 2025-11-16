@@ -97,7 +97,10 @@ jobs:
           cp -r build/linux/x64/release/bundle/* AppDir/usr/bin/
           # Copy icon if it exists
           if [ -f linux/runner/assets/icon.png ]; then
+            # Copy to standard location
             cp linux/runner/assets/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/adati.png
+            # Also copy to AppDir root (required by appimagetool)
+            cp linux/runner/assets/icon.png AppDir/adati.png
           fi
           # Create desktop entry in usr/share/applications
           cat > AppDir/usr/share/applications/adati.desktop << EOF
