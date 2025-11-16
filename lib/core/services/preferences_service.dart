@@ -22,7 +22,8 @@ class PreferencesService {
   // Display Preferences
   static const String _keyShowStreakBorders = 'show_streak_borders';
   static const String _keyTimelineCompactMode = 'timeline_compact_mode';
-  static const String _keyShowWeekMonthHighlights = 'show_week_month_highlights';
+  static const String _keyShowWeekMonthHighlights =
+      'show_week_month_highlights';
   static const String _keyTimelineSpacing = 'timeline_spacing';
   static const String _keyShowStreakNumbers = 'show_streak_numbers';
   static const String _keyShowDescriptions = 'show_descriptions';
@@ -30,18 +31,26 @@ class PreferencesService {
   static const String _keyIconSize = 'icon_size';
   static const String _keyProgressIndicatorStyle = 'progress_indicator_style';
   static const String _keyCalendarCompletionColor = 'calendar_completion_color';
-  static const String _keyHabitCardCompletionColor = 'habit_card_completion_color';
-  static const String _keyCalendarTimelineCompletionColor = 'calendar_timeline_completion_color';
-  static const String _keyMainTimelineCompletionColor = 'main_timeline_completion_color';
-  static const String _keyCalendarBadHabitCompletionColor = 'calendar_bad_habit_completion_color';
-  static const String _keyHabitCardBadHabitCompletionColor = 'habit_card_bad_habit_completion_color';
-  static const String _keyCalendarTimelineBadHabitCompletionColor = 'calendar_timeline_bad_habit_completion_color';
-  static const String _keyMainTimelineBadHabitCompletionColor = 'main_timeline_bad_habit_completion_color';
+  static const String _keyHabitCardCompletionColor =
+      'habit_card_completion_color';
+  static const String _keyCalendarTimelineCompletionColor =
+      'calendar_timeline_completion_color';
+  static const String _keyMainTimelineCompletionColor =
+      'main_timeline_completion_color';
+  static const String _keyCalendarBadHabitCompletionColor =
+      'calendar_bad_habit_completion_color';
+  static const String _keyHabitCardBadHabitCompletionColor =
+      'habit_card_bad_habit_completion_color';
+  static const String _keyCalendarTimelineBadHabitCompletionColor =
+      'calendar_timeline_bad_habit_completion_color';
+  static const String _keyMainTimelineBadHabitCompletionColor =
+      'main_timeline_bad_habit_completion_color';
   static const String _keyStreakColorScheme = 'streak_color_scheme';
   static const String _keyShowPercentage = 'show_percentage';
   static const String _keyFontSizeScale = 'font_size_scale';
   static const String _keyCardSpacing = 'card_spacing';
   static const String _keyShowStatisticsCard = 'show_statistics_card';
+  static const String _keyShowMainTimeline = 'show_main_timeline';
   static const String _keyDefaultView = 'default_view';
   static const String _keyShowStreakOnCard = 'show_streak_on_card';
   static const String _keyBadHabitLogicMode = 'bad_habit_logic_mode';
@@ -51,14 +60,20 @@ class PreferencesService {
   static const String _keyHabitFilterByTags = 'habit_filter_by_tags';
   // Settings page section expansion states
   static const String _keySettingsGeneralExpanded = 'settings_general_expanded';
-  static const String _keySettingsAppearanceExpanded = 'settings_appearance_expanded';
+  static const String _keySettingsAppearanceExpanded =
+      'settings_appearance_expanded';
   static const String _keySettingsDisplayExpanded = 'settings_display_expanded';
-  static const String _keySettingsDisplayPreferencesExpanded = 'settings_display_preferences_expanded';
-  static const String _keySettingsDisplayLayoutExpanded = 'settings_display_layout_expanded';
-  static const String _keySettingsNotificationsExpanded = 'settings_notifications_expanded';
+  static const String _keySettingsDisplayPreferencesExpanded =
+      'settings_display_preferences_expanded';
+  static const String _keySettingsDisplayLayoutExpanded =
+      'settings_display_layout_expanded';
+  static const String _keySettingsNotificationsExpanded =
+      'settings_notifications_expanded';
   static const String _keySettingsTagsExpanded = 'settings_tags_expanded';
-  static const String _keySettingsDataExportExpanded = 'settings_data_export_expanded';
-  static const String _keySettingsAdvancedExpanded = 'settings_advanced_expanded';
+  static const String _keySettingsDataExportExpanded =
+      'settings_data_export_expanded';
+  static const String _keySettingsAdvancedExpanded =
+      'settings_advanced_expanded';
   static const String _keySettingsAboutExpanded = 'settings_about_expanded';
 
   static SharedPreferences? _prefs;
@@ -93,6 +108,7 @@ class PreferencesService {
     Log.debug('getThemeMode() = $mode');
     return mode;
   }
+
   static Future<bool> setThemeMode(String mode) async {
     Log.info('setThemeMode(mode=$mode)');
     return prefs.setString(_keyThemeMode, mode);
@@ -104,6 +120,7 @@ class PreferencesService {
     Log.debug('getLanguage() = $lang');
     return lang;
   }
+
   static Future<bool> setLanguage(String language) async {
     Log.info('setLanguage(language=$language)');
     return prefs.setString(_keyLanguage, language);
@@ -115,6 +132,7 @@ class PreferencesService {
     Log.debug('isFirstLaunch() = $value');
     return value;
   }
+
   static Future<bool> setFirstLaunch(bool value) async {
     Log.info('setFirstLaunch(value=$value)');
     return prefs.setBool(_keyFirstLaunch, value);
@@ -147,6 +165,7 @@ class PreferencesService {
     final value = prefs.getString(_keyDaySquareSize);
     return (value == null || value.isEmpty) ? 'large' : value;
   }
+
   static Future<bool> setDaySquareSize(String size) =>
       prefs.setString(_keyDaySquareSize, size);
 
@@ -155,6 +174,7 @@ class PreferencesService {
     final value = prefs.getString(_keyDateFormat);
     return (value == null || value.isEmpty) ? 'yyyy-MM-dd' : value;
   }
+
   static Future<bool> setDateFormat(String format) =>
       prefs.setString(_keyDateFormat, format);
 
@@ -169,6 +189,7 @@ class PreferencesService {
     Log.debug('getNotificationsEnabled() = $value');
     return value;
   }
+
   static Future<bool> setNotificationsEnabled(bool enabled) async {
     Log.info('setNotificationsEnabled(enabled=$enabled)');
     return prefs.setBool(_keyNotificationsEnabled, enabled);
@@ -179,11 +200,13 @@ class PreferencesService {
     final value = prefs.getString(_keyHabitCheckboxStyle);
     return (value == null || value.isEmpty) ? 'square' : value;
   }
+
   static Future<bool> setHabitCheckboxStyle(String style) =>
       prefs.setString(_keyHabitCheckboxStyle, style);
 
   // Modal timeline days (default: 200)
-  static int getModalTimelineDays() => prefs.getInt(_keyModalTimelineDays) ?? 200;
+  static int getModalTimelineDays() =>
+      prefs.getInt(_keyModalTimelineDays) ?? 200;
   static Future<bool> setModalTimelineDays(int days) =>
       prefs.setInt(_keyModalTimelineDays, days);
 
@@ -192,6 +215,7 @@ class PreferencesService {
     final value = prefs.getString(_keyHabitSortOrder);
     return (value == null || value.isEmpty) ? 'name' : value;
   }
+
   static Future<bool> setHabitSortOrder(String order) =>
       prefs.setString(_keyHabitSortOrder, order);
 
@@ -254,8 +278,7 @@ class PreferencesService {
   static Future<bool> setShowDescriptions(bool value) =>
       prefs.setBool(_keyShowDescriptions, value);
 
-  static bool getCompactCards() =>
-      prefs.getBool(_keyCompactCards) ?? false;
+  static bool getCompactCards() => prefs.getBool(_keyCompactCards) ?? false;
   static Future<bool> setCompactCards(bool value) =>
       prefs.setBool(_keyCompactCards, value);
 
@@ -263,6 +286,7 @@ class PreferencesService {
     final value = prefs.getString(_keyIconSize);
     return (value == null || value.isEmpty) ? 'medium' : value;
   }
+
   static Future<bool> setIconSize(String size) =>
       prefs.setString(_keyIconSize, size);
 
@@ -270,6 +294,7 @@ class PreferencesService {
     final value = prefs.getString(_keyProgressIndicatorStyle);
     return (value == null || value.isEmpty) ? 'circular' : value;
   }
+
   static Future<bool> setProgressIndicatorStyle(String style) =>
       prefs.setString(_keyProgressIndicatorStyle, style);
 
@@ -277,15 +302,18 @@ class PreferencesService {
   static int getCalendarCompletionColor() {
     // Migrate from old key if it exists
     final oldKey = 'completion_color';
-    if (prefs.containsKey(oldKey) && !prefs.containsKey(_keyCalendarCompletionColor)) {
+    if (prefs.containsKey(oldKey) &&
+        !prefs.containsKey(_keyCalendarCompletionColor)) {
       final oldValue = prefs.getInt(oldKey);
       if (oldValue != null) {
         setCalendarCompletionColor(oldValue);
         prefs.remove(oldKey); // Remove old key after migration
       }
     }
-    return prefs.getInt(_keyCalendarCompletionColor) ?? 0xFF4CAF50; // green default
+    return prefs.getInt(_keyCalendarCompletionColor) ??
+        0xFF4CAF50; // green default
   }
+
   static Future<bool> setCalendarCompletionColor(int color) =>
       prefs.setInt(_keyCalendarCompletionColor, color);
 
@@ -297,34 +325,40 @@ class PreferencesService {
 
   // Calendar timeline completion color (for timeline inside calendar modal)
   static int getCalendarTimelineCompletionColor() =>
-      prefs.getInt(_keyCalendarTimelineCompletionColor) ?? 0xFF4CAF50; // green default
+      prefs.getInt(_keyCalendarTimelineCompletionColor) ??
+      0xFF4CAF50; // green default
   static Future<bool> setCalendarTimelineCompletionColor(int color) =>
       prefs.setInt(_keyCalendarTimelineCompletionColor, color);
 
   // Main timeline completion color (for main timeline page)
   static int getMainTimelineCompletionColor() =>
-      prefs.getInt(_keyMainTimelineCompletionColor) ?? 0xFF4CAF50; // green default
+      prefs.getInt(_keyMainTimelineCompletionColor) ??
+      0xFF4CAF50; // green default
   static Future<bool> setMainTimelineCompletionColor(int color) =>
       prefs.setInt(_keyMainTimelineCompletionColor, color);
 
   // Bad habit completion colors (default: red)
   static int getCalendarBadHabitCompletionColor() =>
-      prefs.getInt(_keyCalendarBadHabitCompletionColor) ?? 0xFFF44336; // red default
+      prefs.getInt(_keyCalendarBadHabitCompletionColor) ??
+      0xFFF44336; // red default
   static Future<bool> setCalendarBadHabitCompletionColor(int color) =>
       prefs.setInt(_keyCalendarBadHabitCompletionColor, color);
 
   static int getHabitCardBadHabitCompletionColor() =>
-      prefs.getInt(_keyHabitCardBadHabitCompletionColor) ?? 0xFFF44336; // red default
+      prefs.getInt(_keyHabitCardBadHabitCompletionColor) ??
+      0xFFF44336; // red default
   static Future<bool> setHabitCardBadHabitCompletionColor(int color) =>
       prefs.setInt(_keyHabitCardBadHabitCompletionColor, color);
 
   static int getCalendarTimelineBadHabitCompletionColor() =>
-      prefs.getInt(_keyCalendarTimelineBadHabitCompletionColor) ?? 0xFFF44336; // red default
+      prefs.getInt(_keyCalendarTimelineBadHabitCompletionColor) ??
+      0xFFF44336; // red default
   static Future<bool> setCalendarTimelineBadHabitCompletionColor(int color) =>
       prefs.setInt(_keyCalendarTimelineBadHabitCompletionColor, color);
 
   static int getMainTimelineBadHabitCompletionColor() =>
-      prefs.getInt(_keyMainTimelineBadHabitCompletionColor) ?? 0xFFF44336; // red default
+      prefs.getInt(_keyMainTimelineBadHabitCompletionColor) ??
+      0xFFF44336; // red default
   static Future<bool> setMainTimelineBadHabitCompletionColor(int color) =>
       prefs.setInt(_keyMainTimelineBadHabitCompletionColor, color);
 
@@ -332,11 +366,11 @@ class PreferencesService {
     final value = prefs.getString(_keyStreakColorScheme);
     return (value == null || value.isEmpty) ? 'default' : value;
   }
+
   static Future<bool> setStreakColorScheme(String scheme) =>
       prefs.setString(_keyStreakColorScheme, scheme);
 
-  static bool getShowPercentage() =>
-      prefs.getBool(_keyShowPercentage) ?? true;
+  static bool getShowPercentage() => prefs.getBool(_keyShowPercentage) ?? true;
   static Future<bool> setShowPercentage(bool value) =>
       prefs.setBool(_keyShowPercentage, value);
 
@@ -344,11 +378,11 @@ class PreferencesService {
     final value = prefs.getString(_keyFontSizeScale);
     return (value == null || value.isEmpty) ? 'normal' : value;
   }
+
   static Future<bool> setFontSizeScale(String scale) =>
       prefs.setString(_keyFontSizeScale, scale);
 
-  static double getCardSpacing() =>
-      prefs.getDouble(_keyCardSpacing) ?? 12.0;
+  static double getCardSpacing() => prefs.getDouble(_keyCardSpacing) ?? 12.0;
   static Future<bool> setCardSpacing(double value) =>
       prefs.setDouble(_keyCardSpacing, value);
 
@@ -357,10 +391,16 @@ class PreferencesService {
   static Future<bool> setShowStatisticsCard(bool value) =>
       prefs.setBool(_keyShowStatisticsCard, value);
 
+  static bool getShowMainTimeline() =>
+      prefs.getBool(_keyShowMainTimeline) ?? true;
+  static Future<bool> setShowMainTimeline(bool value) =>
+      prefs.setBool(_keyShowMainTimeline, value);
+
   static String getDefaultView() {
     final value = prefs.getString(_keyDefaultView);
     return (value == null || value.isEmpty) ? 'habits' : value;
   }
+
   static Future<bool> setDefaultView(String view) =>
       prefs.setString(_keyDefaultView, view);
 
@@ -368,6 +408,7 @@ class PreferencesService {
     final value = prefs.getString(_keyBadHabitLogicMode);
     return (value == null || value.isEmpty) ? 'negative' : value;
   }
+
   static Future<bool> setBadHabitLogicMode(String mode) =>
       prefs.setString(_keyBadHabitLogicMode, mode);
 
@@ -385,7 +426,8 @@ class PreferencesService {
     return prefs.setString(_keyHabitGroupBy, value);
   }
 
-  static String? getHabitFilterByType() => prefs.getString(_keyHabitFilterByType);
+  static String? getHabitFilterByType() =>
+      prefs.getString(_keyHabitFilterByType);
   static Future<bool> setHabitFilterByType(String? value) {
     if (value == null || value.isEmpty) {
       return prefs.remove(_keyHabitFilterByType);
@@ -393,7 +435,8 @@ class PreferencesService {
     return prefs.setString(_keyHabitFilterByType, value);
   }
 
-  static String? getHabitFilterByTags() => prefs.getString(_keyHabitFilterByTags);
+  static String? getHabitFilterByTags() =>
+      prefs.getString(_keyHabitFilterByTags);
   static Future<bool> setHabitFilterByTags(String? value) {
     if (value == null || value.isEmpty) {
       return prefs.remove(_keyHabitFilterByTags);

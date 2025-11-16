@@ -3049,6 +3049,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final fontSizeScale = ref.watch(fontSizeScaleProvider);
     final cardSpacing = ref.watch(cardSpacingProvider);
     final showStatisticsCard = ref.watch(showStatisticsCardProvider);
+    final showMainTimeline = ref.watch(showMainTimelineProvider);
     final defaultView = ref.watch(defaultViewProvider);
     final showStreakOnCard = ref.watch(showStreakOnCardProvider);
     final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
@@ -3548,6 +3549,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 final notifier = ref.read(showStatisticsCardNotifierProvider);
                 await notifier.setShowStatisticsCard(value);
                 ref.invalidate(showStatisticsCardNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.calendar_view_month),
+              title: Text('show_main_timeline'.tr()),
+              subtitle: Text('show_main_timeline_description'.tr()),
+              value: showMainTimeline,
+              onChanged: (value) async {
+                final notifier = ref.read(showMainTimelineNotifierProvider);
+                await notifier.setShowMainTimeline(value);
+                ref.invalidate(showMainTimelineNotifierProvider);
               },
             ),
             ListTile(

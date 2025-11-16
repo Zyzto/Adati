@@ -9,6 +9,7 @@ import '../widgets/timeline_stats.dart';
 import '../../habits/widgets/habits_section.dart';
 import '../../habits/providers/habit_providers.dart';
 import '../../habits/widgets/habit_form_modal.dart';
+import '../../settings/providers/settings_providers.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/services/demo_data_service.dart';
 import '../../../core/services/preferences_service.dart';
@@ -251,12 +252,19 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
           }
 
           // Show normal layout when habits exist
+          final showStatisticsCard = ref.watch(showStatisticsCardProvider);
+          final showMainTimeline = ref.watch(showMainTimelineProvider);
+          
           return Stack(
             children: [
-              const SingleChildScrollView(
+              SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [TimelineStats(), CalendarGrid(), HabitsSection()],
+                  children: [
+                    if (showStatisticsCard) const TimelineStats(),
+                    if (showMainTimeline) const CalendarGrid(),
+                    const HabitsSection(),
+                  ],
                 ),
               ),
               // Performance indicator overlay

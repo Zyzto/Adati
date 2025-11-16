@@ -820,6 +820,28 @@ final showStatisticsCardProvider = Provider<bool>((ref) {
   return ref.watch(showStatisticsCardNotifierProvider).value;
 });
 
+// Show Main Timeline
+class ShowMainTimelineNotifier {
+  bool _value;
+
+  ShowMainTimelineNotifier() : _value = PreferencesService.getShowMainTimeline();
+
+  bool get value => _value;
+
+  Future<void> setShowMainTimeline(bool value) async {
+    _value = value;
+    await PreferencesService.setShowMainTimeline(value);
+  }
+}
+
+final showMainTimelineNotifierProvider = Provider<ShowMainTimelineNotifier>((ref) {
+  return ShowMainTimelineNotifier();
+});
+
+final showMainTimelineProvider = Provider<bool>((ref) {
+  return ref.watch(showMainTimelineNotifierProvider).value;
+});
+
 // Default View
 class DefaultViewNotifier {
   String _view;
