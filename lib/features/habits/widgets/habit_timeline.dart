@@ -93,17 +93,25 @@ class HabitTimeline extends ConsumerWidget {
             final showWeekMonthHighlights = ref.watch(showWeekMonthHighlightsProvider);
             final spacing = compact ? 4.0 : timelineSpacing;
             
+            final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
             final timelineWidget = Wrap(
               spacing: spacing,
               runSpacing: spacing,
               children: days.map((day) {
                 final entryCompleted = entriesMap[day] ?? false;
-                // For display: show completed for good habits, show "not done" for bad habits
-                final displayCompleted = isGoodHabit ? entryCompleted : !entryCompleted;
+                // For display: respect bad habit logic mode setting
+                final displayCompleted = isGoodHabit
+                    ? entryCompleted
+                    : (badHabitLogicMode == 'negative'
+                        ? !entryCompleted // Negative mode: mark = incomplete
+                        : !entryCompleted); // Positive mode: not mark = complete (same logic)
                 final streakLength = streakMap[day] ?? 0;
                 final isCurrentWeek = showWeekMonthHighlights && _isInCurrentWeek(day);
                 final isCurrentMonth = showWeekMonthHighlights && _isInCurrentMonth(day);
                 
+                final completionColor = isGoodHabit
+                    ? ref.watch(calendarTimelineCompletionColorProvider)
+                    : ref.watch(calendarTimelineBadHabitCompletionColorProvider);
                 return DaySquare(
                   date: day,
                   completed: displayCompleted,
@@ -112,6 +120,7 @@ class HabitTimeline extends ConsumerWidget {
                   streakLength: streakLength,
                   highlightWeek: isCurrentWeek,
                   highlightMonth: isCurrentMonth,
+                  completionColor: completionColor,
                 );
               }).toList(),
             );

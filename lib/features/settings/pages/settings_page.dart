@@ -28,10 +28,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Expansion state for each section
   bool _generalExpanded = true;
   bool _appearanceExpanded = false;
-  bool _displayExpanded = false;
-  bool _displayPreferencesExpanded = false;
+  bool _displayLayoutExpanded = false;
   bool _notificationsExpanded = false;
-  bool _tagsExpanded = false;
   bool _dataExportExpanded = false;
   bool _advancedExpanded = false;
   bool _aboutExpanded = false;
@@ -46,12 +44,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() {
       _generalExpanded = PreferencesService.getSettingsGeneralExpanded();
       _appearanceExpanded = PreferencesService.getSettingsAppearanceExpanded();
-      _displayExpanded = PreferencesService.getSettingsDisplayExpanded();
-      _displayPreferencesExpanded =
+      // Migrate from old display/displayPreferences keys to new displayLayout key
+      final oldDisplayExpanded =
+          PreferencesService.getSettingsDisplayExpanded();
+      final oldDisplayPreferencesExpanded =
           PreferencesService.getSettingsDisplayPreferencesExpanded();
+      // If either old section was expanded, expand the new merged section
+      // Otherwise, use the new key if it exists
+      if (oldDisplayExpanded || oldDisplayPreferencesExpanded) {
+        _displayLayoutExpanded = true;
+        // Migrate the state to the new key
+        PreferencesService.setSettingsDisplayLayoutExpanded(true);
+      } else {
+        _displayLayoutExpanded =
+            PreferencesService.getSettingsDisplayLayoutExpanded();
+      }
       _notificationsExpanded =
           PreferencesService.getSettingsNotificationsExpanded();
-      _tagsExpanded = PreferencesService.getSettingsTagsExpanded();
       _dataExportExpanded = PreferencesService.getSettingsDataExportExpanded();
       _advancedExpanded = PreferencesService.getSettingsAdvancedExpanded();
       _aboutExpanded = PreferencesService.getSettingsAboutExpanded();
@@ -66,13 +75,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       case 'appearance':
         await PreferencesService.setSettingsAppearanceExpanded(expanded);
         break;
-      case 'display':
-        await PreferencesService.setSettingsDisplayExpanded(expanded);
-        break;
-      case 'displayPreferences':
-        await PreferencesService.setSettingsDisplayPreferencesExpanded(
-          expanded,
-        );
+      case 'displayLayout':
+        await PreferencesService.setSettingsDisplayLayoutExpanded(expanded);
         break;
       case 'notifications':
         await PreferencesService.setSettingsNotificationsExpanded(expanded);
@@ -500,8 +504,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   // Default values
-  static const double defaultCardElevation = 2.0;
-  static const double defaultCardBorderRadius = 12.0;
   static const String defaultDaySquareSize = 'large';
   static const int defaultTimelineDays = 100;
   static const int defaultModalTimelineDays = 200;
@@ -552,7 +554,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       case 'dd.MM.yyyy':
         return 'DD.MM.YYYY';
       default:
-        return format;
+        // Return default format if invalid
+        return 'YYYY-MM-DD';
     }
   }
 
@@ -1189,6 +1192,47 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           Navigator.pop(context); // Close loading
 
           if (success) {
+            // Invalidate all settings providers to reload from cleared preferences
+            ref.invalidate(themeModeNotifierProvider);
+            ref.invalidate(themeColorNotifierProvider);
+            ref.invalidate(timelineDaysNotifierProvider);
+            ref.invalidate(modalTimelineDaysNotifierProvider);
+            ref.invalidate(daySquareSizeNotifierProvider);
+            ref.invalidate(dateFormatNotifierProvider);
+            ref.invalidate(firstDayOfWeekNotifierProvider);
+            ref.invalidate(notificationsEnabledNotifierProvider);
+            ref.invalidate(habitCheckboxStyleNotifierProvider);
+            ref.invalidate(habitSortOrderNotifierProvider);
+            ref.invalidate(showStreakBordersNotifierProvider);
+            ref.invalidate(timelineCompactModeNotifierProvider);
+            ref.invalidate(showWeekMonthHighlightsNotifierProvider);
+            ref.invalidate(timelineSpacingNotifierProvider);
+            ref.invalidate(showStreakNumbersNotifierProvider);
+            ref.invalidate(showDescriptionsNotifierProvider);
+            ref.invalidate(compactCardsNotifierProvider);
+            ref.invalidate(iconSizeNotifierProvider);
+            ref.invalidate(progressIndicatorStyleNotifierProvider);
+            ref.invalidate(calendarCompletionColorNotifierProvider);
+            ref.invalidate(habitCardCompletionColorNotifierProvider);
+            ref.invalidate(calendarTimelineCompletionColorNotifierProvider);
+            ref.invalidate(mainTimelineCompletionColorNotifierProvider);
+            ref.invalidate(calendarBadHabitCompletionColorNotifierProvider);
+            ref.invalidate(habitCardBadHabitCompletionColorNotifierProvider);
+            ref.invalidate(
+              calendarTimelineBadHabitCompletionColorNotifierProvider,
+            );
+            ref.invalidate(mainTimelineBadHabitCompletionColorNotifierProvider);
+            ref.invalidate(streakColorSchemeNotifierProvider);
+            ref.invalidate(showPercentageNotifierProvider);
+            ref.invalidate(fontSizeScaleNotifierProvider);
+            ref.invalidate(cardSpacingNotifierProvider);
+            ref.invalidate(showStatisticsCardNotifierProvider);
+            ref.invalidate(defaultViewNotifierProvider);
+            ref.invalidate(showStreakOnCardNotifierProvider);
+
+            // Reload expansion states to defaults
+            _loadExpansionStates();
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('settings_reset_success'.tr()),
@@ -1938,24 +1982,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  void _showCardStyleDialog(BuildContext context, WidgetRef ref) {
-    final initialElevation = ref.watch(cardElevationProvider);
-    final initialBorderRadius = ref.watch(cardBorderRadiusProvider);
-    final cardStyleNotifier = ref.read(cardStyleNotifierProvider);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return _CardStyleDialogContent(
-          initialElevation: initialElevation,
-          initialBorderRadius: initialBorderRadius,
-          cardStyleNotifier: cardStyleNotifier,
-          ref: ref,
-        );
-      },
-    );
-  }
-
   void _showDaySquareSizeDialog(BuildContext context, WidgetRef ref) {
     final currentSize = ref.watch(daySquareSizeProvider);
     final notifier = ref.read(daySquareSizeNotifierProvider);
@@ -2197,15 +2223,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       case 'taskAlt':
         return 'task_alt'.tr();
       default:
-        return style;
+        // Return default if invalid value
+        return 'square'.tr();
     }
-  }
-
-  Future<void> _revertCardStyle(BuildContext context, WidgetRef ref) async {
-    final cardStyleNotifier = ref.read(cardStyleNotifierProvider);
-    await cardStyleNotifier.setElevation(defaultCardElevation);
-    await cardStyleNotifier.setBorderRadius(defaultCardBorderRadius);
-    ref.invalidate(cardStyleNotifierProvider);
   }
 
   Future<void> _revertDaySquareSize(BuildContext context, WidgetRef ref) async {
@@ -2266,6 +2286,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (dialogContext.mounted) {
                   navigator.pop();
                 }
+              } else {
+                // Show error for invalid input
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('please_enter_valid_number'.tr()),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             child: Text('save'.tr()),
@@ -2311,6 +2341,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ref.invalidate(modalTimelineDaysNotifierProvider);
                 if (dialogContext.mounted) {
                   navigator.pop();
+                }
+              } else {
+                // Show error for invalid input
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('please_enter_valid_number'.tr()),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
               }
             },
@@ -2554,9 +2594,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  void _showCompletionColorDialog(BuildContext context, WidgetRef ref) {
-    final currentColor = ref.watch(completionColorProvider);
-    final notifier = ref.read(completionColorNotifierProvider);
+  void _showCompletionColorDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String titleKey,
+    int currentColor,
+    Future<void> Function(int) onColorSelected,
+    Provider<dynamic> notifierProvider,
+  ) {
     final navigator = Navigator.of(context);
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
@@ -2581,7 +2626,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('completion_color'.tr()),
+        title: Text(titleKey.tr()),
         content: SizedBox(
           width: contentWidth,
           child: GridView.builder(
@@ -2598,8 +2643,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               final isSelected = colorValue == currentColor;
               return GestureDetector(
                 onTap: () async {
-                  await notifier.setCompletionColor(colorValue);
-                  ref.invalidate(completionColorNotifierProvider);
+                  await onColorSelected(colorValue);
+                  ref.invalidate(notifierProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2893,13 +2938,70 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  void _showBadHabitLogicModeDialog(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.watch(badHabitLogicModeProvider);
+    final notifier = ref.read(badHabitLogicModeNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('bad_habit_logic_mode'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'bad_habit_logic_mode_description'.tr(),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 16),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('bad_habit_logic_mode_negative'.tr()),
+              value: 'negative',
+              groupValue: currentMode,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setBadHabitLogicMode(value);
+                  ref.invalidate(badHabitLogicModeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+            _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Text('bad_habit_logic_mode_positive'.tr()),
+              value: 'positive',
+              groupValue: currentMode,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setBadHabitLogicMode(value);
+                  ref.invalidate(badHabitLogicModeNotifierProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentLanguage = PreferencesService.getLanguage() ?? 'en';
     final themeMode = ref.watch(themeModeProvider);
     final themeColor = ref.watch(themeColorProvider);
-    final cardElevation = ref.watch(cardElevationProvider);
-    final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
     final daySquareSize = ref.watch(daySquareSizeProvider);
     final dateFormat = ref.watch(dateFormatProvider);
     final firstDayOfWeek = ref.watch(firstDayOfWeekProvider);
@@ -2920,7 +3022,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final compactCards = ref.watch(compactCardsProvider);
     final iconSize = ref.watch(iconSizeProvider);
     final progressIndicatorStyle = ref.watch(progressIndicatorStyleProvider);
-    final completionColor = ref.watch(completionColorProvider);
+    final calendarCompletionColor = ref.watch(calendarCompletionColorProvider);
+    final habitCardCompletionColor = ref.watch(
+      habitCardCompletionColorProvider,
+    );
+    final calendarTimelineCompletionColor = ref.watch(
+      calendarTimelineCompletionColorProvider,
+    );
+    final mainTimelineCompletionColor = ref.watch(
+      mainTimelineCompletionColorProvider,
+    );
+    final calendarBadHabitCompletionColor = ref.watch(
+      calendarBadHabitCompletionColorProvider,
+    );
+    final habitCardBadHabitCompletionColor = ref.watch(
+      habitCardBadHabitCompletionColorProvider,
+    );
+    final calendarTimelineBadHabitCompletionColor = ref.watch(
+      calendarTimelineBadHabitCompletionColorProvider,
+    );
+    final mainTimelineBadHabitCompletionColor = ref.watch(
+      mainTimelineBadHabitCompletionColorProvider,
+    );
     final streakColorScheme = ref.watch(streakColorSchemeProvider);
     final showPercentage = ref.watch(showPercentageProvider);
     final fontSizeScale = ref.watch(fontSizeScaleProvider);
@@ -2928,6 +3051,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final showStatisticsCard = ref.watch(showStatisticsCardProvider);
     final defaultView = ref.watch(defaultViewProvider);
     final showStreakOnCard = ref.watch(showStreakOnCardProvider);
+    final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
 
     final mediaQuery = MediaQuery.of(context);
     final isLandscape = mediaQuery.size.width > mediaQuery.size.height;
@@ -2959,21 +3083,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               subtitle: Text(_getThemeName(themeMode)),
               onTap: () => _showThemeDialog(context, ref),
             ),
-          ],
-        ),
-
-        // Appearance Section
-        _buildCollapsibleSection(
-          title: 'appearance'.tr(),
-          icon: Icons.palette,
-          isExpanded: _appearanceExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _appearanceExpanded = expanded;
-            });
-            _saveExpansionState('appearance', expanded);
-          },
-          children: [
             ListTile(
               leading: const Icon(Icons.palette),
               title: Text('select_theme_color'.tr()),
@@ -2991,23 +3100,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               onTap: () => _showThemeColorDialog(context, ref),
             ),
-            ListTile(
-              leading: const Icon(Icons.style),
-              title: Text('card_style'.tr()),
-              subtitle: Text(
-                '${'elevation'.tr()}: ${cardElevation.toStringAsFixed(1)}, ${'border_radius'.tr()}: ${cardBorderRadius.toStringAsFixed(1)}',
-              ),
-              trailing:
-                  (cardElevation != defaultCardElevation ||
-                      cardBorderRadius != defaultCardBorderRadius)
-                  ? IconButton(
-                      icon: const Icon(Icons.refresh),
-                      tooltip: 'reset_to_default'.tr(),
-                      onPressed: () => _revertCardStyle(context, ref),
-                    )
-                  : null,
-              onTap: () => _showCardStyleDialog(context, ref),
-            ),
+          ],
+        ),
+
+        // Appearance Section
+        _buildCollapsibleSection(
+          title: 'appearance'.tr(),
+          icon: Icons.palette,
+          isExpanded: _appearanceExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _appearanceExpanded = expanded;
+            });
+            _saveExpansionState('appearance', expanded);
+          },
+          children: [
             ListTile(
               leading: const Icon(Icons.square),
               title: Text('day_square_size'.tr()),
@@ -3027,19 +3134,272 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
               onTap: () => _showHabitCheckboxStyleDialog(context, ref),
             ),
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: Text('icon_size'.tr()),
+              subtitle: Text(_getIconSizeName(iconSize)),
+              onTap: () => _showIconSizeDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: Text('calendar_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(calendarCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'calendar_completion_color',
+                calendarCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    calendarCompletionColorNotifierProvider,
+                  );
+                  await notifier.setCalendarCompletionColor(color);
+                },
+                calendarCompletionColorNotifierProvider,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.credit_card),
+              title: Text('habit_card_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(habitCardCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'habit_card_completion_color',
+                habitCardCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    habitCardCompletionColorNotifierProvider,
+                  );
+                  await notifier.setHabitCardCompletionColor(color);
+                },
+                habitCardCompletionColorNotifierProvider,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.timeline),
+              title: Text('calendar_timeline_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(calendarTimelineCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'calendar_timeline_completion_color',
+                calendarTimelineCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    calendarTimelineCompletionColorNotifierProvider,
+                  );
+                  await notifier.setCalendarTimelineCompletionColor(color);
+                },
+                calendarTimelineCompletionColorNotifierProvider,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.view_timeline),
+              title: Text('main_timeline_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(mainTimelineCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'main_timeline_completion_color',
+                mainTimelineCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    mainTimelineCompletionColorNotifierProvider,
+                  );
+                  await notifier.setMainTimelineCompletionColor(color);
+                },
+                mainTimelineCompletionColorNotifierProvider,
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.thumb_down),
+              title: Text('calendar_bad_habit_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(calendarBadHabitCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'calendar_bad_habit_completion_color',
+                calendarBadHabitCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    calendarBadHabitCompletionColorNotifierProvider,
+                  );
+                  await notifier.setCalendarBadHabitCompletionColor(color);
+                },
+                calendarBadHabitCompletionColorNotifierProvider,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.thumb_down),
+              title: Text('habit_card_bad_habit_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(habitCardBadHabitCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'habit_card_bad_habit_completion_color',
+                habitCardBadHabitCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    habitCardBadHabitCompletionColorNotifierProvider,
+                  );
+                  await notifier.setHabitCardBadHabitCompletionColor(color);
+                },
+                habitCardBadHabitCompletionColorNotifierProvider,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.thumb_down),
+              title: Text('calendar_timeline_bad_habit_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(calendarTimelineBadHabitCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'calendar_timeline_bad_habit_completion_color',
+                calendarTimelineBadHabitCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    calendarTimelineBadHabitCompletionColorNotifierProvider,
+                  );
+                  await notifier.setCalendarTimelineBadHabitCompletionColor(
+                    color,
+                  );
+                },
+                calendarTimelineBadHabitCompletionColorNotifierProvider,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.thumb_down),
+              title: Text('main_timeline_bad_habit_completion_color'.tr()),
+              trailing: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Color(mainTimelineBadHabitCompletionColor),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              onTap: () => _showCompletionColorDialog(
+                context,
+                ref,
+                'main_timeline_bad_habit_completion_color',
+                mainTimelineBadHabitCompletionColor,
+                (color) async {
+                  final notifier = ref.read(
+                    mainTimelineBadHabitCompletionColorNotifierProvider,
+                  );
+                  await notifier.setMainTimelineBadHabitCompletionColor(color);
+                },
+                mainTimelineBadHabitCompletionColorNotifierProvider,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.color_lens),
+              title: Text('streak_color_scheme'.tr()),
+              subtitle: Text(_getStreakColorSchemeName(streakColorScheme)),
+              onTap: () => _showStreakColorSchemeDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: Text('font_size_scale'.tr()),
+              subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
+              onTap: () => _showFontSizeScaleDialog(context, ref),
+            ),
           ],
         ),
 
-        // Display Section
+        // Display & Layout Section
         _buildCollapsibleSection(
-          title: 'display'.tr(),
-          icon: Icons.display_settings,
-          isExpanded: _displayExpanded,
+          title: 'display_layout'.tr(),
+          icon: Icons.view_quilt,
+          isExpanded: _displayLayoutExpanded,
           onExpansionChanged: (expanded) {
             setState(() {
-              _displayExpanded = expanded;
+              _displayLayoutExpanded = expanded;
             });
-            _saveExpansionState('display', expanded);
+            _saveExpansionState('displayLayout', expanded);
           },
           children: [
             ListTile(
@@ -3080,31 +3440,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   : null,
               onTap: () => _showModalTimelineDaysDialog(context, ref),
             ),
-          ],
-        ),
-
-        // Display Preferences Section
-        _buildCollapsibleSection(
-          title: 'display_preferences'.tr(),
-          icon: Icons.tune,
-          isExpanded: _displayPreferencesExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _displayPreferencesExpanded = expanded;
-            });
-            _saveExpansionState('displayPreferences', expanded);
-          },
-          children: [
-            SwitchListTile(
-              secondary: const Icon(Icons.border_color),
-              title: Text('show_streak_borders'.tr()),
-              subtitle: Text('show_streak_borders_description'.tr()),
-              value: showStreakBorders,
-              onChanged: (value) async {
-                final notifier = ref.read(showStreakBordersNotifierProvider);
-                await notifier.setShowStreakBorders(value);
-                ref.invalidate(showStreakBordersNotifierProvider);
-              },
+            ListTile(
+              leading: const Icon(Icons.space_bar),
+              title: Text('timeline_spacing'.tr()),
+              subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
+              onTap: () => _showTimelineSpacingDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.format_line_spacing),
+              title: Text('card_spacing'.tr()),
+              subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
+              onTap: () => _showCardSpacingDialog(context, ref),
             ),
             SwitchListTile(
               secondary: const Icon(Icons.compress),
@@ -3115,6 +3461,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 final notifier = ref.read(timelineCompactModeNotifierProvider);
                 await notifier.setTimelineCompactMode(value);
                 ref.invalidate(timelineCompactModeNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.border_color),
+              title: Text('show_streak_borders'.tr()),
+              subtitle: Text('show_streak_borders_description'.tr()),
+              value: showStreakBorders,
+              onChanged: (value) async {
+                final notifier = ref.read(showStreakBordersNotifierProvider);
+                await notifier.setShowStreakBorders(value);
+                ref.invalidate(showStreakBordersNotifierProvider);
               },
             ),
             SwitchListTile(
@@ -3129,12 +3486,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 await notifier.setShowWeekMonthHighlights(value);
                 ref.invalidate(showWeekMonthHighlightsNotifierProvider);
               },
-            ),
-            ListTile(
-              leading: const Icon(Icons.space_bar),
-              title: Text('timeline_spacing'.tr()),
-              subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
-              onTap: () => _showTimelineSpacingDialog(context, ref),
             ),
             SwitchListTile(
               secondary: const Icon(Icons.numbers),
@@ -3169,43 +3520,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ref.invalidate(compactCardsNotifierProvider);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.image),
-              title: Text('icon_size'.tr()),
-              subtitle: Text(_getIconSizeName(iconSize)),
-              onTap: () => _showIconSizeDialog(context, ref),
-            ),
-            ListTile(
-              leading: const Icon(Icons.trending_up),
-              title: Text('progress_indicator_style'.tr()),
-              subtitle: Text(
-                _getProgressIndicatorStyleName(progressIndicatorStyle),
-              ),
-              onTap: () => _showProgressIndicatorStyleDialog(context, ref),
-            ),
-            ListTile(
-              leading: const Icon(Icons.palette),
-              title: Text('completion_color'.tr()),
-              trailing: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Color(completionColor),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor,
-                    width: 1.5,
-                  ),
-                ),
-              ),
-              onTap: () => _showCompletionColorDialog(context, ref),
-            ),
-            ListTile(
-              leading: const Icon(Icons.color_lens),
-              title: Text('streak_color_scheme'.tr()),
-              subtitle: Text(_getStreakColorSchemeName(streakColorScheme)),
-              onTap: () => _showStreakColorSchemeDialog(context, ref),
-            ),
             SwitchListTile(
               secondary: const Icon(Icons.percent),
               title: Text('show_percentage'.tr()),
@@ -3218,16 +3532,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.text_fields),
-              title: Text('font_size_scale'.tr()),
-              subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
-              onTap: () => _showFontSizeScaleDialog(context, ref),
-            ),
-            ListTile(
-              leading: const Icon(Icons.format_line_spacing),
-              title: Text('card_spacing'.tr()),
-              subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
-              onTap: () => _showCardSpacingDialog(context, ref),
+              leading: const Icon(Icons.trending_up),
+              title: Text('progress_indicator_style'.tr()),
+              subtitle: Text(
+                _getProgressIndicatorStyleName(progressIndicatorStyle),
+              ),
+              onTap: () => _showProgressIndicatorStyleDialog(context, ref),
             ),
             SwitchListTile(
               secondary: const Icon(Icons.bar_chart),
@@ -3260,10 +3570,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ],
         ),
 
-        // Notifications Section
+        // Features Section (Notifications and Tags)
         _buildCollapsibleSection(
-          title: 'notifications'.tr(),
-          icon: Icons.notifications,
+          title: 'features'.tr(),
+          icon: Icons.extension,
           isExpanded: _notificationsExpanded,
           onExpansionChanged: (expanded) {
             setState(() {
@@ -3282,30 +3592,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ref.invalidate(notificationsEnabledNotifierProvider);
               },
             ),
-          ],
-        ),
-        // Tags Section
-        _buildCollapsibleSection(
-          title: 'tags'.tr(),
-          icon: Icons.label,
-          isExpanded: _tagsExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _tagsExpanded = expanded;
-            });
-            _saveExpansionState('tags', expanded);
-          },
-          children: [
+            ListTile(
+              leading: const Icon(Icons.psychology),
+              title: Text('bad_habit_logic_mode'.tr()),
+              subtitle: Text(
+                badHabitLogicMode == 'negative'
+                    ? 'bad_habit_logic_mode_negative'.tr()
+                    : 'bad_habit_logic_mode_positive'.tr(),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showBadHabitLogicModeDialog(context, ref),
+            ),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TagManagementWidget(),
             ),
           ],
         ),
-        // Data & Export Section
+
+        // Data Management Section
         _buildCollapsibleSection(
-          title: 'data_export'.tr(),
-          icon: Icons.folder,
+          title: 'data_management'.tr(),
+          icon: Icons.storage,
           isExpanded: _dataExportExpanded,
           onExpansionChanged: (expanded) {
             setState(() {
@@ -3328,6 +3636,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showImportDialog(context, ref),
             ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text('database_statistics'.tr()),
+              subtitle: Text('view_database_stats'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showDatabaseStatsDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cleaning_services),
+              title: Text('optimize_database'.tr()),
+              subtitle: Text('optimize_database_description'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _optimizeDatabase(context, ref),
+            ),
           ],
         ),
 
@@ -3343,13 +3665,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _saveExpansionState('advanced', expanded);
           },
           children: [
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: Text('database_statistics'.tr()),
-              subtitle: Text('view_database_stats'.tr()),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showDatabaseStatsDialog(context, ref),
-            ),
             ListTile(
               leading: const Icon(Icons.delete_sweep),
               title: Text('reset_all_habits'.tr()),
@@ -3370,13 +3685,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               subtitle: Text('clear_all_data_description'.tr()),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _showClearAllDataDialog(context, ref),
-            ),
-            ListTile(
-              leading: const Icon(Icons.cleaning_services),
-              title: Text('optimize_database'.tr()),
-              subtitle: Text('optimize_database_description'.tr()),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _optimizeDatabase(context, ref),
             ),
             ListTile(
               leading: const Icon(Icons.description),
@@ -3583,83 +3891,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             },
         child: bodyContent,
       ),
-    );
-  }
-}
-
-class _CardStyleDialogContent extends StatefulWidget {
-  final double initialElevation;
-  final double initialBorderRadius;
-  final dynamic cardStyleNotifier;
-  final dynamic ref;
-
-  const _CardStyleDialogContent({
-    required this.initialElevation,
-    required this.initialBorderRadius,
-    required this.cardStyleNotifier,
-    required this.ref,
-  });
-
-  @override
-  State<_CardStyleDialogContent> createState() =>
-      _CardStyleDialogContentState();
-}
-
-class _CardStyleDialogContentState extends State<_CardStyleDialogContent> {
-  late double _elevation;
-  late double _borderRadius;
-
-  @override
-  void initState() {
-    super.initState();
-    _elevation = widget.initialElevation;
-    _borderRadius = widget.initialBorderRadius;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('card_style'.tr()),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('${'elevation'.tr()}: ${_elevation.toStringAsFixed(1)}'),
-          Slider(
-            value: _elevation,
-            min: 0,
-            max: 8,
-            divisions: 16,
-            onChanged: (value) {
-              setState(() {
-                _elevation = value;
-              });
-              widget.cardStyleNotifier.setElevation(value);
-              widget.ref.invalidate(cardStyleNotifierProvider);
-            },
-          ),
-          const SizedBox(height: 16),
-          Text('${'border_radius'.tr()}: ${_borderRadius.toStringAsFixed(1)}'),
-          Slider(
-            value: _borderRadius,
-            min: 0,
-            max: 24,
-            divisions: 48,
-            onChanged: (value) {
-              setState(() {
-                _borderRadius = value;
-              });
-              widget.cardStyleNotifier.setBorderRadius(value);
-              widget.ref.invalidate(cardStyleNotifierProvider);
-            },
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('done'.tr()),
-        ),
-      ],
     );
   }
 }

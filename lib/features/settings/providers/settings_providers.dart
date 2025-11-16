@@ -537,26 +537,177 @@ final progressIndicatorStyleProvider = Provider<String>((ref) {
   return ref.watch(progressIndicatorStyleNotifierProvider).style;
 });
 
-// Completion Color
-class CompletionColorNotifier {
+// Calendar Completion Color
+class CalendarCompletionColorNotifier {
   int _color;
 
-  CompletionColorNotifier() : _color = PreferencesService.getCompletionColor();
+  CalendarCompletionColorNotifier() : _color = PreferencesService.getCalendarCompletionColor();
 
   int get color => _color;
 
-  Future<void> setCompletionColor(int color) async {
+  Future<void> setCalendarCompletionColor(int color) async {
     _color = color;
-    await PreferencesService.setCompletionColor(color);
+    await PreferencesService.setCalendarCompletionColor(color);
   }
 }
 
-final completionColorNotifierProvider = Provider<CompletionColorNotifier>((ref) {
-  return CompletionColorNotifier();
+final calendarCompletionColorNotifierProvider = Provider<CalendarCompletionColorNotifier>((ref) {
+  return CalendarCompletionColorNotifier();
 });
 
-final completionColorProvider = Provider<int>((ref) {
-  return ref.watch(completionColorNotifierProvider).color;
+final calendarCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(calendarCompletionColorNotifierProvider).color;
+});
+
+// Habit Card Completion Color
+class HabitCardCompletionColorNotifier {
+  int _color;
+
+  HabitCardCompletionColorNotifier() : _color = PreferencesService.getHabitCardCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setHabitCardCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setHabitCardCompletionColor(color);
+  }
+}
+
+final habitCardCompletionColorNotifierProvider = Provider<HabitCardCompletionColorNotifier>((ref) {
+  return HabitCardCompletionColorNotifier();
+});
+
+final habitCardCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(habitCardCompletionColorNotifierProvider).color;
+});
+
+// Calendar Timeline Completion Color
+class CalendarTimelineCompletionColorNotifier {
+  int _color;
+
+  CalendarTimelineCompletionColorNotifier() : _color = PreferencesService.getCalendarTimelineCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setCalendarTimelineCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setCalendarTimelineCompletionColor(color);
+  }
+}
+
+final calendarTimelineCompletionColorNotifierProvider = Provider<CalendarTimelineCompletionColorNotifier>((ref) {
+  return CalendarTimelineCompletionColorNotifier();
+});
+
+final calendarTimelineCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(calendarTimelineCompletionColorNotifierProvider).color;
+});
+
+// Main Timeline Completion Color
+class MainTimelineCompletionColorNotifier {
+  int _color;
+
+  MainTimelineCompletionColorNotifier() : _color = PreferencesService.getMainTimelineCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setMainTimelineCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setMainTimelineCompletionColor(color);
+  }
+}
+
+final mainTimelineCompletionColorNotifierProvider = Provider<MainTimelineCompletionColorNotifier>((ref) {
+  return MainTimelineCompletionColorNotifier();
+});
+
+final mainTimelineCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(mainTimelineCompletionColorNotifierProvider).color;
+});
+
+// Bad Habit Completion Colors
+class CalendarBadHabitCompletionColorNotifier {
+  int _color;
+
+  CalendarBadHabitCompletionColorNotifier() : _color = PreferencesService.getCalendarBadHabitCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setCalendarBadHabitCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setCalendarBadHabitCompletionColor(color);
+  }
+}
+
+final calendarBadHabitCompletionColorNotifierProvider = Provider<CalendarBadHabitCompletionColorNotifier>((ref) {
+  return CalendarBadHabitCompletionColorNotifier();
+});
+
+final calendarBadHabitCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(calendarBadHabitCompletionColorNotifierProvider).color;
+});
+
+class HabitCardBadHabitCompletionColorNotifier {
+  int _color;
+
+  HabitCardBadHabitCompletionColorNotifier() : _color = PreferencesService.getHabitCardBadHabitCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setHabitCardBadHabitCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setHabitCardBadHabitCompletionColor(color);
+  }
+}
+
+final habitCardBadHabitCompletionColorNotifierProvider = Provider<HabitCardBadHabitCompletionColorNotifier>((ref) {
+  return HabitCardBadHabitCompletionColorNotifier();
+});
+
+final habitCardBadHabitCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(habitCardBadHabitCompletionColorNotifierProvider).color;
+});
+
+class CalendarTimelineBadHabitCompletionColorNotifier {
+  int _color;
+
+  CalendarTimelineBadHabitCompletionColorNotifier() : _color = PreferencesService.getCalendarTimelineBadHabitCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setCalendarTimelineBadHabitCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setCalendarTimelineBadHabitCompletionColor(color);
+  }
+}
+
+final calendarTimelineBadHabitCompletionColorNotifierProvider = Provider<CalendarTimelineBadHabitCompletionColorNotifier>((ref) {
+  return CalendarTimelineBadHabitCompletionColorNotifier();
+});
+
+final calendarTimelineBadHabitCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(calendarTimelineBadHabitCompletionColorNotifierProvider).color;
+});
+
+class MainTimelineBadHabitCompletionColorNotifier {
+  int _color;
+
+  MainTimelineBadHabitCompletionColorNotifier() : _color = PreferencesService.getMainTimelineBadHabitCompletionColor();
+
+  int get color => _color;
+
+  Future<void> setMainTimelineBadHabitCompletionColor(int color) async {
+    _color = color;
+    await PreferencesService.setMainTimelineBadHabitCompletionColor(color);
+  }
+}
+
+final mainTimelineBadHabitCompletionColorNotifierProvider = Provider<MainTimelineBadHabitCompletionColorNotifier>((ref) {
+  return MainTimelineBadHabitCompletionColorNotifier();
+});
+
+final mainTimelineBadHabitCompletionColorProvider = Provider<int>((ref) {
+  return ref.watch(mainTimelineBadHabitCompletionColorNotifierProvider).color;
 });
 
 // Streak Color Scheme
@@ -711,5 +862,27 @@ final showStreakOnCardNotifierProvider = Provider<ShowStreakOnCardNotifier>((ref
 
 final showStreakOnCardProvider = Provider<bool>((ref) {
   return ref.watch(showStreakOnCardNotifierProvider).value;
+});
+
+// Bad Habit Logic Mode
+class BadHabitLogicModeNotifier {
+  String _mode;
+
+  BadHabitLogicModeNotifier() : _mode = PreferencesService.getBadHabitLogicMode();
+
+  String get mode => _mode;
+
+  Future<void> setBadHabitLogicMode(String mode) async {
+    _mode = mode;
+    await PreferencesService.setBadHabitLogicMode(mode);
+  }
+}
+
+final badHabitLogicModeNotifierProvider = Provider<BadHabitLogicModeNotifier>((ref) {
+  return BadHabitLogicModeNotifier();
+});
+
+final badHabitLogicModeProvider = Provider<String>((ref) {
+  return ref.watch(badHabitLogicModeNotifierProvider).mode;
 });
 

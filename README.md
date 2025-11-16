@@ -24,6 +24,7 @@ Adati is a modern, feature-rich habit tracking application built with Flutter. I
   - **Measurable**: Track numeric values with units (e.g., "Walked 5 km", "Drank 8 glasses of water")
   - **Occurrences**: Track multiple occurrences per day (e.g., "Exercised: Morning, Evening")
 - **Good & Bad Habits**: Track both positive habits you want to build and negative habits you want to break
+  - **Configurable Bad Habit Logic**: Choose how bad habits affect your timeline completion (see Settings)
 - **Goal Setting**: Set daily, weekly, or monthly goals for measurable habits
 - **Streak Tracking**: Automatic calculation and display of current and longest streaks (separate for good/bad habits)
 - **Tag System**: Organize habits with custom tags for better categorization
@@ -171,6 +172,9 @@ See `.github/workflows/release.yml` for the complete workflow configuration.
 
 ### Viewing Timeline
 - The main timeline shows a calendar grid with color-coded completion status
+- **Completion Calculation**: The timeline uses a weighted completion system that respects your bad habit logic mode setting:
+  - **Negative Mode**: `(good completed - bad marked) / total good habits`. If only bad habits exist, starts at 100% and decreases by `bad marked / total bad habits`. Completion rate is clamped to 0-100%.
+  - **Positive Mode**: `(good completed + bad not marked) / total habits`. Completion rate is clamped to 0-100%.
 - Tap any day to view and edit all entries for that date
 - Statistics at the top show your overall progress
 - Filter habits by tags or search by name
@@ -191,6 +195,9 @@ See `.github/workflows/release.yml` for the complete workflow configuration.
 ### Settings
 - **Language**: Switch between English and Arabic (with RTL support)
 - **Theme**: Choose Light, Dark, or System theme
+- **Bad Habit Logic Mode**: Choose how bad habits affect timeline completion
+  - **Negative Mode (Default)**: Marking a bad habit counts as negative, reducing completion rate. Good habits add +1, bad habits subtract -1 when marked. If you only have bad habits, the timeline starts at 100% and decreases when you mark them.
+  - **Positive Mode**: Not marking a bad habit counts as positive. Good habits add +1 when completed, bad habits add +1 when NOT marked. This is the traditional behavior where avoiding bad habits is rewarded.
 - **Data & Export**: Import/export your data
 - **Advanced**: Database statistics and reset options
 - All preferences are saved automatically
