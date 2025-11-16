@@ -69,6 +69,18 @@ flutter:
   
   assets:
     - assets/translations/
+  
+  fonts:
+    - family: Almarai
+      fonts:
+        - asset: assets/fonts/Almarai-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Almarai-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Almarai-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Almarai-ExtraBold.ttf
+          weight: 800
 
 flutter_launcher_icons:
   android: true

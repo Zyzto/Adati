@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:intl/intl.dart';
 import '../providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../../core/database/app_database.dart' as db;
@@ -115,7 +116,10 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                       ),
                       Expanded(
                         child: Text(
-                          DateFormat('MMMM yyyy').format(_selectedMonth),
+                          DateFormat(
+                            'MMMM yyyy',
+                            context.locale.languageCode,
+                          ).format(_selectedMonth),
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
@@ -660,6 +664,7 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final firstDayOfWeekSetting = ref.watch(firstDayOfWeekProvider);
 
     final firstDayOfMonth = DateTime(
       _selectedMonth.year,
@@ -675,12 +680,24 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
     );
     final firstDayWeekday = firstDayOfMonth.weekday;
 
+    // Convert setting (0=Sunday, 1=Monday) to Dart weekday (1=Monday, 7=Sunday)
+    final startWeekday = firstDayOfWeekSetting == 0 ? 7 : firstDayOfWeekSetting;
+
     // Calculate days to show
     final daysInMonth = lastDayOfMonth.day;
     final days = <DateTime?>[];
 
+    // Calculate offset: how many days to shift the first day of month
+    // Dart weekday: 1=Monday, 7=Sunday
+    // We need to align firstDayWeekday with startWeekday
+    // When startWeekday is 7 (Sunday), we want Sunday to be in column 0
+    int offset = (firstDayWeekday - startWeekday) % 7;
+    if (offset < 0) {
+      offset += 7;
+    }
+
     // Add empty cells for days before the first day of the month
-    for (int i = 1; i < firstDayWeekday; i++) {
+    for (int i = 0; i < offset; i++) {
       days.add(null);
     }
 
@@ -727,23 +744,52 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
               ],
             ),
           ),
-          // Weekday headers with theme colors
-          Row(
-            children: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-                .map(
-                  (day) => Expanded(
-                    child: Center(
-                      child: Text(
-                        day.tr(),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurfaceVariant,
+          // Weekday headers with theme colors - use full names, respect first day of week
+          Builder(
+            builder: (context) {
+              // Weekday names in order: Monday, Tuesday, ..., Sunday
+              final weekdayNames = [
+                'monday',
+                'tuesday',
+                'wednesday',
+                'thursday',
+                'friday',
+                'saturday',
+                'sunday',
+              ];
+
+              // Reorder based on first day of week setting
+              // 0 = Sunday, 1 = Monday
+              final orderedWeekdays = firstDayOfWeekSetting == 0
+                  ? [
+                      'sunday',
+                      'monday',
+                      'tuesday',
+                      'wednesday',
+                      'thursday',
+                      'friday',
+                      'saturday',
+                    ]
+                  : weekdayNames;
+
+              return Row(
+                children: orderedWeekdays
+                    .map(
+                      (day) => Expanded(
+                        child: Center(
+                          child: Text(
+                            day.tr(),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                )
-                .toList(),
+                    )
+                    .toList(),
+              );
+            },
           ),
           const SizedBox(height: 8),
           // Calendar grid with swipe gestures - fixed height
@@ -798,9 +844,14 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                       final dayOnly = app_date_utils.DateUtils.getDateOnly(day);
                       final isCompleted = entriesMap[dayOnly] ?? false;
                       final isToday = app_date_utils.DateUtils.isToday(day);
-                      final isWeekend =
-                          day.weekday == 6 ||
-                          day.weekday == 7; // Saturday or Sunday
+                      // Weekend detection based on first day of week setting
+                      // If week starts Sunday (0): weekends are Friday (5) and Saturday (6)
+                      // If week starts Monday (1): weekends are Saturday (6) and Sunday (7)
+                      final isWeekend = firstDayOfWeekSetting == 0
+                          ? (day.weekday == 5 ||
+                                day.weekday == 6) // Friday or Saturday
+                          : (day.weekday == 6 ||
+                                day.weekday == 7); // Saturday or Sunday
                       final hasNotes = entriesWithNotes[dayOnly] ?? false;
                       final streakLength = streakMap[day] ?? 0;
 
@@ -808,12 +859,18 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                         label: isCompleted
                             ? 'completed_on'.tr(
                                 namedArgs: {
-                                  'date': DateFormat('MMMM d').format(day),
+                                  'date': DateFormat(
+                                    'MMMM d',
+                                    context.locale.languageCode,
+                                  ).format(day),
                                 },
                               )
                             : 'not_completed_on'.tr(
                                 namedArgs: {
-                                  'date': DateFormat('MMMM d').format(day),
+                                  'date': DateFormat(
+                                    'MMMM d',
+                                    context.locale.languageCode,
+                                  ).format(day),
                                 },
                               ),
                         button: true,
@@ -1389,6 +1446,11 @@ class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
 
             // Calculate background color based on animation
             Color backgroundColor;
+            // Grey color for weekends - more visible
+            final weekendColor = colorScheme.brightness == Brightness.dark
+                ? Colors.grey[700]!.withValues(alpha: 0.6)
+                : Colors.grey[300]!;
+
             if (isAnimatingCompleted) {
               // Interpolate between uncompleted and completed colors
               final uncompletedColor = widget.isToday
@@ -1397,27 +1459,37 @@ class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
                           ? 0.4
                           : 0.3,
                     )
-                  : (widget.isWeekend
-                        ? colorScheme.surfaceContainerHighest
-                        : colorScheme.surface);
-              final completedColor = _getCompletedColor(context);
+                  : (widget.isWeekend ? weekendColor : colorScheme.surface);
+              // For weekends, blend with weekend color even when completing
+              final completedColor = widget.isWeekend
+                  ? Color.lerp(weekendColor, _getCompletedColor(context), 0.7)!
+                  : _getCompletedColor(context);
               backgroundColor = Color.lerp(
                 uncompletedColor,
                 completedColor,
                 completionValue,
               )!;
             } else {
-              backgroundColor = widget.isCompleted
-                  ? _getCompletedColor(context)
-                  : (widget.isToday
-                        ? colorScheme.primaryContainer.withValues(
-                            alpha: colorScheme.brightness == Brightness.dark
-                                ? 0.4
-                                : 0.3,
-                          )
-                        : (widget.isWeekend
-                              ? colorScheme.surfaceContainerHighest
-                              : colorScheme.surface));
+              // For completed weekends, use a blend of grey and completed color
+              if (widget.isCompleted && widget.isWeekend) {
+                backgroundColor = Color.lerp(
+                  weekendColor,
+                  _getCompletedColor(context),
+                  0.6,
+                )!;
+              } else {
+                backgroundColor = widget.isCompleted
+                    ? _getCompletedColor(context)
+                    : (widget.isToday
+                          ? colorScheme.primaryContainer.withValues(
+                              alpha: colorScheme.brightness == Brightness.dark
+                                  ? 0.4
+                                  : 0.3,
+                            )
+                          : (widget.isWeekend
+                                ? weekendColor
+                                : colorScheme.surface));
+              }
             }
 
             // Scale the container based on completion animation

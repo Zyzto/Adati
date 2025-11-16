@@ -70,11 +70,13 @@ class App extends ConsumerWidget {
         seedColor: Color(themeColor),
         cardElevation: cardElevation,
         cardBorderRadius: cardBorderRadius,
+        locale: context.locale,
       ),
       darkTheme: AppTheme.darkTheme(
         seedColor: Color(themeColor),
         cardElevation: cardElevation,
         cardBorderRadius: cardBorderRadius,
+        locale: context.locale,
       ),
       themeMode: themeMode,
       localizationsDelegates: context.localizationDelegates,

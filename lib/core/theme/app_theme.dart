@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  // Helper method to get font family based on locale
+  static String? _getFontFamily(Locale? locale) {
+    if (locale == null) return null;
+    // Use Almarai only for Arabic
+    if (locale.languageCode == 'ar') {
+      return 'Almarai';
+    }
+    // Return null to use system default for other languages
+    return null;
+  }
+
   static ThemeData lightTheme({
     Color? seedColor,
     double? cardElevation,
     double? cardBorderRadius,
+    Locale? locale,
   }) {
     final baseSeedColor = seedColor ?? Colors.deepPurple;
     final colorScheme = ColorScheme.fromSeed(
@@ -12,8 +24,22 @@ class AppTheme {
       brightness: Brightness.light,
     );
 
+    final fontFamily = _getFontFamily(locale);
+    
+    // Create base text theme
+    final baseTextTheme = ThemeData.light().textTheme;
+    
+    // Apply font family to text theme only if needed
+    // This ensures Material Icons and emojis use system fonts
+    final textTheme = fontFamily != null
+        ? baseTextTheme.apply(fontFamily: fontFamily)
+        : null;
+
     return ThemeData(
       useMaterial3: true,
+      // Don't set fontFamily globally - only apply to text theme
+      // This allows Material Icons and emojis to use system fonts
+      textTheme: textTheme,
       colorScheme: colorScheme.copyWith(
         // Ensure better contrast for surfaces
         surface: Colors.white,
@@ -80,6 +106,7 @@ class AppTheme {
     Color? seedColor,
     double? cardElevation,
     double? cardBorderRadius,
+    Locale? locale,
   }) {
     final baseSeedColor = seedColor ?? Colors.deepPurple;
     final colorScheme = ColorScheme.fromSeed(
@@ -87,8 +114,22 @@ class AppTheme {
       brightness: Brightness.dark,
     );
 
+    final fontFamily = _getFontFamily(locale);
+    
+    // Create base text theme
+    final baseTextTheme = ThemeData.dark().textTheme;
+    
+    // Apply font family to text theme only if needed
+    // This ensures Material Icons and emojis use system fonts
+    final textTheme = fontFamily != null
+        ? baseTextTheme.apply(fontFamily: fontFamily)
+        : null;
+
     return ThemeData(
       useMaterial3: true,
+      // Don't set fontFamily globally - only apply to text theme
+      // This allows Material Icons and emojis to use system fonts
+      textTheme: textTheme,
       colorScheme: colorScheme.copyWith(
         // Ensure better contrast for surfaces
         surface: Colors.grey[900]!,
