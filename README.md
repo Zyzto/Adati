@@ -245,6 +245,10 @@ lib/
         └── widgets/         # Onboarding widgets
 ```
 
+### 📚 Documentation
+
+- **[SERVICES.md](SERVICES.md)** - Comprehensive documentation for all services in the codebase, including usage examples and API reference
+
 ## 🛠️ Technology Stack
 
 - **Framework**: [Flutter](https://flutter.dev)
