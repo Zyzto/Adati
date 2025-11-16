@@ -60,7 +60,7 @@ class App extends ConsumerWidget {
     final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
 
     return MaterialApp.router(
-      title: 'Adati',
+      title: 'app_name'.tr(),
       debugShowCheckedModeBanner: false,
       // Custom scroll behavior enables mouse drag support on desktop platforms
       // (Linux, Windows, macOS). Without this, users cannot drag PageView or

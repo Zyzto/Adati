@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:easy_localization/easy_localization.dart';
 import '../database/app_database.dart' as db;
 import '../database/models/tracking_types.dart';
 import '../utils/date_utils.dart' as app_date_utils;
@@ -7,7 +8,7 @@ import '../../features/habits/habit_repository.dart';
 import 'logging_service.dart';
 
 class DemoDataService {
-  static const String _demoTagName = 'Demo';
+  static String get _demoTagName => 'demo'.tr();
 
   /// Check if a habit is demo data
   static Future<bool> isDemoData(int habitId, HabitRepository repository) async {
@@ -106,7 +107,7 @@ class DemoDataService {
           'icon': Icons.fastfood,
           'habitType': HabitType.bad,
           'trackingType': TrackingType.occurrences,
-          'occurrenceNames': ['Breakfast', 'Lunch', 'Dinner', 'Snack'],
+          'occurrenceNames': ['breakfast'.tr(), 'lunch'.tr(), 'dinner'.tr(), 'snack'.tr()],
           'entries': 55,
           'completionRate': 0.65,
         },

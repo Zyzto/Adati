@@ -94,11 +94,13 @@ final filteredSortedHabitsProvider = StreamProvider<List<db.Habit>>((
 
     // Apply type filter
     if (filterByType != null && filterByType.isNotEmpty) {
-      if (filterByType == 'good') {
+      const filterTypeGood = 'good';
+      const filterTypeBad = 'bad';
+      if (filterByType == filterTypeGood) {
         filtered = filtered
             .where((h) => h.habitType == HabitType.good.value)
             .toList();
-      } else if (filterByType == 'bad') {
+      } else if (filterByType == filterTypeBad) {
         filtered = filtered
             .where((h) => h.habitType == HabitType.bad.value)
             .toList();

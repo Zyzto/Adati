@@ -1533,19 +1533,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String _getCheckboxStyleName(String style) {
     switch (style) {
       case 'square':
-        return 'Square';
+        return 'square'.tr();
       case 'bordered':
-        return 'Bordered';
+        return 'bordered'.tr();
       case 'circle':
-        return 'Circle';
+        return 'circle'.tr();
       case 'radio':
-        return 'Radio';
+        return 'radio'.tr();
       case 'task':
-        return 'Task';
+        return 'task'.tr();
       case 'verified':
-        return 'Verified';
+        return 'verified'.tr();
       case 'taskAlt':
-        return 'Task Alt';
+        return 'task_alt'.tr();
       default:
         return style;
     }
@@ -2747,9 +2747,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           future: _getPackageInfo(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const ListTile(
-                leading: CircularProgressIndicator(),
-                title: Text('Loading...'),
+              return ListTile(
+                leading: const CircularProgressIndicator(),
+                title: Text('loading'.tr()),
               );
             }
             

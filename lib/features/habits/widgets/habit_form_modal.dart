@@ -464,7 +464,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
           controller: _unitController,
           decoration: InputDecoration(
             labelText: 'unit'.tr(),
-            hintText: 'e.g., minutes, km, steps',
+            hintText: 'unit_example'.tr(),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.straighten),
           ),
@@ -478,7 +478,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             labelText: 'goal_value'.tr(),
-            hintText: 'e.g., 10, 5.5',
+            hintText: 'goal_value_example'.tr(),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.flag),
           ),
@@ -554,7 +554,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                 controller: _occurrenceNameController,
                 decoration: InputDecoration(
                   labelText: 'add_occurrence'.tr(),
-                  hintText: 'e.g., Fajr, Dhuhr, Asr',
+                  hintText: 'occurrence_example'.tr(),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

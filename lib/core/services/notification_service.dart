@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:easy_localization/easy_localization.dart';
 import '../services/logging_service.dart';
 import 'platform_utils.dart';
 
@@ -110,15 +111,15 @@ class NotificationService {
         title,
         body,
         tz.TZDateTime.from(scheduledDate, tz.local),
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             'habit_reminders',
-            'Habit Reminders',
-            channelDescription: 'Notifications for habit reminders',
+            'habit_reminders'.tr(),
+            channelDescription: 'habit_reminders_description'.tr(),
             importance: Importance.high,
             priority: Priority.high,
           ),
-          iOS: DarwinNotificationDetails(),
+          iOS: const DarwinNotificationDetails(),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,

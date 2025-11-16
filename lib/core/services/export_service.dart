@@ -16,7 +16,7 @@ class ExportService {
       final buffer = StringBuffer();
       
       // Header
-      buffer.writeln('Habit Name,Date,Completed,Notes,Current Streak,Longest Streak');
+      buffer.writeln('csv_header'.tr());
       
       // Group entries by habit
       final entriesByHabit = <int, List<db.TrackingEntry>>{};
@@ -53,8 +53,9 @@ class ExportService {
           for (final entry in habitEntries) {
             final dateStr = DateFormat('yyyy-MM-dd').format(entry.date);
             final notes = entry.notes?.replaceAll('"', '""') ?? '';
+            final completedStr = entry.completed ? 'yes'.tr() : 'no'.tr();
             buffer.writeln(
-              '"${habit.name}",$dateStr,${entry.completed ? "Yes" : "No"},"$notes",${streak.currentStreak},${streak.longestStreak}',
+              '"${habit.name}",$dateStr,$completedStr,"$notes",${streak.currentStreak},${streak.longestStreak}',
             );
           }
         }

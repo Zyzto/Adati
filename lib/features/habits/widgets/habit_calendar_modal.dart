@@ -729,12 +729,12 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
           ),
           // Weekday headers with theme colors
           Row(
-            children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            children: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
                 .map(
                   (day) => Expanded(
                     child: Center(
                       child: Text(
-                        day,
+                        day.tr(),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurfaceVariant,
@@ -806,8 +806,16 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
 
                       return Semantics(
                         label: isCompleted
-                            ? 'Completed on ${DateFormat('MMMM d').format(day)}'
-                            : 'Not completed on ${DateFormat('MMMM d').format(day)}',
+                            ? 'completed_on'.tr(
+                                namedArgs: {
+                                  'date': DateFormat('MMMM d').format(day),
+                                },
+                              )
+                            : 'not_completed_on'.tr(
+                                namedArgs: {
+                                  'date': DateFormat('MMMM d').format(day),
+                                },
+                              ),
                         button: true,
                         child: _AnimatedCalendarDay(
                           key: ValueKey('${day.year}-${day.month}-${day.day}'),

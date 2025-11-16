@@ -9,6 +9,10 @@ import 'habit_form_modal.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../settings/providers/settings_providers.dart';
 
+// Filter type constants
+const String _filterTypeGood = 'good';
+const String _filterTypeBad = 'bad';
+
 class HabitsSection extends ConsumerStatefulWidget {
   const HabitsSection({super.key});
 
@@ -606,13 +610,13 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
           ),
         ),
         PopupMenuItem(
-          value: 'filter_type:good',
+          value: 'filter_type:$_filterTypeGood',
           child: Row(
             children: [
               Icon(
                 Icons.thumb_up,
                 size: 20,
-                color: filterByType == 'good'
+                color: filterByType == _filterTypeGood
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -622,13 +626,13 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
           ),
         ),
         PopupMenuItem(
-          value: 'filter_type:bad',
+          value: 'filter_type:$_filterTypeBad',
           child: Row(
             children: [
               Icon(
                 Icons.thumb_down,
                 size: 20,
-                color: filterByType == 'bad'
+                color: filterByType == _filterTypeBad
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.onSurfaceVariant,
               ),

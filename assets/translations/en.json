@@ -247,6 +247,8 @@
   "group_by_type": "Group by Type",
   "no_grouping": "No Grouping",
   "all_habits": "All Habits",
+  "good_habits": "Good Habits",
+  "bad_habits": "Bad Habits",
   "good_habits_only": "Good Habits Only",
   "bad_habits_only": "Bad Habits Only",
   "filter_by_tags": "Filter by Tags",
@@ -385,5 +387,48 @@
     }
   },
   "url_copied_to_clipboard": "URL copied to clipboard",
-  "copy": "Copy"
+  "copy": "Copy",
+  "unit_example": "e.g., minutes, km, steps",
+  "goal_value_example": "e.g., 10, 5.5",
+  "occurrence_example": "e.g., Fajr, Dhuhr, Asr",
+  "completed_on": "Completed on {date}",
+  "@completed_on": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "not_completed_on": "Not completed on {date}",
+  "@not_completed_on": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "habit_reminders": "Habit Reminders",
+  "habit_reminders_description": "Notifications for habit reminders",
+  "csv_header": "Habit Name,Date,Completed,Notes,Current Streak,Longest Streak",
+  "yes": "Yes",
+  "no": "No",
+  "mon": "Mon",
+  "tue": "Tue",
+  "wed": "Wed",
+  "thu": "Thu",
+  "fri": "Fri",
+  "sat": "Sat",
+  "sun": "Sun",
+  "demo": "Demo",
+  "breakfast": "Breakfast",
+  "lunch": "Lunch",
+  "dinner": "Dinner",
+  "snack": "Snack",
+  "square": "Square",
+  "bordered": "Bordered",
+  "circle": "Circle",
+  "radio": "Radio",
+  "task": "Task",
+  "verified": "Verified",
+  "task_alt": "Task Alt"
 }

@@ -188,7 +188,7 @@
   "saturday": "السبت",
   "sunday": "الأحد",
   "habit_type": "نوع العادة",
-  "good_habit": "عادة جيدة",
+  "good_habit": "عادة حسنة",
   "bad_habit": "عادة سيئة",
   "tracking_type": "نوع التتبع",
   "measurable": "قابل للقياس",
@@ -247,7 +247,9 @@
   "group_by_type": "تجميع حسب النوع",
   "no_grouping": "بدون تجميع",
   "all_habits": "جميع العادات",
-  "good_habits_only": "العادات الجيدة فقط",
+  "good_habits": "العادات الحسنة",
+  "bad_habits": "العادات السيئة",
+  "good_habits_only": "العادات الحسنة فقط",
   "bad_habits_only": "العادات السيئة فقط",
   "filter_by_tags": "تصفية حسب العلامات",
   "more_tags": "المزيد من العلامات",
@@ -385,5 +387,48 @@
     }
   },
   "url_copied_to_clipboard": "تم نسخ الرابط إلى الحافظة",
-  "copy": "نسخ"
+  "copy": "نسخ",
+  "unit_example": "مثال: دقائق، كم، خطوات",
+  "goal_value_example": "مثال: 10، 5.5",
+  "occurrence_example": "مثال: الفجر، الظهر، العصر",
+  "completed_on": "مكتمل في {date}",
+  "@completed_on": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "not_completed_on": "غير مكتمل في {date}",
+  "@not_completed_on": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "habit_reminders": "تذكيرات العادات",
+  "habit_reminders_description": "إشعارات لتذكيرات العادات",
+  "csv_header": "اسم العادة,التاريخ,مكتمل,ملاحظات,السلسلة الحالية,أطول سلسلة",
+  "yes": "نعم",
+  "no": "لا",
+  "mon": "إثن",
+  "tue": "ثلث",
+  "wed": "أرب",
+  "thu": "خمس",
+  "fri": "جمع",
+  "sat": "سبت",
+  "sun": "أحد",
+  "demo": "تجريبي",
+  "breakfast": "الإفطار",
+  "lunch": "الغداء",
+  "dinner": "العشاء",
+  "snack": "وجبة خفيفة",
+  "square": "مربع",
+  "bordered": "محدد",
+  "circle": "دائرة",
+  "radio": "راديو",
+  "task": "مهمة",
+  "verified": "متحقق",
+  "task_alt": "مهمة بديلة"
 }
