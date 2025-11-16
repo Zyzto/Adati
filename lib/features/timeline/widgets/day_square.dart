@@ -12,6 +12,7 @@ class DaySquare extends ConsumerWidget {
   final int? streakLength;
   final bool highlightWeek;
   final bool highlightMonth;
+  final int? completionColor;
 
   const DaySquare({
     super.key,
@@ -22,6 +23,7 @@ class DaySquare extends ConsumerWidget {
     this.streakLength,
     this.highlightWeek = false,
     this.highlightMonth = false,
+    this.completionColor,
   });
 
   double _getSize(WidgetRef ref) {
@@ -39,7 +41,7 @@ class DaySquare extends ConsumerWidget {
     }
   }
 
-  Color _getColor() {
+  Color _getColor(WidgetRef ref) {
     if (!completed) {
       if (app_date_utils.DateUtils.isToday(date)) {
         return Colors.grey[300]!;
@@ -50,20 +52,24 @@ class DaySquare extends ConsumerWidget {
       return Colors.grey[200]!;
     }
     
+    // Use provided completion color or default
+    final baseColor = completionColor != null 
+        ? Color(completionColor!)
+        : Colors.green;
+    
     // Apply gradient based on streak length
     if (streakLength != null && streakLength! > 0) {
-      // Darker green for longer streaks
+      // Darker color for longer streaks
       final intensity = (streakLength! / 30).clamp(0.0, 1.0); // Max at 30 days
-      final baseGreen = Colors.green;
       return Color.fromRGBO(
-        ((baseGreen.r * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
-        ((baseGreen.g * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
-        ((baseGreen.b * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
+        ((baseColor.r * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
+        ((baseColor.g * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
+        ((baseColor.b * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
         1.0,
       );
     }
     
-    return Colors.green;
+    return baseColor;
   }
 
   Color? _getStreakBorderColor() {
@@ -158,7 +164,7 @@ class DaySquare extends ConsumerWidget {
               width: squareSize,
               height: squareSize,
               decoration: BoxDecoration(
-                color: _getColor(),
+                color: _getColor(ref),
                 borderRadius: BorderRadius.circular(2),
                 border: _getBorder(ref),
               ),

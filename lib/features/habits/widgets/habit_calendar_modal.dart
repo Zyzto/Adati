@@ -873,22 +873,74 @@ class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
                                 },
                               ),
                         button: true,
-                        child: _AnimatedCalendarDay(
-                          key: ValueKey('${day.year}-${day.month}-${day.day}'),
-                          isCompleted: isCompleted,
-                          isToday: isToday,
-                          isWeekend: isWeekend,
-                          day: day,
-                          entriesMap: entriesMap,
-                          hasNotes: hasNotes,
-                          streakLength: streakLength,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _toggleDay(day);
-                          },
-                          onLongPress: () {
-                            HapticFeedback.mediumImpact();
-                            _showNoteEditor(context, day);
+                        child: Builder(
+                          builder: (context) {
+                            final habitAsync = ref.watch(habitByIdProvider(widget.habitId));
+                            return habitAsync.when(
+                              data: (habit) {
+                                final isGoodHabit = habit?.habitType == HabitType.good.value;
+                                final completionColor = isGoodHabit
+                                    ? ref.watch(calendarCompletionColorProvider)
+                                    : ref.watch(calendarBadHabitCompletionColorProvider);
+                                return _AnimatedCalendarDay(
+                                  key: ValueKey('${day.year}-${day.month}-${day.day}'),
+                                  isCompleted: isCompleted,
+                                  isToday: isToday,
+                                  isWeekend: isWeekend,
+                                  day: day,
+                                  entriesMap: entriesMap,
+                                  hasNotes: hasNotes,
+                                  streakLength: streakLength,
+                                  completionColor: completionColor,
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    _toggleDay(day);
+                                  },
+                                  onLongPress: () {
+                                    HapticFeedback.mediumImpact();
+                                    _showNoteEditor(context, day);
+                                  },
+                                );
+                              },
+                              loading: () => _AnimatedCalendarDay(
+                                key: ValueKey('${day.year}-${day.month}-${day.day}'),
+                                isCompleted: isCompleted,
+                                isToday: isToday,
+                                isWeekend: isWeekend,
+                                day: day,
+                                entriesMap: entriesMap,
+                                hasNotes: hasNotes,
+                                streakLength: streakLength,
+                                completionColor: ref.watch(calendarCompletionColorProvider),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  _toggleDay(day);
+                                },
+                                onLongPress: () {
+                                  HapticFeedback.mediumImpact();
+                                  _showNoteEditor(context, day);
+                                },
+                              ),
+                              error: (_, __) => _AnimatedCalendarDay(
+                                key: ValueKey('${day.year}-${day.month}-${day.day}'),
+                                isCompleted: isCompleted,
+                                isToday: isToday,
+                                isWeekend: isWeekend,
+                                day: day,
+                                entriesMap: entriesMap,
+                                hasNotes: hasNotes,
+                                streakLength: streakLength,
+                                completionColor: ref.watch(calendarCompletionColorProvider),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  _toggleDay(day);
+                                },
+                                onLongPress: () {
+                                  HapticFeedback.mediumImpact();
+                                  _showNoteEditor(context, day);
+                                },
+                              ),
+                            );
                           },
                         ),
                       );
@@ -1341,6 +1393,7 @@ class _AnimatedCalendarDay extends StatefulWidget {
   final int streakLength;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final int completionColor;
 
   const _AnimatedCalendarDay({
     super.key,
@@ -1351,6 +1404,7 @@ class _AnimatedCalendarDay extends StatefulWidget {
     required this.entriesMap,
     this.hasNotes = false,
     this.streakLength = 0,
+    required this.completionColor,
     required this.onTap,
     this.onLongPress,
   });
@@ -1416,9 +1470,8 @@ class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
     }
   }
 
-  Color _getCompletedColor(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return colorScheme.primary;
+  Color _getCompletedColor(int completionColorValue) {
+    return Color(completionColorValue);
   }
 
   @override
@@ -1461,8 +1514,8 @@ class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
                   : (widget.isWeekend ? weekendColor : colorScheme.surface);
               // For weekends, blend with weekend color even when completing
               final completedColor = widget.isWeekend
-                  ? Color.lerp(weekendColor, _getCompletedColor(context), 0.7)!
-                  : _getCompletedColor(context);
+                  ? Color.lerp(weekendColor, _getCompletedColor(widget.completionColor), 0.7)!
+                  : _getCompletedColor(widget.completionColor);
               backgroundColor = Color.lerp(
                 uncompletedColor,
                 completedColor,
@@ -1473,12 +1526,12 @@ class _AnimatedCalendarDayState extends State<_AnimatedCalendarDay>
               if (widget.isCompleted && widget.isWeekend) {
                 backgroundColor = Color.lerp(
                   weekendColor,
-                  _getCompletedColor(context),
+                  _getCompletedColor(widget.completionColor),
                   0.6,
                 )!;
               } else {
                 backgroundColor = widget.isCompleted
-                    ? _getCompletedColor(context)
+                    ? _getCompletedColor(widget.completionColor)
                     : (widget.isToday
                           ? colorScheme.primaryContainer.withValues(
                               alpha: colorScheme.brightness == Brightness.dark

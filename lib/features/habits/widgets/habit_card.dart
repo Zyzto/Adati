@@ -446,12 +446,17 @@ class HabitCard extends ConsumerWidget {
       final checkboxStyleString = ref.watch(habitCheckboxStyleProvider);
       final checkboxStyle = habitCheckboxStyleFromString(checkboxStyleString);
 
+      final isGoodHabit = habit.habitType == HabitType.good.value;
+      final habitCardCompletionColor = isGoodHabit
+          ? ref.watch(habitCardCompletionColorProvider)
+          : ref.watch(habitCardBadHabitCompletionColorProvider);
       return IgnorePointer(
         child: buildCheckboxWidget(
           checkboxStyle,
           isCompleted,
           36,
           null, // onTap is handled by parent InkWell
+          completionColor: Color(habitCardCompletionColor),
         ),
       );
     } else if (trackingType == TrackingType.measurable) {
@@ -747,11 +752,15 @@ class HabitCard extends ConsumerWidget {
     final showStreakBorders = ref.watch(showStreakBordersProvider);
     final cardSpacing = ref.watch(cardSpacingProvider);
 
+    final habitCardCompletionColor = isGoodHabit
+        ? ref.watch(habitCardCompletionColorProvider)
+        : ref.watch(habitCardBadHabitCompletionColorProvider);
+
     return Card(
       margin: EdgeInsets.only(bottom: cardSpacing),
       shape: streakAsync.maybeWhen(
         data: (streak) {
-          // Only show border if there's an active streak AND today is part of it AND setting is enabled
+          // Show border with completion color when today is completed, or with streak color if streak borders are enabled
           return entriesAsync.maybeWhen(
             data: (entries) {
               final today = app_date_utils.DateUtils.getToday();
@@ -760,6 +769,8 @@ class HabitCard extends ConsumerWidget {
                     (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
                   )
                   .firstOrNull;
+
+              final isTodayCompleted = todayEntry?.completed ?? false;
 
               // For good habits: today must be completed for streak to be active
               // For bad habits: today must NOT be completed (not doing bad habit) for streak to be active
@@ -771,11 +782,26 @@ class HabitCard extends ConsumerWidget {
                     : !todayEntry.completed;
               }
 
-              // Only show border if streak > 0 AND today is definitely part of the active streak AND setting is enabled
-              if (showStreakBorders &&
+              // Border logic: show border when checked/completed (same for good and bad habits)
+              // - Good habits: border when completed (they did the good thing)
+              // - Bad habits: border when completed (they did the bad thing - checked)
+              final shouldShowCompletionBorder = isTodayCompleted;
+
+              // Priority: Completion color border (if applicable) > Streak border (if enabled and streak active)
+              if (shouldShowCompletionBorder) {
+                // Show border with completion color
+                return RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: Color(habitCardCompletionColor),
+                    width: 2,
+                  ),
+                );
+              } else if (showStreakBorders &&
                   streak != null &&
                   streak.combinedStreak > 0 &&
                   todayIsPartOfStreak) {
+                // Show streak color border if streak borders are enabled and streak is active
                 final streakColor = _getStreakColor(streak.combinedStreak);
                 return RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -790,8 +816,40 @@ class HabitCard extends ConsumerWidget {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           );
         },
-        orElse: () =>
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        orElse: () {
+          // When streak data is not available, check if today is completed
+          return entriesAsync.maybeWhen(
+            data: (entries) {
+              final today = app_date_utils.DateUtils.getToday();
+              final todayEntry = entries
+                  .where(
+                    (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
+                  )
+                  .firstOrNull;
+              final isTodayCompleted = todayEntry?.completed ?? false;
+
+              // Border logic: show border when checked/completed (same for good and bad habits)
+              // - Good habits: border when completed (they did the good thing)
+              // - Bad habits: border when completed (they did the bad thing - checked)
+              final shouldShowCompletionBorder = isTodayCompleted;
+
+              if (shouldShowCompletionBorder) {
+                return RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: Color(habitCardCompletionColor),
+                    width: 2,
+                  ),
+                );
+              }
+              return RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              );
+            },
+            orElse: () =>
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          );
+        },
       ),
       child: IntrinsicHeight(
         child: Row(

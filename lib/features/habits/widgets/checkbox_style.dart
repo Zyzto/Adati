@@ -14,9 +14,12 @@ Widget buildCheckboxWidget(
   HabitCheckboxStyle style,
   bool isCompleted,
   double size,
-  VoidCallback? onTap,
-) {
-  final color = isCompleted ? Colors.green : Colors.grey;
+  VoidCallback? onTap, {
+  Color? completionColor,
+}) {
+  final color = isCompleted 
+      ? (completionColor ?? Colors.green)
+      : Colors.grey;
   final iconSize = size * 0.9;
 
   Widget checkboxWidget;
