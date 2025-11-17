@@ -13,13 +13,81 @@ class AppTheme {
     return null;
   }
 
+  // Helper method to get text scale factor from font size scale setting
+  static double _getTextScaleFactor(String? fontSizeScale) {
+    switch (fontSizeScale) {
+      case 'small':
+        return 0.85;
+      case 'normal':
+        return 1.0;
+      case 'large':
+        return 1.15;
+      case 'extra_large':
+        return 1.3;
+      default:
+        return 1.0;
+    }
+  }
+
+  // Helper method to scale text theme
+  static TextTheme _scaleTextTheme(TextTheme baseTextTheme, double scaleFactor) {
+    return TextTheme(
+      displayLarge: baseTextTheme.displayLarge?.copyWith(
+        fontSize: (baseTextTheme.displayLarge?.fontSize ?? 57) * scaleFactor,
+      ),
+      displayMedium: baseTextTheme.displayMedium?.copyWith(
+        fontSize: (baseTextTheme.displayMedium?.fontSize ?? 45) * scaleFactor,
+      ),
+      displaySmall: baseTextTheme.displaySmall?.copyWith(
+        fontSize: (baseTextTheme.displaySmall?.fontSize ?? 36) * scaleFactor,
+      ),
+      headlineLarge: baseTextTheme.headlineLarge?.copyWith(
+        fontSize: (baseTextTheme.headlineLarge?.fontSize ?? 32) * scaleFactor,
+      ),
+      headlineMedium: baseTextTheme.headlineMedium?.copyWith(
+        fontSize: (baseTextTheme.headlineMedium?.fontSize ?? 28) * scaleFactor,
+      ),
+      headlineSmall: baseTextTheme.headlineSmall?.copyWith(
+        fontSize: (baseTextTheme.headlineSmall?.fontSize ?? 24) * scaleFactor,
+      ),
+      titleLarge: baseTextTheme.titleLarge?.copyWith(
+        fontSize: (baseTextTheme.titleLarge?.fontSize ?? 22) * scaleFactor,
+      ),
+      titleMedium: baseTextTheme.titleMedium?.copyWith(
+        fontSize: (baseTextTheme.titleMedium?.fontSize ?? 16) * scaleFactor,
+      ),
+      titleSmall: baseTextTheme.titleSmall?.copyWith(
+        fontSize: (baseTextTheme.titleSmall?.fontSize ?? 14) * scaleFactor,
+      ),
+      bodyLarge: baseTextTheme.bodyLarge?.copyWith(
+        fontSize: (baseTextTheme.bodyLarge?.fontSize ?? 16) * scaleFactor,
+      ),
+      bodyMedium: baseTextTheme.bodyMedium?.copyWith(
+        fontSize: (baseTextTheme.bodyMedium?.fontSize ?? 14) * scaleFactor,
+      ),
+      bodySmall: baseTextTheme.bodySmall?.copyWith(
+        fontSize: (baseTextTheme.bodySmall?.fontSize ?? 12) * scaleFactor,
+      ),
+      labelLarge: baseTextTheme.labelLarge?.copyWith(
+        fontSize: (baseTextTheme.labelLarge?.fontSize ?? 14) * scaleFactor,
+      ),
+      labelMedium: baseTextTheme.labelMedium?.copyWith(
+        fontSize: (baseTextTheme.labelMedium?.fontSize ?? 12) * scaleFactor,
+      ),
+      labelSmall: baseTextTheme.labelSmall?.copyWith(
+        fontSize: (baseTextTheme.labelSmall?.fontSize ?? 11) * scaleFactor,
+      ),
+    );
+  }
+
   static ThemeData lightTheme({
     Color? seedColor,
     double? cardElevation,
     double? cardBorderRadius,
     Locale? locale,
+    String? fontSizeScale,
   }) {
-    Log.debug('AppTheme.lightTheme(seedColor=$seedColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, locale=${locale?.languageCode})');
+    Log.debug('AppTheme.lightTheme(seedColor=$seedColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, locale=${locale?.languageCode}, fontSizeScale=$fontSizeScale)');
     final baseSeedColor = seedColor ?? Colors.deepPurple;
     final colorScheme = ColorScheme.fromSeed(
       seedColor: baseSeedColor,
@@ -27,15 +95,19 @@ class AppTheme {
     );
 
     final fontFamily = _getFontFamily(locale);
+    final textScaleFactor = _getTextScaleFactor(fontSizeScale);
     
     // Create base text theme
     final baseTextTheme = ThemeData.light().textTheme;
     
     // Apply font family to text theme only if needed
     // This ensures Material Icons and emojis use system fonts
-    final textTheme = fontFamily != null
+    final textThemeWithFont = fontFamily != null
         ? baseTextTheme.apply(fontFamily: fontFamily)
-        : null;
+        : baseTextTheme;
+    
+    // Apply font size scale
+    final textTheme = _scaleTextTheme(textThemeWithFont, textScaleFactor);
 
     return ThemeData(
       useMaterial3: true,
@@ -109,8 +181,9 @@ class AppTheme {
     double? cardElevation,
     double? cardBorderRadius,
     Locale? locale,
+    String? fontSizeScale,
   }) {
-    Log.debug('AppTheme.darkTheme(seedColor=$seedColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, locale=${locale?.languageCode})');
+    Log.debug('AppTheme.darkTheme(seedColor=$seedColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, locale=${locale?.languageCode}, fontSizeScale=$fontSizeScale)');
     final baseSeedColor = seedColor ?? Colors.deepPurple;
     final colorScheme = ColorScheme.fromSeed(
       seedColor: baseSeedColor,
@@ -118,15 +191,19 @@ class AppTheme {
     );
 
     final fontFamily = _getFontFamily(locale);
+    final textScaleFactor = _getTextScaleFactor(fontSizeScale);
     
     // Create base text theme
     final baseTextTheme = ThemeData.dark().textTheme;
     
     // Apply font family to text theme only if needed
     // This ensures Material Icons and emojis use system fonts
-    final textTheme = fontFamily != null
+    final textThemeWithFont = fontFamily != null
         ? baseTextTheme.apply(fontFamily: fontFamily)
-        : null;
+        : baseTextTheme;
+    
+    // Apply font size scale
+    final textTheme = _scaleTextTheme(textThemeWithFont, textScaleFactor);
 
     return ThemeData(
       useMaterial3: true,

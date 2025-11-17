@@ -60,9 +60,10 @@ class App extends ConsumerWidget {
     final themeColor = ref.watch(themeColorProvider);
     final cardElevation = ref.watch(cardElevationProvider);
     final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
+    final fontSizeScale = ref.watch(fontSizeScaleProvider);
 
     Log.debug(
-      'App build: themeMode=$themeMode, themeColor=$themeColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius',
+      'App build: themeMode=$themeMode, themeColor=$themeColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, fontSizeScale=$fontSizeScale',
     );
 
     return MaterialApp.router(
@@ -77,12 +78,14 @@ class App extends ConsumerWidget {
         cardElevation: cardElevation,
         cardBorderRadius: cardBorderRadius,
         locale: context.locale,
+        fontSizeScale: fontSizeScale,
       ),
       darkTheme: AppTheme.darkTheme(
         seedColor: Color(themeColor),
         cardElevation: cardElevation,
         cardBorderRadius: cardBorderRadius,
         locale: context.locale,
+        fontSizeScale: fontSizeScale,
       ),
       themeMode: themeMode,
       localizationsDelegates: context.localizationDelegates,
