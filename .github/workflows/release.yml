@@ -42,11 +42,22 @@ jobs:
           if [ -n "${{ secrets.KEYSTORE_FILE }}" ]; then
             echo "Setting up release signing..."
             echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > android/app/release.keystore
+            
+            # Verify keystore and list available aliases
+            echo "Verifying keystore..."
+            if keytool -list -v -keystore android/app/release.keystore -storepass "${{ secrets.KEYSTORE_PASSWORD }}" 2>/dev/null | grep -i "Alias name:"; then
+              echo "✓ Keystore is valid"
+              echo "Available aliases:"
+              keytool -list -keystore android/app/release.keystore -storepass "${{ secrets.KEYSTORE_PASSWORD }}" 2>/dev/null || true
+            else
+              echo "⚠ Warning: Could not verify keystore (this is normal if passwords don't match yet)"
+            fi
+            
             echo "storeFile=release.keystore" > android/key.properties
             echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
             echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
             echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-            echo "✓ Release signing configured"
+            echo "✓ Release signing configured with alias: ${{ secrets.KEY_ALIAS }}"
           else
             echo "⚠ No signing secrets found, will use debug signing"
           fi
