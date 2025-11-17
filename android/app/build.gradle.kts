@@ -68,6 +68,12 @@ android {
         release {
             // Use release signing config if it exists, otherwise fall back to debug
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            
+            // ProGuard rules (even if minifyEnabled is false, rules help with compatibility)
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
