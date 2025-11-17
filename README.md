@@ -9,7 +9,18 @@
 [![Dart](https://img.shields.io/badge/Dart-3.9.2%2B-0175C2?logo=dart)](https://dart.dev)
 [![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Web-lightgrey)](https://flutter.dev)
 
+[![Latest Release](https://img.shields.io/github/v/release/Zyzto/Adati?label=Latest%20Release&logo=github)](https://github.com/Zyzto/Adati/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Zyzto/Adati/total?label=Downloads&logo=github)](https://github.com/Zyzto/Adati/releases)
+
 </div>
+
+## 📥 Download
+
+Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/Adati/releases):
+
+- **Android**: Download the APK file and install directly, or use the App Bundle for Google Play Store
+- **Linux**: Download the AppImage, make it executable (`chmod +x adati-*.AppImage`), and run it
+- **Windows**: Download the ZIP file, extract it, and run `adati.exe` from the extracted folder
 
 ## 📱 About
 
@@ -446,14 +457,6 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📦 Download
-
-Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/Adati/releases):
-
-- **Android**: Download the APK file and install directly, or use the App Bundle for Google Play Store
-- **Linux**: Download the AppImage, make it executable (`chmod +x adati-*.AppImage`), and run it
-- **Windows**: Download the ZIP file, extract it, and run `adati.exe`
 
 ## 📄 License
 
