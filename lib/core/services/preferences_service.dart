@@ -182,7 +182,7 @@ class PreferencesService {
       prefs.setString(_keyDateFormat, format);
 
   // First day of week (0=Sunday, 1=Monday)
-  static int getFirstDayOfWeek() => prefs.getInt(_keyFirstDayOfWeek) ?? 1;
+  static int getFirstDayOfWeek() => prefs.getInt(_keyFirstDayOfWeek) ?? 0;
   static Future<bool> setFirstDayOfWeek(int day) =>
       prefs.setInt(_keyFirstDayOfWeek, day);
 
@@ -198,24 +198,24 @@ class PreferencesService {
     return prefs.setBool(_keyNotificationsEnabled, enabled);
   }
 
-  // Habit checkbox style (default: square)
+  // Habit checkbox style (default: circle)
   static String getHabitCheckboxStyle() {
     final value = prefs.getString(_keyHabitCheckboxStyle);
-    return (value == null || value.isEmpty) ? 'square' : value;
+    return (value == null || value.isEmpty) ? 'circle' : value;
   }
 
   static Future<bool> setHabitCheckboxStyle(String style) =>
       prefs.setString(_keyHabitCheckboxStyle, style);
 
-  // Habit detail timeline days (default: 200)
+  // Habit detail timeline days (default: 100)
   static int getModalTimelineDays() =>
-      prefs.getInt(_keyModalTimelineDays) ?? 200;
+      prefs.getInt(_keyModalTimelineDays) ?? 100;
   static Future<bool> setModalTimelineDays(int days) =>
       prefs.setInt(_keyModalTimelineDays, days);
 
-  // Habit card timeline days (default: 100)
+  // Habit card timeline days (default: 50)
   static int getHabitCardTimelineDays() =>
-      prefs.getInt(_keyHabitCardTimelineDays) ?? 100;
+      prefs.getInt(_keyHabitCardTimelineDays) ?? 50;
   static Future<bool> setHabitCardTimelineDays(int days) =>
       prefs.setInt(_keyHabitCardTimelineDays, days);
 
@@ -258,7 +258,7 @@ class PreferencesService {
 
   // Display Preferences
   static bool getShowStreakBorders() =>
-      prefs.getBool(_keyShowStreakBorders) ?? true;
+      prefs.getBool(_keyShowStreakBorders) ?? false;
   static Future<bool> setShowStreakBorders(bool value) =>
       prefs.setBool(_keyShowStreakBorders, value);
 
@@ -335,7 +335,7 @@ class PreferencesService {
   // Calendar timeline completion color (for timeline inside calendar modal)
   static int getCalendarTimelineCompletionColor() =>
       prefs.getInt(_keyCalendarTimelineCompletionColor) ??
-      0xFF4CAF50; // green default
+      4282339765; // Updated default
   static Future<bool> setCalendarTimelineCompletionColor(int color) =>
       prefs.setInt(_keyCalendarTimelineCompletionColor, color);
 
@@ -361,7 +361,7 @@ class PreferencesService {
 
   static int getCalendarTimelineBadHabitCompletionColor() =>
       prefs.getInt(_keyCalendarTimelineBadHabitCompletionColor) ??
-      0xFFF44336; // red default
+      4280391411; // Updated default
   static Future<bool> setCalendarTimelineBadHabitCompletionColor(int color) =>
       prefs.setInt(_keyCalendarTimelineBadHabitCompletionColor, color);
 
@@ -420,7 +420,7 @@ class PreferencesService {
 
   static String getBadHabitLogicMode() {
     final value = prefs.getString(_keyBadHabitLogicMode);
-    return (value == null || value.isEmpty) ? 'negative' : value;
+    return (value == null || value.isEmpty) ? 'positive' : value;
   }
 
   static Future<bool> setBadHabitLogicMode(String mode) =>
