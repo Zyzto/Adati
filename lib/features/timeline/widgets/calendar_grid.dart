@@ -64,12 +64,22 @@ class CalendarGrid extends ConsumerWidget {
               entries,
               badHabitLogicMode,
             );
+            
+            // Check if only bad habits exist
+            final hasGoodHabits = habits.any((h) => h.habitType == HabitType.good.value);
+            final hasBadHabits = habits.any((h) => h.habitType == HabitType.bad.value);
+            final onlyBadHabits = !hasGoodHabits && hasBadHabits;
+            
+            // Use bad habit color if only bad habits exist, otherwise use good habit color
+            final completionColor = onlyBadHabits
+                ? ref.watch(mainTimelineBadHabitCompletionColorProvider)
+                : ref.watch(mainTimelineCompletionColorProvider);
 
             return DaySquare(
               date: day,
               completed: completionRate > 0,
               onTap: null, // Disabled for now, might be used later
-              completionColor: ref.watch(mainTimelineCompletionColorProvider),
+              completionColor: completionColor,
             );
           },
           loading: () => DaySquare(
