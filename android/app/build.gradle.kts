@@ -32,22 +32,34 @@ android {
     }
 
     signingConfigs {
-        // Only create release signing config if keystore file exists
+        // Support both CI/CD (environment variables) and local builds (key.properties)
         val keystorePropertiesFile = rootProject.file("key.properties")
-        if (keystorePropertiesFile.exists()) {
+        val hasKeystoreFile = keystorePropertiesFile.exists()
+        val hasEnvVars = System.getenv("KEYSTORE_FILE") != null
+        
+        if (hasKeystoreFile || hasEnvVars) {
             create("release") {
-                // Signing configuration from key.properties file
-                // For local builds, create a key.properties file with:
-                // storeFile=path/to/keystore.jks
-                // storePassword=your_store_password
-                // keyAlias=your_key_alias
-                // keyPassword=your_key_password
-                val keystoreProperties = Properties()
-                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
+                if (hasEnvVars) {
+                    // CI/CD: Use environment variables from GitHub Secrets
+                    // The keystore file is created in android/app/release.keystore
+                    storeFile = file("release.keystore")
+                    storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+                    keyAlias = System.getenv("KEY_ALIAS") ?: ""
+                    keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+                } else {
+                    // Local: Use key.properties file
+                    // For local builds, create a key.properties file with:
+                    // storeFile=path/to/keystore.jks
+                    // storePassword=your_store_password
+                    // keyAlias=your_key_alias
+                    // keyPassword=your_key_password
+                    val keystoreProperties = Properties()
+                    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+                    storeFile = file(keystoreProperties["storeFile"] as String)
+                    storePassword = keystoreProperties["storePassword"] as String
+                    keyAlias = keystoreProperties["keyAlias"] as String
+                    keyPassword = keystoreProperties["keyPassword"] as String
+                }
             }
         }
     }

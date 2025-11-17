@@ -37,6 +37,20 @@ jobs:
       - name: Generate code
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
+      - name: Setup Android signing
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_FILE }}" ]; then
+            echo "Setting up release signing..."
+            echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > android/app/release.keystore
+            echo "storeFile=release.keystore" > android/key.properties
+            echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
+            echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+            echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+            echo "✓ Release signing configured"
+          else
+            echo "⚠ No signing secrets found, will use debug signing"
+          fi
+
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
