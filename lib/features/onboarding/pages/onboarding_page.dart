@@ -7,6 +7,7 @@ import '../../../core/services/preferences_service.dart';
 import '../../../core/services/demo_data_service.dart';
 import '../../../core/services/import_service.dart';
 import '../../habits/providers/habit_providers.dart';
+import '../../settings/providers/settings_providers.dart';
 import '../widgets/onboarding_slide.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -139,6 +140,77 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _completeOnboarding();
   }
 
+  void _showLanguageDialog(BuildContext context) {
+    final currentLanguage = PreferencesService.getLanguage() ?? 'en';
+    final navigator = Navigator.of(context);
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('select_language'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                Icons.language,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text('english'.tr()),
+              trailing: currentLanguage == 'en'
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () async {
+                await PreferencesService.setLanguage('en');
+                if (dialogContext.mounted) {
+                  await dialogContext.setLocale(const Locale('en'));
+                  navigator.pop();
+                }
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.language,
+                color: theme.colorScheme.primary,
+              ),
+              title: Text('arabic'.tr()),
+              trailing: currentLanguage == 'ar'
+                  ? Icon(Icons.check, color: theme.colorScheme.primary)
+                  : null,
+              onTap: () async {
+                await PreferencesService.setLanguage('ar');
+                if (dialogContext.mounted) {
+                  await dialogContext.setLocale(const Locale('ar'));
+                  navigator.pop();
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleTheme(WidgetRef ref) {
+    final notifier = ref.read(themeModeNotifierProvider);
+    final currentTheme = ref.read(themeModeProvider);
+
+    // Toggle between light and dark (skip system for simplicity in onboarding)
+    final newTheme = currentTheme == ThemeMode.light
+        ? ThemeMode.dark
+        : ThemeMode.light;
+
+    notifier.setThemeMode(newTheme);
+    ref.invalidate(themeModeNotifierProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -151,20 +223,58 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         body: SafeArea(
           child: Column(
             children: [
-              // Skip button (hide on last page)
-              if (_currentPage < slidesList.length)
-                Align(
-                  alignment: Alignment.topRight,
-                  child: TextButton(
-                    onPressed: () {
-                      _goToPage(slidesList.length);
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.onSurfaceVariant,
+              // Top bar with language, theme toggle, and skip button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Language and Theme controls (visible on all pages)
+                    // In RTL, this will be on the right side
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Language selector
+                        IconButton(
+                          icon: const Icon(Icons.language),
+                          tooltip: 'select_language'.tr(),
+                          onPressed: () => _showLanguageDialog(context),
+                          style: IconButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        // Theme toggle
+                        IconButton(
+                          icon: ref.watch(themeModeProvider) == ThemeMode.dark
+                              ? const Icon(Icons.light_mode)
+                              : const Icon(Icons.dark_mode),
+                          tooltip: ref.watch(themeModeProvider) == ThemeMode.dark
+                              ? 'light'.tr()
+                              : 'dark'.tr(),
+                          onPressed: () => _toggleTheme(ref),
+                          style: IconButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Text('skip'.tr()),
-                  ),
+                    // Skip button (hide on last page)
+                    // In RTL, this will be on the left side
+                    if (_currentPage < slidesList.length)
+                      TextButton(
+                        onPressed: () {
+                          _goToPage(slidesList.length);
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        child: Text('skip'.tr()),
+                      )
+                    else
+                      const SizedBox.shrink(),
+                  ],
                 ),
+              ),
               // PageView
               Expanded(
                 child: MouseRegion(
