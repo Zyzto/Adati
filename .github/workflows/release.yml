@@ -183,11 +183,30 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release --no-tree-shake-icons
 
+      - name: Get version from tag or input
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event.inputs.version }}") {
+            $version = "${{ github.event.inputs.version }}"
+          } else {
+            # Extract version from tag (e.g., refs/tags/v0.2.0 -> 0.2.0)
+            $ref = "${{ github.ref }}"
+            if ($ref -match "refs/tags/v(.+)") {
+              $version = $matches[1]
+            } else {
+              $version = $ref.Replace("refs/tags/", "").Replace("refs/heads/", "")
+            }
+          }
+          Write-Host "Version: $version"
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Package Windows release
         shell: pwsh
         run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
           $releaseDir = "build\windows\x64\runner\Release"
-          $zipName = "adati-windows-x64.zip"
+          $zipName = "adati-$version-windows-x64.zip"
           
           # Create ZIP file with entire release directory
           Compress-Archive -Path "$releaseDir\*" -DestinationPath $zipName -Force
@@ -205,7 +224,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
-          path: adati-windows-x64.zip
+          path: adati-*-windows-x64.zip
           retention-days: 30
 
   create-release:
@@ -276,9 +295,10 @@ jobs:
             echo "✗ Linux AppImage not found"
           fi
           
-          # Windows ZIP (contains full application bundle)
-          if [ -f windows-exe/adati-windows-x64.zip ]; then
-            cp windows-exe/adati-windows-x64.zip adati-${VERSION}-windows-x64.zip
+          # Windows ZIP (contains full application bundle, already has version in name)
+          if ls windows-exe/adati-*-windows-x64.zip 1> /dev/null 2>&1; then
+            # Copy the versioned ZIP file (it already has the correct name)
+            cp windows-exe/adati-*-windows-x64.zip adati-${VERSION}-windows-x64.zip
             echo "✓ Found Windows ZIP"
           else
             echo "✗ Windows ZIP not found"
