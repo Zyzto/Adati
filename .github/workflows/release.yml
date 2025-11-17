@@ -183,11 +183,29 @@ jobs:
       - name: Build Windows
         run: flutter build windows --release --no-tree-shake-icons
 
-      - name: Upload Windows EXE
+      - name: Package Windows release
+        shell: pwsh
+        run: |
+          $releaseDir = "build\windows\x64\runner\Release"
+          $zipName = "adati-windows-x64.zip"
+          
+          # Create ZIP file with entire release directory
+          Compress-Archive -Path "$releaseDir\*" -DestinationPath $zipName -Force
+          
+          # Display ZIP contents and size
+          Write-Host "=== Windows Release Package ==="
+          Write-Host "ZIP file: $zipName"
+          $zipSize = (Get-Item $zipName).Length
+          Write-Host "Size: $([math]::Round($zipSize / 1MB, 2)) MB ($zipSize bytes)"
+          Write-Host ""
+          Write-Host "Contents:"
+          Get-ChildItem -Path $releaseDir -Recurse | Select-Object FullName, @{Name="Size (KB)";Expression={[math]::Round($_.Length / 1KB, 2)}} | Format-Table -AutoSize
+
+      - name: Upload Windows ZIP
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
-          path: build/windows/x64/runner/Release/adati.exe
+          path: adati-windows-x64.zip
           retention-days: 30
 
   create-release:
@@ -258,12 +276,12 @@ jobs:
             echo "✗ Linux AppImage not found"
           fi
           
-          # Windows EXE
-          if [ -f windows-exe/adati.exe ]; then
-            cp windows-exe/adati.exe adati-${VERSION}-windows-x64.exe
-            echo "✓ Found Windows EXE"
+          # Windows ZIP (contains full application bundle)
+          if [ -f windows-exe/adati-windows-x64.zip ]; then
+            cp windows-exe/adati-windows-x64.zip adati-${VERSION}-windows-x64.zip
+            echo "✓ Found Windows ZIP"
           else
-            echo "✗ Windows EXE not found"
+            echo "✗ Windows ZIP not found"
           fi
           
           # List what we have
@@ -290,9 +308,9 @@ jobs:
             BODY_NOTES="${BODY_NOTES}- **Linux AppImage**: \`adati-${VERSION}-linux-x86_64.AppImage\`"$'\n'
           fi
           
-          if [ -f adati-${VERSION}-windows-x64.exe ]; then
-            ARTIFACTS_LIST+=("adati-${VERSION}-windows-x64.exe")
-            BODY_NOTES="${BODY_NOTES}- **Windows**: \`adati-${VERSION}-windows-x64.exe\`"$'\n'
+          if [ -f adati-${VERSION}-windows-x64.zip ]; then
+            ARTIFACTS_LIST+=("adati-${VERSION}-windows-x64.zip")
+            BODY_NOTES="${BODY_NOTES}- **Windows**: \`adati-${VERSION}-windows-x64.zip\` (extract and run \`adati.exe\`)"$'\n'
           fi
           
           if [ ${#ARTIFACTS_LIST[@]} -eq 0 ]; then
@@ -337,7 +355,7 @@ jobs:
             
             - **Android**: Install the APK directly or use the App Bundle for Google Play
             - **Linux**: Make the AppImage executable (`chmod +x adati-*.AppImage`) and run it
-            - **Windows**: Download and run `adati.exe` directly
+            - **Windows**: Extract the ZIP file and run `adati.exe` from the extracted folder
             
             **Note**: Some platforms may have failed to build. Only successfully built artifacts are included.
           files: ${{ steps.prepare-artifacts.outputs.files }}
