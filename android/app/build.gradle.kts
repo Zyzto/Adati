@@ -32,15 +32,16 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            // Signing configuration will be set via environment variables or key.properties
-            // For local builds, you can create a key.properties file with:
-            // storeFile=path/to/keystore.jks
-            // storePassword=your_store_password
-            // keyAlias=your_key_alias
-            // keyPassword=your_key_password
-            val keystorePropertiesFile = rootProject.file("key.properties")
-            if (keystorePropertiesFile.exists()) {
+        // Only create release signing config if keystore file exists
+        val keystorePropertiesFile = rootProject.file("key.properties")
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                // Signing configuration from key.properties file
+                // For local builds, create a key.properties file with:
+                // storeFile=path/to/keystore.jks
+                // storePassword=your_store_password
+                // keyAlias=your_key_alias
+                // keyPassword=your_key_password
                 val keystoreProperties = Properties()
                 keystoreProperties.load(FileInputStream(keystorePropertiesFile))
                 storeFile = file(keystoreProperties["storeFile"] as String)
@@ -53,6 +54,7 @@ android {
 
     buildTypes {
         release {
+            // Use release signing config if it exists, otherwise fall back to debug
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
