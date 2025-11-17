@@ -51,6 +51,8 @@ class PreferencesService {
   static const String _keyCardSpacing = 'card_spacing';
   static const String _keyShowStatisticsCard = 'show_statistics_card';
   static const String _keyShowMainTimeline = 'show_main_timeline';
+  static const String _keyUseStreakColorsForSquares =
+      'use_streak_colors_for_squares';
   static const String _keyDefaultView = 'default_view';
   static const String _keyShowStreakOnCard = 'show_streak_on_card';
   static const String _keyBadHabitLogicMode = 'bad_habit_logic_mode';
@@ -395,6 +397,11 @@ class PreferencesService {
       prefs.getBool(_keyShowMainTimeline) ?? true;
   static Future<bool> setShowMainTimeline(bool value) =>
       prefs.setBool(_keyShowMainTimeline, value);
+
+  static bool getUseStreakColorsForSquares() =>
+      prefs.getBool(_keyUseStreakColorsForSquares) ?? false;
+  static Future<bool> setUseStreakColorsForSquares(bool value) =>
+      prefs.setBool(_keyUseStreakColorsForSquares, value);
 
   static String getDefaultView() {
     final value = prefs.getString(_keyDefaultView);

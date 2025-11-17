@@ -730,16 +730,51 @@ class HabitCard extends ConsumerWidget {
     );
   }
 
-  Color _getStreakColor(int streakLength) {
-    // Color gradient based on streak length
-    if (streakLength >= 30) {
-      return Colors.purple; // Longest streaks - purple
-    } else if (streakLength >= 14) {
-      return Colors.orange; // Medium streaks - orange
-    } else if (streakLength >= 7) {
-      return Colors.amber; // Short streaks - amber
+  Color _getStreakColor(WidgetRef ref, int streakLength) {
+    final scheme = ref.watch(streakColorSchemeProvider);
+    return _getStreakColorForLength(streakLength, scheme);
+  }
+
+  Color _getStreakColorForLength(int length, String scheme) {
+    Color baseColor;
+    
+    // Determine base color based on streak length
+    if (length >= 30) {
+      baseColor = Colors.purple; // Longest streaks
+    } else if (length >= 14) {
+      baseColor = Colors.orange; // Medium streaks
+    } else if (length >= 7) {
+      baseColor = Colors.amber; // Short streaks
     } else {
-      return Colors.green; // Very short streaks - green
+      baseColor = Colors.green; // Very short streaks
+    }
+    
+    // Apply color scheme transformation
+    switch (scheme) {
+      case 'vibrant':
+        // More saturated, brighter colors
+        return Color.fromARGB(
+          255,
+          ((baseColor.red * 1.2).clamp(0, 255)).round(),
+          ((baseColor.green * 1.2).clamp(0, 255)).round(),
+          ((baseColor.blue * 1.2).clamp(0, 255)).round(),
+        );
+      case 'subtle':
+        // Muted, desaturated colors
+        final gray = (baseColor.red * 0.299 + baseColor.green * 0.587 + baseColor.blue * 0.114).round();
+        return Color.fromARGB(
+          255,
+          ((gray + baseColor.red) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.green) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.blue) / 2).clamp(0, 255).round(),
+        );
+      case 'monochrome':
+        // Grayscale
+        final gray = (baseColor.red * 0.299 + baseColor.green * 0.587 + baseColor.blue * 0.114).round();
+        return Color.fromARGB(255, gray, gray, gray);
+      case 'default':
+      default:
+        return baseColor;
     }
   }
 
@@ -802,7 +837,7 @@ class HabitCard extends ConsumerWidget {
                   streak.combinedStreak > 0 &&
                   todayIsPartOfStreak) {
                 // Show streak color border if streak borders are enabled and streak is active
-                final streakColor = _getStreakColor(streak.combinedStreak);
+                final streakColor = _getStreakColor(ref, streak.combinedStreak);
                 return RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: BorderSide(color: streakColor, width: 2),

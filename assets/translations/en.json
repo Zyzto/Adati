@@ -247,6 +247,8 @@
   "show_statistics_card_description": "Display the statistics card on the timeline page",
   "show_main_timeline": "Show Main Timeline",
   "show_main_timeline_description": "Display the calendar grid on the timeline page",
+  "use_streak_colors_for_squares": "Use Streak Colors for Squares",
+  "use_streak_colors_for_squares_description": "Color completed day squares based on streak length and color scheme",
   "streak_color_scheme": "Streak Color Scheme",
   "default": "Default",
   "vibrant": "Vibrant",

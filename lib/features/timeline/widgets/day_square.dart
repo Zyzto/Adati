@@ -52,47 +52,91 @@ class DaySquare extends ConsumerWidget {
       return Colors.grey[200]!;
     }
     
-    // Use provided completion color or default
+    // Check if streak colors should be used for squares
+    final useStreakColors = ref.watch(useStreakColorsForSquaresProvider);
+    
+    // If enabled and there's a streak, use streak colors based on color scheme
+    if (useStreakColors && streakLength != null && streakLength! > 0) {
+      final scheme = ref.watch(streakColorSchemeProvider);
+      return _getStreakColorForLength(streakLength!, scheme);
+    }
+    
+    // Default: use provided completion color or apply gradient based on streak length
     final baseColor = completionColor != null 
         ? Color(completionColor!)
         : Colors.green;
     
-    // Apply gradient based on streak length
+    // Apply gradient based on streak length (if not using streak colors)
     if (streakLength != null && streakLength! > 0) {
       // Darker color for longer streaks
       final intensity = (streakLength! / 30).clamp(0.0, 1.0); // Max at 30 days
-      return Color.fromRGBO(
-        ((baseColor.r * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
-        ((baseColor.g * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
-        ((baseColor.b * 255.0) * (0.5 + intensity * 0.5)).round().clamp(0, 255),
-        1.0,
+      return Color.fromARGB(
+        255,
+        ((baseColor.red * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
+        ((baseColor.green * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
+        ((baseColor.blue * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
       );
     }
     
     return baseColor;
   }
 
-  Color? _getStreakBorderColor() {
+  Color? _getStreakBorderColor(WidgetRef ref) {
     if (streakLength == null || streakLength! == 0) {
       return null;
     }
     
-    // Border color based on streak length
-    if (streakLength! >= 30) {
-      return Colors.purple; // Longest streaks - purple
-    } else if (streakLength! >= 14) {
-      return Colors.orange; // Medium streaks - orange
-    } else if (streakLength! >= 7) {
-      return Colors.amber; // Short streaks - amber
+    final scheme = ref.watch(streakColorSchemeProvider);
+    return _getStreakColorForLength(streakLength!, scheme);
+  }
+
+  Color _getStreakColorForLength(int length, String scheme) {
+    Color baseColor;
+    
+    // Determine base color based on streak length
+    if (length >= 30) {
+      baseColor = Colors.purple; // Longest streaks
+    } else if (length >= 14) {
+      baseColor = Colors.orange; // Medium streaks
+    } else if (length >= 7) {
+      baseColor = Colors.amber; // Short streaks
     } else {
-      return Colors.green; // Very short streaks - green
+      baseColor = Colors.green; // Very short streaks
+    }
+    
+    // Apply color scheme transformation
+    switch (scheme) {
+      case 'vibrant':
+        // More saturated, brighter colors
+        return Color.fromARGB(
+          255,
+          ((baseColor.red * 1.2).clamp(0, 255)).round(),
+          ((baseColor.green * 1.2).clamp(0, 255)).round(),
+          ((baseColor.blue * 1.2).clamp(0, 255)).round(),
+        );
+      case 'subtle':
+        // Muted, desaturated colors
+        final gray = (baseColor.red * 0.299 + baseColor.green * 0.587 + baseColor.blue * 0.114).round();
+        return Color.fromARGB(
+          255,
+          ((gray + baseColor.red) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.green) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.blue) / 2).clamp(0, 255).round(),
+        );
+      case 'monochrome':
+        // Grayscale
+        final gray = (baseColor.red * 0.299 + baseColor.green * 0.587 + baseColor.blue * 0.114).round();
+        return Color.fromARGB(255, gray, gray, gray);
+      case 'default':
+      default:
+        return baseColor;
     }
   }
 
 
   Border? _getBorder(WidgetRef ref) {
     final showStreakBorders = ref.watch(showStreakBordersProvider);
-    final streakBorderColor = _getStreakBorderColor();
+    final streakBorderColor = _getStreakBorderColor(ref);
     final isToday = app_date_utils.DateUtils.isToday(date);
     
     // Priority: Today > Streak (only for completed days with active streaks)

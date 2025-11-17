@@ -842,6 +842,28 @@ final showMainTimelineProvider = Provider<bool>((ref) {
   return ref.watch(showMainTimelineNotifierProvider).value;
 });
 
+// Use Streak Colors for Squares
+class UseStreakColorsForSquaresNotifier {
+  bool _value;
+
+  UseStreakColorsForSquaresNotifier() : _value = PreferencesService.getUseStreakColorsForSquares();
+
+  bool get value => _value;
+
+  Future<void> setUseStreakColorsForSquares(bool value) async {
+    _value = value;
+    await PreferencesService.setUseStreakColorsForSquares(value);
+  }
+}
+
+final useStreakColorsForSquaresNotifierProvider = Provider<UseStreakColorsForSquaresNotifier>((ref) {
+  return UseStreakColorsForSquaresNotifier();
+});
+
+final useStreakColorsForSquaresProvider = Provider<bool>((ref) {
+  return ref.watch(useStreakColorsForSquaresNotifierProvider).value;
+});
+
 // Default View
 class DefaultViewNotifier {
   String _view;

@@ -2694,6 +2694,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setStreakColorScheme(value);
                   ref.invalidate(streakColorSchemeNotifierProvider);
+                  ref.invalidate(streakColorSchemeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2709,6 +2710,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setStreakColorScheme(value);
                   ref.invalidate(streakColorSchemeNotifierProvider);
+                  ref.invalidate(streakColorSchemeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2724,6 +2726,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setStreakColorScheme(value);
                   ref.invalidate(streakColorSchemeNotifierProvider);
+                  ref.invalidate(streakColorSchemeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2739,6 +2742,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setStreakColorScheme(value);
                   ref.invalidate(streakColorSchemeNotifierProvider);
+                  ref.invalidate(streakColorSchemeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -3050,6 +3054,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final cardSpacing = ref.watch(cardSpacingProvider);
     final showStatisticsCard = ref.watch(showStatisticsCardProvider);
     final showMainTimeline = ref.watch(showMainTimelineProvider);
+    final useStreakColorsForSquares = ref.watch(
+      useStreakColorsForSquaresProvider,
+    );
     final defaultView = ref.watch(defaultViewProvider);
     final showStreakOnCard = ref.watch(showStreakOnCardProvider);
     final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
@@ -3473,6 +3480,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 final notifier = ref.read(showStreakBordersNotifierProvider);
                 await notifier.setShowStreakBorders(value);
                 ref.invalidate(showStreakBordersNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.palette),
+              title: Text('use_streak_colors_for_squares'.tr()),
+              subtitle: Text('use_streak_colors_for_squares_description'.tr()),
+              value: useStreakColorsForSquares,
+              onChanged: (value) async {
+                final notifier = ref.read(
+                  useStreakColorsForSquaresNotifierProvider,
+                );
+                await notifier.setUseStreakColorsForSquares(value);
+                ref.invalidate(useStreakColorsForSquaresNotifierProvider);
               },
             ),
             SwitchListTile(

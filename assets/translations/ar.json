@@ -247,6 +247,8 @@
   "show_statistics_card_description": "عرض بطاقة الإحصائيات في صفحة الجدول الزمني",
   "show_main_timeline": "إظهار الجدول الزمني الرئيسي",
   "show_main_timeline_description": "عرض شبكة التقويم في صفحة الجدول الزمني",
+  "use_streak_colors_for_squares": "استخدام ألوان السلسلة للمربعات",
+  "use_streak_colors_for_squares_description": "تلوين مربعات الأيام المكتملة بناءً على طول السلسلة ومخطط الألوان",
   "streak_color_scheme": "مخطط ألوان السلسلة",
   "default": "افتراضي",
   "vibrant": "نابض بالحياة",
