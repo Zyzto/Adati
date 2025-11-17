@@ -59,6 +59,81 @@ Adati is a modern, feature-rich habit tracking application built with Flutter. I
 - ✅ Windows
 - ✅ Web
 
+## 📖 Usage
+
+### Creating a Habit
+1. Navigate to the Timeline or Habits tab
+2. Tap the "+" button or "New Habit" option
+3. Enter habit name, optional description, choose a color and icon
+4. Select habit type (Good or Bad habit)
+5. Choose tracking type:
+   - **Completed**: Simple completion tracking
+   - **Measurable**: Set unit (minutes, km, glasses, etc.) and goal value
+   - **Occurrences**: Define occurrence names (e.g., "Morning", "Evening")
+6. Set goal period (daily, weekly, or monthly) for measurable habits
+7. Optionally enable reminders and set reminder time
+8. Add tags to organize your habits
+9. Save to start tracking
+
+### Tracking Habits
+
+#### Completed Habits
+- Tap on a day in the calendar grid to mark habits as complete/incomplete
+- Add optional notes to any entry
+
+#### Measurable Habits
+- Tap on a day to enter a numeric value
+- The app automatically marks as complete when goal is reached
+- Track values like: minutes exercised, km walked, glasses of water, pages read, etc.
+
+#### Occurrences Habits
+- Tap on a day to select which occurrences happened
+- Track multiple occurrences per day (e.g., "Exercised in the morning and evening")
+
+### Viewing Timeline
+- The main timeline shows a calendar grid with color-coded completion status
+- **Completion Calculation**: The timeline uses a weighted completion system that respects your bad habit logic mode setting:
+  - **Negative Mode**: `(good completed - bad marked) / total good habits`. If only bad habits exist, starts at 100% and decreases by `bad marked / total bad habits`. Completion rate is clamped to 0-100%.
+  - **Positive Mode**: `(good completed + bad not marked) / total habits`. Completion rate is clamped to 0-100%.
+- Tap any day to view and edit all entries for that date
+- Statistics at the top show your overall progress
+- Filter habits by tags or search by name
+
+### Habit Details
+- Tap on any habit card to see:
+  - Calendar view with completion history
+  - Current and longest streaks
+  - Statistics and progress
+  - Edit or delete the habit
+
+### Data Management
+- **Export Data**: Export all data, habits only, or settings only (JSON or CSV format)
+- **Import Data**: Import data from exported files (supports JSON and CSV)
+- **Database Statistics**: View database size and record counts
+- **Reset Habits**: Option to reset all habits and tracking data
+
+### Settings
+- **Language**: Switch between English and Arabic (with RTL support)
+- **Theme**: Choose Light, Dark, or System theme
+- **Bad Habit Logic Mode**: Choose how bad habits affect timeline completion
+  - **Negative Mode (Default)**: Marking a bad habit counts as negative, reducing completion rate. Good habits add +1, bad habits subtract -1 when marked. If you only have bad habits, the timeline starts at 100% and decreases when you mark them.
+  - **Positive Mode**: Not marking a bad habit counts as positive. Good habits add +1 when completed, bad habits add +1 when NOT marked. This is the traditional behavior where avoiding bad habits is rewarded.
+- **Data & Export**: Import/export your data
+- **Advanced**: Database statistics and reset options
+- All preferences are saved automatically
+
+## 🖥️ Desktop-Specific Features
+
+### Mouse Drag Support
+The app includes a custom scroll behavior (`AppScrollBehavior`) that enables mouse drag gestures on desktop platforms. This allows users to:
+- Click and hold to drag PageView slides (e.g., in the onboarding screen)
+- Use mouse drag for all scrollable widgets throughout the app
+- Support trackpad gestures
+
+**Implementation**: The custom behavior extends `MaterialScrollBehavior` and includes `PointerDeviceKind.mouse` and `PointerDeviceKind.trackpad` in the allowed drag devices. This is applied globally via `MaterialApp.scrollBehavior`.
+
+**Why it's needed**: Flutter's default `MaterialScrollBehavior` only allows drag gestures for touch devices, stylus, and inverted stylus. Without this custom behavior, users on desktop platforms cannot drag scrollable widgets with a mouse.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -139,80 +214,6 @@ The project includes GitHub Actions workflows for automated builds and releases:
 
 See `.github/workflows/release.yml` for the complete workflow configuration.
 
-## 📖 Usage
-
-### Creating a Habit
-1. Navigate to the Timeline or Habits tab
-2. Tap the "+" button or "New Habit" option
-3. Enter habit name, optional description, choose a color and icon
-4. Select habit type (Good or Bad habit)
-5. Choose tracking type:
-   - **Completed**: Simple completion tracking
-   - **Measurable**: Set unit (minutes, km, glasses, etc.) and goal value
-   - **Occurrences**: Define occurrence names (e.g., "Morning", "Evening")
-6. Set goal period (daily, weekly, or monthly) for measurable habits
-7. Optionally enable reminders and set reminder time
-8. Add tags to organize your habits
-9. Save to start tracking
-
-### Tracking Habits
-
-#### Completed Habits
-- Tap on a day in the calendar grid to mark habits as complete/incomplete
-- Add optional notes to any entry
-
-#### Measurable Habits
-- Tap on a day to enter a numeric value
-- The app automatically marks as complete when goal is reached
-- Track values like: minutes exercised, km walked, glasses of water, pages read, etc.
-
-#### Occurrences Habits
-- Tap on a day to select which occurrences happened
-- Track multiple occurrences per day (e.g., "Exercised in the morning and evening")
-
-### Viewing Timeline
-- The main timeline shows a calendar grid with color-coded completion status
-- **Completion Calculation**: The timeline uses a weighted completion system that respects your bad habit logic mode setting:
-  - **Negative Mode**: `(good completed - bad marked) / total good habits`. If only bad habits exist, starts at 100% and decreases by `bad marked / total bad habits`. Completion rate is clamped to 0-100%.
-  - **Positive Mode**: `(good completed + bad not marked) / total habits`. Completion rate is clamped to 0-100%.
-- Tap any day to view and edit all entries for that date
-- Statistics at the top show your overall progress
-- Filter habits by tags or search by name
-
-### Habit Details
-- Tap on any habit card to see:
-  - Calendar view with completion history
-  - Current and longest streaks
-  - Statistics and progress
-  - Edit or delete the habit
-
-### Data Management
-- **Export Data**: Export all data, habits only, or settings only (JSON or CSV format)
-- **Import Data**: Import data from exported files (supports JSON and CSV)
-- **Database Statistics**: View database size and record counts
-- **Reset Habits**: Option to reset all habits and tracking data
-
-### Settings
-- **Language**: Switch between English and Arabic (with RTL support)
-- **Theme**: Choose Light, Dark, or System theme
-- **Bad Habit Logic Mode**: Choose how bad habits affect timeline completion
-  - **Negative Mode (Default)**: Marking a bad habit counts as negative, reducing completion rate. Good habits add +1, bad habits subtract -1 when marked. If you only have bad habits, the timeline starts at 100% and decreases when you mark them.
-  - **Positive Mode**: Not marking a bad habit counts as positive. Good habits add +1 when completed, bad habits add +1 when NOT marked. This is the traditional behavior where avoiding bad habits is rewarded.
-- **Data & Export**: Import/export your data
-- **Advanced**: Database statistics and reset options
-- All preferences are saved automatically
-
-## 🖥️ Desktop-Specific Features
-
-### Mouse Drag Support
-The app includes a custom scroll behavior (`AppScrollBehavior`) that enables mouse drag gestures on desktop platforms. This allows users to:
-- Click and hold to drag PageView slides (e.g., in the onboarding screen)
-- Use mouse drag for all scrollable widgets throughout the app
-- Support trackpad gestures
-
-**Implementation**: The custom behavior extends `MaterialScrollBehavior` and includes `PointerDeviceKind.mouse` and `PointerDeviceKind.trackpad` in the allowed drag devices. This is applied globally via `MaterialApp.scrollBehavior`.
-
-**Why it's needed**: Flutter's default `MaterialScrollBehavior` only allows drag gestures for touch devices, stylus, and inverted stylus. Without this custom behavior, users on desktop platforms cannot drag scrollable widgets with a mouse.
 
 ## 🏗️ Project Structure
 
