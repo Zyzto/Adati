@@ -221,38 +221,57 @@ jobs:
         continue-on-error: true  # Continue even if some artifacts are missing
 
       - name: Extract and rename artifacts
+        id: prepare-artifacts
         run: |
           # Extract artifacts from their directories and rename with version
           VERSION="${{ steps.version.outputs.VERSION }}"
           
+          # Debug: List all downloaded artifacts
+          echo "=== Downloaded artifacts structure ==="
+          find . -type f -name "*.apk" -o -name "*.aab" -o -name "*.AppImage" -o -name "*.exe" | head -20
+          echo ""
+          echo "=== Artifact directories ==="
+          ls -la
+          echo ""
+          
           # Android APK
           if [ -f android-apk/app-release.apk ]; then
             cp android-apk/app-release.apk adati-${VERSION}-android.apk
+            echo "✓ Found Android APK"
+          else
+            echo "✗ Android APK not found"
           fi
           
           # Android AAB
           if [ -f android-aab/app-release.aab ]; then
             cp android-aab/app-release.aab adati-${VERSION}-android.aab
+            echo "✓ Found Android AAB"
+          else
+            echo "✗ Android AAB not found"
           fi
           
           # Linux AppImage
           if [ -f linux-appimage/adati-x86_64.AppImage ]; then
             cp linux-appimage/adati-x86_64.AppImage adati-${VERSION}-linux-x86_64.AppImage
+            echo "✓ Found Linux AppImage"
+          else
+            echo "✗ Linux AppImage not found"
           fi
           
           # Windows EXE
           if [ -f windows-exe/adati.exe ]; then
             cp windows-exe/adati.exe adati-${VERSION}-windows-x64.exe
+            echo "✓ Found Windows EXE"
+          else
+            echo "✗ Windows EXE not found"
           fi
           
           # List what we have
-          echo "Available artifacts:"
+          echo ""
+          echo "=== Prepared artifacts for release ==="
           ls -lh adati-* 2>/dev/null || echo "No artifacts found"
-
-      - name: Check which artifacts exist
-        id: artifacts
-        run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
+          
+          # Build artifacts list and body notes
           ARTIFACTS_LIST=()
           BODY_NOTES=""
           
@@ -281,16 +300,27 @@ jobs:
             exit 1
           fi
           
-          # Join artifacts with spaces for the files parameter
-          ARTIFACTS_STRING=$(IFS=' '; echo "${ARTIFACTS_LIST[*]}")
+          # Format artifacts as multi-line string for files parameter
+          # softprops/action-gh-release expects newline-separated file paths
+          ARTIFACTS_MULTILINE=$(IFS=$'\n'; echo "${ARTIFACTS_LIST[*]}")
           
-          echo "artifacts<<EOF" >> $GITHUB_OUTPUT
-          echo "$ARTIFACTS_STRING" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo ""
+          echo "=== Artifacts to upload ==="
+          echo "$ARTIFACTS_MULTILINE"
           
-          echo "body_notes<<EOF" >> $GITHUB_OUTPUT
-          echo -n "$BODY_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Output artifacts as multi-line string
+          {
+            echo "files<<EOF"
+            echo "$ARTIFACTS_MULTILINE"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+          
+          # Output body notes
+          {
+            echo "body_notes<<EOF"
+            echo -n "$BODY_NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -301,7 +331,8 @@ jobs:
             ## Release ${{ steps.version.outputs.VERSION }}
             
             ### Downloads
-            ${{ steps.artifacts.outputs.body_notes }}
+            ${{ steps.prepare-artifacts.outputs.body_notes }}
+            
             ### Installation
             
             - **Android**: Install the APK directly or use the App Bundle for Google Play
@@ -309,7 +340,7 @@ jobs:
             - **Windows**: Download and run `adati.exe` directly
             
             **Note**: Some platforms may have failed to build. Only successfully built artifacts are included.
-          files: ${{ steps.artifacts.outputs.artifacts }}
+          files: ${{ steps.prepare-artifacts.outputs.files }}
           draft: false
           prerelease: false
 
