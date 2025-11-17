@@ -17,16 +17,16 @@ import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
 import '../../../../core/services/preferences_service.dart';
 
-class HabitCalendarModal extends ConsumerStatefulWidget {
+class HabitDetailPage extends ConsumerStatefulWidget {
   final int habitId;
 
-  const HabitCalendarModal({super.key, required this.habitId});
+  const HabitDetailPage({super.key, required this.habitId});
 
   @override
-  ConsumerState<HabitCalendarModal> createState() => _HabitCalendarModalState();
+  ConsumerState<HabitDetailPage> createState() => _HabitDetailPageState();
 }
 
-class _HabitCalendarModalState extends ConsumerState<HabitCalendarModal> {
+class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
   DateTime _selectedMonth = DateTime.now();
   // Optimistic updates: track pending changes for immediate UI feedback
   final Map<DateTime, bool> _optimisticUpdates = {};

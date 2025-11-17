@@ -206,7 +206,7 @@ class PreferencesService {
   static Future<bool> setHabitCheckboxStyle(String style) =>
       prefs.setString(_keyHabitCheckboxStyle, style);
 
-  // Modal timeline days (default: 200)
+  // Habit detail timeline days (default: 200)
   static int getModalTimelineDays() =>
       prefs.getInt(_keyModalTimelineDays) ?? 200;
   static Future<bool> setModalTimelineDays(int days) =>

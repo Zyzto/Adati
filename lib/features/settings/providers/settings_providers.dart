@@ -271,7 +271,7 @@ final habitCheckboxStyleProvider = Provider<String>((ref) {
   return ref.watch(habitCheckboxStyleNotifierProvider).style;
 });
 
-// Modal Timeline Days
+// Habit Detail Timeline Days
 class ModalTimelineDaysNotifier {
   int _days;
 

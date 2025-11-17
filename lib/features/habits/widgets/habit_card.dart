@@ -9,7 +9,7 @@ import '../providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../providers/habit_providers.dart';
 import '../widgets/habit_timeline.dart';
-import 'habit_calendar_modal.dart';
+import '../pages/habit_detail_page.dart';
 import 'checkbox_style.dart';
 import '../../settings/providers/settings_providers.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
@@ -897,7 +897,7 @@ class HabitCard extends ConsumerWidget {
                     context: context,
                     isScrollControlled: true,
                     useSafeArea: true,
-                    builder: (context) => HabitCalendarModal(habitId: habit.id),
+                    builder: (context) => HabitDetailPage(habitId: habit.id),
                   );
                 },
                 hoverColor: Colors.transparent,
