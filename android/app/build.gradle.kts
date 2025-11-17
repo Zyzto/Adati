@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.shenepoy.adati"
-    compileSdk = 34
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -26,7 +26,7 @@ android {
     defaultConfig {
         applicationId = "com.shenepoy.adati"
         minSdk = 29  // Android 10 (API 29)
-        targetSdk = 34  // Android 14
+        targetSdk = 36  // Android 15
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
