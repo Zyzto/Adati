@@ -293,6 +293,28 @@ final modalTimelineDaysProvider = Provider<int>((ref) {
   return ref.watch(modalTimelineDaysNotifierProvider).days;
 });
 
+// Habit Card Timeline Days
+class HabitCardTimelineDaysNotifier {
+  int _days;
+
+  HabitCardTimelineDaysNotifier() : _days = PreferencesService.getHabitCardTimelineDays();
+
+  int get days => _days;
+
+  Future<void> setHabitCardTimelineDays(int days) async {
+    _days = days;
+    await PreferencesService.setHabitCardTimelineDays(days);
+  }
+}
+
+final habitCardTimelineDaysNotifierProvider = Provider<HabitCardTimelineDaysNotifier>((ref) {
+  return HabitCardTimelineDaysNotifier();
+});
+
+final habitCardTimelineDaysProvider = Provider<int>((ref) {
+  return ref.watch(habitCardTimelineDaysNotifierProvider).days;
+});
+
 // Habit Sort Order
 class HabitSortOrderNotifier {
   String _order;

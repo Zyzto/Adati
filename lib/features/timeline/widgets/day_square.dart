@@ -72,9 +72,9 @@ class DaySquare extends ConsumerWidget {
       final intensity = (streakLength! / 30).clamp(0.0, 1.0); // Max at 30 days
       return Color.fromARGB(
         255,
-        ((baseColor.red * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
-        ((baseColor.green * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
-        ((baseColor.blue * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
+        ((baseColor.r * 255.0 * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
+        ((baseColor.g * 255.0 * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
+        ((baseColor.b * 255.0 * (0.5 + intensity * 0.5)).clamp(0, 255)).round(),
       );
     }
     
@@ -110,22 +110,22 @@ class DaySquare extends ConsumerWidget {
         // More saturated, brighter colors
         return Color.fromARGB(
           255,
-          ((baseColor.red * 1.2).clamp(0, 255)).round(),
-          ((baseColor.green * 1.2).clamp(0, 255)).round(),
-          ((baseColor.blue * 1.2).clamp(0, 255)).round(),
+          ((baseColor.r * 255.0 * 1.2).clamp(0, 255)).round(),
+          ((baseColor.g * 255.0 * 1.2).clamp(0, 255)).round(),
+          ((baseColor.b * 255.0 * 1.2).clamp(0, 255)).round(),
         );
       case 'subtle':
         // Muted, desaturated colors
-        final gray = (baseColor.red * 0.299 + baseColor.green * 0.587 + baseColor.blue * 0.114).round();
+        final gray = ((baseColor.r * 255.0 * 0.299 + baseColor.g * 255.0 * 0.587 + baseColor.b * 255.0 * 0.114)).round();
         return Color.fromARGB(
           255,
-          ((gray + baseColor.red) / 2).clamp(0, 255).round(),
-          ((gray + baseColor.green) / 2).clamp(0, 255).round(),
-          ((gray + baseColor.blue) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.r * 255.0) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.g * 255.0) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.b * 255.0) / 2).clamp(0, 255).round(),
         );
       case 'monochrome':
         // Grayscale
-        final gray = (baseColor.red * 0.299 + baseColor.green * 0.587 + baseColor.blue * 0.114).round();
+        final gray = ((baseColor.r * 255.0 * 0.299 + baseColor.g * 255.0 * 0.587 + baseColor.b * 255.0 * 0.114)).round();
         return Color.fromARGB(255, gray, gray, gray);
       case 'default':
       default:

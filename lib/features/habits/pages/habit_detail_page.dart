@@ -921,7 +921,7 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
                                   _showNoteEditor(context, day);
                                 },
                               ),
-                              error: (_, __) => _AnimatedCalendarDay(
+                              error: (_, _) => _AnimatedCalendarDay(
                                 key: ValueKey('${day.year}-${day.month}-${day.day}'),
                                 isCompleted: isCompleted,
                                 isToday: isToday,

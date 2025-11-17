@@ -15,6 +15,7 @@ class PreferencesService {
   static const String _keyNotificationsEnabled = 'notifications_enabled';
   static const String _keyHabitCheckboxStyle = 'habit_checkbox_style';
   static const String _keyModalTimelineDays = 'modal_timeline_days';
+  static const String _keyHabitCardTimelineDays = 'habit_card_timeline_days';
   static const String _keyHabitSortOrder = 'habit_sort_order';
   static const String _keyHabitFilterQuery = 'habit_filter_query';
   static const String _keyHabitWeeklyGoal = 'habit_weekly_goal_';
@@ -211,6 +212,12 @@ class PreferencesService {
       prefs.getInt(_keyModalTimelineDays) ?? 200;
   static Future<bool> setModalTimelineDays(int days) =>
       prefs.setInt(_keyModalTimelineDays, days);
+
+  // Habit card timeline days (default: 100)
+  static int getHabitCardTimelineDays() =>
+      prefs.getInt(_keyHabitCardTimelineDays) ?? 100;
+  static Future<bool> setHabitCardTimelineDays(int days) =>
+      prefs.setInt(_keyHabitCardTimelineDays, days);
 
   // Habit sort order (default: 'name')
   static String getHabitSortOrder() {

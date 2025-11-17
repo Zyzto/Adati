@@ -89,6 +89,7 @@
   "reset_to_default": "Reset to default",
   "habit_checkbox_style": "Habit Checkbox Style",
   "modal_timeline_days": "Habit Detail Timeline Days",
+  "habit_card_timeline_days": "Habit Card Timeline Days",
   "no_entries_yet": "No entries yet",
   "complete_habit_to_see_calendar": "Complete this habit to see it appear in the calendar",
   "this_month": "This Month",

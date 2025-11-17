@@ -89,6 +89,7 @@
   "reset_to_default": "إعادة تعيين إلى الافتراضي",
   "habit_checkbox_style": "نمط مربع اختيار العادة",
   "modal_timeline_days": "أيام الجدول الزمني في صفحة تفاصيل العادة",
+  "habit_card_timeline_days": "أيام الجدول الزمني في بطاقة العادة",
   "no_entries_yet": "لا توجد إدخالات بعد",
   "complete_habit_to_see_calendar": "أكمل هذه العادة لرؤيتها في التقويم",
   "this_month": "هذا الشهر",

@@ -7,7 +7,6 @@ import 'package:animations/animations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/import_service.dart';
@@ -507,7 +506,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Default values
   static const String defaultDaySquareSize = 'large';
   static const int defaultTimelineDays = 100;
-  static const int defaultModalTimelineDays = 200;
+  static const int defaultModalTimelineDays = 100;
+  static const int defaultHabitCardTimelineDays = 50;
 
   String _getLanguageName(String? code) {
     switch (code) {
@@ -2095,6 +2095,62 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  void _showHabitCardTimelineDaysDialog(BuildContext context, WidgetRef ref) {
+    final currentDays = ref.watch(habitCardTimelineDaysProvider);
+    final notifier = ref.read(habitCardTimelineDaysNotifierProvider);
+    final navigator = Navigator.of(context);
+    final controller = TextEditingController(text: currentDays.toString());
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('habit_card_timeline_days'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'number_of_days_to_show'.tr(),
+                hintText: 'enter_number_of_days'.tr(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => navigator.pop(),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () async {
+              final days = int.tryParse(controller.text);
+              if (days != null && days > 0) {
+                await notifier.setHabitCardTimelineDays(days);
+                ref.invalidate(habitCardTimelineDaysNotifierProvider);
+                if (dialogContext.mounted) {
+                  navigator.pop();
+                }
+              } else {
+                // Show error for invalid input
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('please_enter_valid_number'.tr()),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: Text('save'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showFirstDayOfWeekDialog(BuildContext context, WidgetRef ref) {
     final currentDay = ref.watch(firstDayOfWeekProvider);
     final notifier = ref.read(firstDayOfWeekNotifierProvider);
@@ -2250,6 +2306,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final notifier = ref.read(modalTimelineDaysNotifierProvider);
     await notifier.setModalTimelineDays(defaultModalTimelineDays);
     ref.invalidate(modalTimelineDaysNotifierProvider);
+  }
+
+  Future<void> _revertHabitCardTimelineDays(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final notifier = ref.read(habitCardTimelineDaysNotifierProvider);
+    await notifier.setHabitCardTimelineDays(defaultHabitCardTimelineDays);
+    ref.invalidate(habitCardTimelineDaysNotifierProvider);
   }
 
   void _showTimelineDaysDialog(BuildContext context, WidgetRef ref) {
@@ -3014,6 +3079,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final firstDayOfWeek = ref.watch(firstDayOfWeekProvider);
     final timelineDays = ref.watch(timelineDaysProvider);
     final modalTimelineDays = ref.watch(modalTimelineDaysProvider);
+    final habitCardTimelineDays = ref.watch(habitCardTimelineDaysProvider);
     final habitCheckboxStyle = ref.watch(habitCheckboxStyleProvider);
     final notificationsEnabled = ref.watch(notificationsEnabledProvider);
     final notificationsNotifier = ref.read(
@@ -3450,6 +3516,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     )
                   : null,
               onTap: () => _showModalTimelineDaysDialog(context, ref),
+            ),
+            ListTile(
+              leading: const Icon(Icons.view_week),
+              title: Text('habit_card_timeline_days'.tr()),
+              subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
+              trailing: habitCardTimelineDays != defaultHabitCardTimelineDays
+                  ? IconButton(
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'reset_to_default'.tr(),
+                      onPressed: () =>
+                          _revertHabitCardTimelineDays(context, ref),
+                    )
+                  : null,
+              onTap: () => _showHabitCardTimelineDaysDialog(context, ref),
             ),
             ListTile(
               leading: const Icon(Icons.space_bar),
