@@ -18,7 +18,9 @@
 
 Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/Adati/releases):
 
-- **Android**: Download the APK file and install directly, or use the App Bundle for Google Play Store
+- **Android**: 
+  - Download the APK file and install directly, or use the App Bundle for Google Play Store
+  - **Get automatic updates**: [📱 Add to Obtainium](https://github.com/ImranR98/Obtainium) - Install [Obtainium](https://github.com/ImranR98/Obtainium) and add this repository (`Zyzto/Adati`) to receive automatic update notifications
 - **Linux**: Download the AppImage, make it executable (`chmod +x adati-*.AppImage`), and run it
 - **Windows**: Download the ZIP file, extract it, and run `adati.exe` from the extracted folder
 
