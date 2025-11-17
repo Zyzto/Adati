@@ -7,6 +7,7 @@ import 'package:animations/animations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/import_service.dart';
@@ -2056,6 +2057,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final notifier = ref.read(dateFormatNotifierProvider);
     final navigator = Navigator.of(context);
     final formats = ['yyyy-MM-dd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'dd.MM.yyyy'];
+    final exampleDate = DateTime.now();
 
     showDialog(
       context: context,
@@ -2064,10 +2066,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: formats.map((format) {
+            final formattedExample = DateFormat(format).format(exampleDate);
             return _buildRadioListItem<String>(
               context: dialogContext,
               title: Text(_getDateFormatName(format)),
-              subtitle: Text(DateTime.now().toString().split(' ')[0]),
+              subtitle: Text(formattedExample),
               value: format,
               groupValue: currentFormat,
               onChanged: (value) async {
