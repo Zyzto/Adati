@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 
 class OnboardingSlide extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? imagePath;
   final String title;
   final String description;
   final Color? iconColor;
 
   const OnboardingSlide({
     super.key,
-    required this.icon,
+    this.icon,
+    this.imagePath,
     required this.title,
     required this.description,
     this.iconColor,
-  });
+  }) : assert(icon != null || imagePath != null, 'Either icon or imagePath must be provided');
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +26,19 @@ class OnboardingSlide extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 120,
-            color: iconColorValue,
-          ),
+          if (imagePath != null)
+            Image.asset(
+              imagePath!,
+              width: 200,
+              height: 200,
+              fit: BoxFit.contain,
+            )
+          else if (icon != null)
+            Icon(
+              icon,
+              size: 200,
+              color: iconColorValue,
+            ),
           const SizedBox(height: 48),
           Text(
             title,

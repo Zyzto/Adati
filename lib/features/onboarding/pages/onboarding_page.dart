@@ -25,7 +25,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   // Get slides list
   List<Map<String, dynamic>> get slides => [
         {
-          'icon': Icons.timeline,
+          'imagePath': 'assets/icon.png',
           'title': 'onboarding_welcome_title'.tr(),
           'description': 'onboarding_welcome_description'.tr(),
         },
@@ -296,7 +296,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       if (index < slidesList.length) {
                         final slide = slidesList[index];
                         return OnboardingSlide(
-                          icon: slide['icon'] as IconData,
+                          icon: slide['icon'] as IconData?,
+                          imagePath: slide['imagePath'] as String?,
                           title: slide['title'] as String,
                           description: slide['description'] as String,
                         );
