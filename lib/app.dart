@@ -6,7 +6,6 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/app_scroll_behavior.dart';
 import 'core/services/preferences_service.dart';
 import 'core/services/log_helper.dart';
-import 'features/habits/pages/habit_detail_page.dart';
 import 'features/timeline/pages/day_detail_page.dart';
 import 'features/settings/pages/settings_page.dart';
 import 'features/settings/providers/settings_providers.dart';
@@ -33,13 +32,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           final dateStr = state.pathParameters['date']!;
           final date = DateTime.parse(dateStr);
           return DayDetailPage(date: date);
-        },
-      ),
-      GoRoute(
-        path: '/habits/:id',
-        builder: (context, state) {
-          final id = int.parse(state.pathParameters['id']!);
-          return HabitDetailPage(habitId: id);
         },
       ),
       GoRoute(
