@@ -45,7 +45,10 @@ class HabitRepository with Loggable {
       }
       
       // Schedule reminders if enabled
-      if (habit.reminderEnabled.value == true && habit.reminderTime.value != null) {
+      if (habit.reminderEnabled.present && 
+          habit.reminderEnabled.value == true && 
+          habit.reminderTime.present && 
+          habit.reminderTime.value != null) {
         await _scheduleReminders(habitId, habit.name.value, habit.reminderTime.value!);
       }
       
@@ -76,7 +79,10 @@ class HabitRepository with Loggable {
       await _cancelReminders(id);
       
       // Schedule new reminders if enabled
-      if (habit.reminderEnabled.value == true && habit.reminderTime.value != null) {
+      if (habit.reminderEnabled.present && 
+          habit.reminderEnabled.value == true && 
+          habit.reminderTime.present && 
+          habit.reminderTime.value != null) {
         final habitName = habit.name.value.isNotEmpty 
             ? habit.name.value 
             : (existingHabit?.name ?? 'Habit');
