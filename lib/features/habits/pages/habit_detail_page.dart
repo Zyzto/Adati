@@ -418,14 +418,14 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
                       _buildStatItem(
                         context,
                         Icons.local_fire_department,
-                        '${streak?.currentStreak ?? 0}',
+                        '${streak?.combinedStreak ?? 0}',
                         'current_streak'.tr(),
                         colorScheme.primary,
                       ),
                       _buildStatItem(
                         context,
                         Icons.emoji_events,
-                        '${streak?.longestStreak ?? 0}',
+                        '${streak?.combinedLongestStreak ?? 0}',
                         'longest_streak'.tr(),
                         colorScheme.secondary,
                       ),

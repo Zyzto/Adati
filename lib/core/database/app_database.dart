@@ -16,7 +16,7 @@ class AppDatabase extends _$AppDatabase with Loggable {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -227,6 +227,46 @@ class AppDatabase extends _$AppDatabase with Loggable {
             ''');
           logInfo('Migration 3->4: Removed unused components and added new tracking system');
           }
+
+        if (from < 5) {
+          // Migration 4->5: Add indexes for performance optimization
+          await m.database.executor.runCustom('''
+            -- Index on tracking_entries.date for date-based queries
+            CREATE INDEX IF NOT EXISTS idx_tracking_entries_date ON tracking_entries(date);
+            
+            -- Index on habit_tags.habit_id for faster habit tag lookups
+            CREATE INDEX IF NOT EXISTS idx_habit_tags_habit_id ON habit_tags(habit_id);
+            
+            -- Index on habit_tags.tag_id for reverse tag lookups (finding habits by tag)
+            CREATE INDEX IF NOT EXISTS idx_habit_tags_tag_id ON habit_tags(tag_id);
+            
+            -- Index on streaks.habit_id (UNIQUE constraint may create one, but explicit index helps)
+            CREATE INDEX IF NOT EXISTS idx_streaks_habit_id ON streaks(habit_id);
+            ''');
+          logInfo('Migration 4->5: Added database indexes for performance optimization');
+        }
+
+        if (from < 6) {
+          // Migration 5->6: Remove unused created_at column from tags table
+          await m.database.executor.runCustom('''
+            -- Recreate tags table without created_at column
+            CREATE TABLE tags_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+              name TEXT NOT NULL CHECK(length(name) >= 1 AND length(name) <= 100),
+              color INTEGER NOT NULL,
+              icon TEXT
+            );
+            
+            -- Copy existing data (excluding created_at)
+            INSERT INTO tags_new (id, name, color, icon)
+            SELECT id, name, color, icon FROM tags;
+            
+            -- Drop old table and rename new one
+            DROP TABLE tags;
+            ALTER TABLE tags_new RENAME TO tags;
+            ''');
+          logInfo('Migration 5->6: Removed created_at column from tags table');
+        }
         } catch (e, stackTrace) {
           logError(
             'Database migration failed from $from to $to',

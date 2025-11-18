@@ -14,7 +14,11 @@ class Streaks extends Table {
   IntColumn get badStreak => integer().withDefault(const Constant(0))();
   IntColumn get badLongestStreak => integer().withDefault(const Constant(0))();
   // Backward compatibility (map to combinedStreak)
+  /// @deprecated Use combinedStreak instead. This field is kept for backward compatibility only.
+  @Deprecated('Use combinedStreak instead')
   IntColumn get currentStreak => integer().withDefault(const Constant(0))();
+  /// @deprecated Use combinedLongestStreak instead. This field is kept for backward compatibility only.
+  @Deprecated('Use combinedLongestStreak instead')
   IntColumn get longestStreak => integer().withDefault(const Constant(0))();
   DateTimeColumn get lastUpdated => dateTime().withDefault(currentDateAndTime)();
 }

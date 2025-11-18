@@ -8,7 +8,9 @@ import 'package:adati/core/database/daos/streak_dao.dart';
 import 'package:adati/core/database/models/tracking_types.dart';
 import 'package:adati/core/utils/date_utils.dart' as app_date_utils;
 import 'package:adati/core/services/loggable_mixin.dart';
+import 'package:adati/core/services/notification_service.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:easy_localization/easy_localization.dart';
 
 class HabitRepository with Loggable {
   final db.AppDatabase _db;
@@ -41,6 +43,12 @@ class HabitRepository with Loggable {
       if (tagIds != null && tagIds.isNotEmpty) {
         await _habitTagDao.setHabitTags(habitId, tagIds);
       }
+      
+      // Schedule reminders if enabled
+      if (habit.reminderEnabled.value == true && habit.reminderTime.value != null) {
+        await _scheduleReminders(habitId, habit.name.value, habit.reminderTime.value!);
+      }
+      
       logInfo('createHabit() created habit with id=$habitId');
       return habitId;
     } catch (e, stackTrace) {
@@ -56,10 +64,29 @@ class HabitRepository with Loggable {
     final id = habit.id.value;
     logInfo('updateHabit(id=$id, tagIds=$tagIds)');
     try {
+      // Get existing habit to check reminder changes
+      final existingHabit = await getHabitById(id);
+      
       final result = await _habitDao.updateHabit(habit);
       if (tagIds != null && habit.id.present) {
         await _habitTagDao.setHabitTags(habit.id.value, tagIds);
       }
+      
+      // Cancel existing reminders
+      await _cancelReminders(id);
+      
+      // Schedule new reminders if enabled
+      if (habit.reminderEnabled.value == true && habit.reminderTime.value != null) {
+        final habitName = habit.name.value.isNotEmpty 
+            ? habit.name.value 
+            : (existingHabit?.name ?? 'Habit');
+        await _scheduleReminders(
+          id,
+          habitName,
+          habit.reminderTime.value!,
+        );
+      }
+      
       logInfo('updateHabit(id=$id) updated successfully');
       return result;
     } catch (e, stackTrace) {
@@ -71,6 +98,9 @@ class HabitRepository with Loggable {
   Future<int> deleteHabit(int id) async {
     logInfo('deleteHabit(id=$id)');
     try {
+      // Cancel reminders before deleting
+      await _cancelReminders(id);
+      
       final result = await _habitDao.deleteHabit(id);
       logInfo('deleteHabit(id=$id) deleted successfully');
       return result;
@@ -398,32 +428,167 @@ class HabitRepository with Loggable {
 
   // Advanced: Database statistics
   Future<Map<String, int>> getDatabaseStats() async {
-    final habits = await getAllHabits();
-    final tags = await getAllTags();
-    
-    int totalEntries = 0;
-    int totalStreaks = 0;
-    
-    for (final habit in habits) {
-      final entries = await getEntriesByHabit(habit.id);
-      totalEntries += entries.length;
+    try {
+      // Use SQL aggregate queries for better performance
+      final habitsCount = await _db.customSelect(
+        'SELECT COUNT(*) as count FROM habits',
+        readsFrom: {_db.habits},
+      ).getSingle();
       
-      final streak = await getStreakByHabit(habit.id);
-      if (streak != null) {
-        totalStreaks++;
-      }
+      final tagsCount = await _db.customSelect(
+        'SELECT COUNT(*) as count FROM tags',
+        readsFrom: {_db.tags},
+      ).getSingle();
+      
+      final entriesCount = await _db.customSelect(
+        'SELECT COUNT(*) as count FROM tracking_entries',
+        readsFrom: {_db.trackingEntries},
+      ).getSingle();
+      
+      final streaksCount = await _db.customSelect(
+        'SELECT COUNT(*) as count FROM streaks',
+        readsFrom: {_db.streaks},
+      ).getSingle();
+      
+      return {
+        'habits': habitsCount.read<int>('count'),
+        'tags': tagsCount.read<int>('count'),
+        'entries': entriesCount.read<int>('count'),
+        'streaks': streaksCount.read<int>('count'),
+      };
+    } catch (e, stackTrace) {
+      logError(
+        'getDatabaseStats() failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Return zeros on error
+      return {
+        'habits': 0,
+        'tags': 0,
+        'entries': 0,
+        'streaks': 0,
+      };
     }
-    
-    return {
-      'habits': habits.length,
-      'tags': tags.length,
-      'entries': totalEntries,
-      'streaks': totalStreaks,
-    };
   }
 
   // Advanced: Vacuum database (optimize)
   Future<void> vacuumDatabase() async {
     await _db.customStatement('VACUUM');
+  }
+
+  // Reminder scheduling helpers
+  Future<void> _scheduleReminders(int habitId, String habitName, String reminderTimeJson) async {
+    try {
+      final reminderData = jsonDecode(reminderTimeJson) as Map<String, dynamic>;
+      final frequency = reminderData['frequency'] as String? ?? 'daily';
+      final days = (reminderData['days'] as List<dynamic>?)?.cast<int>() ?? [];
+      final timeStr = reminderData['time'] as String? ?? '09:00';
+      
+      final timeParts = timeStr.split(':');
+      final hour = int.tryParse(timeParts[0]) ?? 9;
+      final minute = int.tryParse(timeParts[1]) ?? 0;
+      
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      
+      if (frequency == 'daily') {
+        // Schedule daily notification
+        var scheduledDate = DateTime(today.year, today.month, today.day, hour, minute);
+        // If time has passed today, schedule for tomorrow
+        if (scheduledDate.isBefore(now)) {
+          scheduledDate = scheduledDate.add(const Duration(days: 1));
+        }
+        
+        await NotificationService.scheduleNotification(
+          id: habitId,
+          title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
+          body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
+          scheduledDate: scheduledDate,
+          payload: habitId.toString(),
+        );
+        logInfo('Scheduled daily reminder for habit $habitId at $timeStr');
+      } else if (frequency == 'weekly' && days.isNotEmpty) {
+        // Schedule weekly notifications for specified days
+        for (final dayOfWeek in days) {
+          // dayOfWeek: 1=Monday, 7=Sunday
+          final daysUntilNext = (dayOfWeek - now.weekday) % 7;
+          final scheduledDate = today.add(Duration(days: daysUntilNext == 0 ? 7 : daysUntilNext));
+          final scheduledDateTime = DateTime(
+            scheduledDate.year,
+            scheduledDate.month,
+            scheduledDate.day,
+            hour,
+            minute,
+          );
+          
+          // Use habitId * 100 + dayOfWeek as unique notification ID
+          await NotificationService.scheduleNotification(
+            id: habitId * 100 + dayOfWeek,
+            title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
+            body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
+            scheduledDate: scheduledDateTime,
+            payload: habitId.toString(),
+          );
+        }
+        logInfo('Scheduled weekly reminders for habit $habitId on days $days at $timeStr');
+      } else if (frequency == 'monthly' && days.isNotEmpty) {
+        // Schedule monthly notifications for specified days
+        for (final dayOfMonth in days) {
+          final currentMonth = DateTime(now.year, now.month, dayOfMonth, hour, minute);
+          DateTime scheduledDate;
+          
+          if (currentMonth.isBefore(now)) {
+            // If day has passed this month, schedule for next month
+            scheduledDate = DateTime(now.year, now.month + 1, dayOfMonth, hour, minute);
+          } else {
+            scheduledDate = currentMonth;
+          }
+          
+          // Use habitId * 1000 + dayOfMonth as unique notification ID
+          await NotificationService.scheduleNotification(
+            id: habitId * 1000 + dayOfMonth,
+            title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
+            body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
+            scheduledDate: scheduledDate,
+            payload: habitId.toString(),
+          );
+        }
+        logInfo('Scheduled monthly reminders for habit $habitId on days $days at $timeStr');
+      }
+    } catch (e, stackTrace) {
+      logError(
+        'Failed to schedule reminders for habit $habitId',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't throw - allow habit creation/update to succeed even if reminders fail
+    }
+  }
+
+  Future<void> _cancelReminders(int habitId) async {
+    try {
+      // Cancel daily reminder (uses habitId as notification ID)
+      await NotificationService.cancelNotification(habitId);
+      
+      // Cancel weekly reminders (habitId * 100 + dayOfWeek, where dayOfWeek is 1-7)
+      for (int dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek++) {
+        await NotificationService.cancelNotification(habitId * 100 + dayOfWeek);
+      }
+      
+      // Cancel monthly reminders (habitId * 1000 + dayOfMonth, where dayOfMonth is 1-31)
+      for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
+        await NotificationService.cancelNotification(habitId * 1000 + dayOfMonth);
+      }
+      
+      logInfo('Cancelled all reminders for habit $habitId');
+    } catch (e, stackTrace) {
+      logError(
+        'Failed to cancel reminders for habit $habitId',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't throw - allow operation to continue
+    }
   }
 }
