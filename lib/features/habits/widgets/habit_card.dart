@@ -722,10 +722,15 @@ class HabitCard extends ConsumerWidget {
           ),
         // Timeline visualization (disabled clicks)
         SizedBox(height: compactCards ? 8 : 16),
-        HabitTimeline(
-          habitId: habit.id,
-          compact: compactCards || ref.watch(timelineCompactModeProvider),
-          daysToShow: ref.watch(habitCardTimelineDaysProvider),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: compactCards ? 80 : 120,
+          ),
+          child: HabitTimeline(
+            habitId: habit.id,
+            compact: compactCards || ref.watch(timelineCompactModeProvider),
+            daysToShow: ref.watch(habitCardTimelineDaysProvider),
+          ),
         ),
       ],
     );

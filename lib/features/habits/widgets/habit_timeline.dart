@@ -132,7 +132,19 @@ class HabitTimeline extends ConsumerWidget {
               );
             }
 
-            return timelineWidget;
+            // Wrap in a widget that can handle vertical constraints
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                // If we have vertical constraints, wrap in SingleChildScrollView
+                if (constraints.maxHeight.isFinite && constraints.maxHeight > 0) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: timelineWidget,
+                  );
+                }
+                return timelineWidget;
+              },
+            );
           },
           loading: () => const SizedBox(
             height: 50,
