@@ -5,6 +5,7 @@ import '../habit_repository.dart';
 import '../../settings/providers/settings_providers.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/demo_data_service.dart';
+import '../../../../core/services/log_helper.dart';
 
 final databaseProvider = Provider<db.AppDatabase>((ref) {
   return db.AppDatabase();
@@ -17,15 +18,33 @@ final habitRepositoryProvider = Provider<HabitRepository>((ref) {
 
 final habitsProvider = StreamProvider<List<db.Habit>>((ref) async* {
   final repository = ref.watch(habitRepositoryProvider);
-  await for (final habits in repository.watchAllHabits()) {
-    yield habits;
+  try {
+    await for (final habits in repository.watchAllHabits()) {
+      yield habits;
+    }
+  } catch (e, stackTrace) {
+    Log.error(
+      'Error in habitsProvider stream',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    yield []; // Yield empty list on error to prevent crashes
   }
 });
 
 final tagsProvider = StreamProvider<List<db.Tag>>((ref) async* {
   final repository = ref.watch(habitRepositoryProvider);
-  await for (final tags in repository.watchAllTags()) {
-    yield tags;
+  try {
+    await for (final tags in repository.watchAllTags()) {
+      yield tags;
+    }
+  } catch (e, stackTrace) {
+    Log.error(
+      'Error in tagsProvider stream',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    yield []; // Yield empty list on error to prevent crashes
   }
 });
 
@@ -34,8 +53,17 @@ final habitTagsProvider = StreamProvider.family<List<db.Tag>, int>((
   habitId,
 ) async* {
   final repository = ref.watch(habitRepositoryProvider);
-  await for (final tags in repository.watchTagsForHabit(habitId)) {
-    yield tags;
+  try {
+    await for (final tags in repository.watchTagsForHabit(habitId)) {
+      yield tags;
+    }
+  } catch (e, stackTrace) {
+    Log.error(
+      'Error in habitTagsProvider stream for habitId=$habitId',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    yield []; // Yield empty list on error to prevent crashes
   }
 });
 
@@ -44,13 +72,22 @@ final habitByIdProvider = StreamProvider.family<db.Habit?, int>((
   id,
 ) async* {
   final repository = ref.watch(habitRepositoryProvider);
-  final habitData = await repository.getHabitById(id);
-  yield habitData;
-
-  // Also watch for changes
-  await for (final habits in repository.watchAllHabits()) {
-    final habitData = habits.where((h) => h.id == id).firstOrNull;
+  try {
+    final habitData = await repository.getHabitById(id);
     yield habitData;
+
+    // Also watch for changes
+    await for (final habits in repository.watchAllHabits()) {
+      final habitData = habits.where((h) => h.id == id).firstOrNull;
+      yield habitData;
+    }
+  } catch (e, stackTrace) {
+    Log.error(
+      'Error in habitByIdProvider stream for id=$id',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    yield null; // Yield null on error to prevent crashes
   }
 });
 
@@ -64,7 +101,8 @@ final filteredSortedHabitsProvider = StreamProvider<List<db.Habit>>((
   final filterByTags = ref.watch(habitFilterByTagsProvider);
   final repository = ref.watch(habitRepositoryProvider);
 
-  await for (final habits in repository.watchAllHabits()) {
+  try {
+    await for (final habits in repository.watchAllHabits()) {
     // Apply text filter
     var filtered = habits;
     if (filterQuery != null && filterQuery.isNotEmpty) {
@@ -166,6 +204,14 @@ final filteredSortedHabitsProvider = StreamProvider<List<db.Habit>>((
     }
 
     yield sorted;
+    }
+  } catch (e, stackTrace) {
+    Log.error(
+      'Error in filteredSortedHabitsProvider stream',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    yield []; // Yield empty list on error to prevent crashes
   }
 });
 

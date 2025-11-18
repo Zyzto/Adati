@@ -75,11 +75,26 @@ class ExportService {
       );
       
       if (result != null) {
-        // Write to the selected path
-        final file = await File(result).create(recursive: true);
-        await file.writeAsString(buffer.toString());
-        Log.info('Exported data to: $result');
-        return result;
+        try {
+          // Write to the selected path
+          final file = await File(result).create(recursive: true);
+          await file.writeAsString(buffer.toString());
+          Log.info('Exported data to: $result');
+          return result;
+        } on FileSystemException catch (e) {
+          Log.error(
+            'File system error exporting CSV (permissions or disk space): $e',
+          );
+          return null;
+        } on IOException catch (e) {
+          Log.error(
+            'IO error exporting CSV: $e',
+          );
+          return null;
+        } catch (e) {
+          Log.error('Error exporting to CSV: $e');
+          return null;
+        }
       }
       
       return null;
@@ -147,10 +162,25 @@ class ExportService {
       );
       
       if (result != null) {
-        final file = await File(result).create(recursive: true);
-        await file.writeAsString(jsonString);
-        Log.info('Exported data to: $result');
-        return result;
+        try {
+          final file = await File(result).create(recursive: true);
+          await file.writeAsString(jsonString);
+          Log.info('Exported data to: $result');
+          return result;
+        } on FileSystemException catch (e) {
+          Log.error(
+            'File system error exporting JSON (permissions or disk space): $e',
+          );
+          return null;
+        } on IOException catch (e) {
+          Log.error(
+            'IO error exporting JSON: $e',
+          );
+          return null;
+        } catch (e) {
+          Log.error('Error exporting to JSON: $e');
+          return null;
+        }
       }
       
       return null;
@@ -196,10 +226,25 @@ class ExportService {
       );
       
       if (result != null) {
-        final file = await File(result).create(recursive: true);
-        await file.writeAsString(jsonString);
-        Log.info('Exported habits to: $result');
-        return result;
+        try {
+          final file = await File(result).create(recursive: true);
+          await file.writeAsString(jsonString);
+          Log.info('Exported habits to: $result');
+          return result;
+        } on FileSystemException catch (e) {
+          Log.error(
+            'File system error exporting habits (permissions or disk space): $e',
+          );
+          return null;
+        } on IOException catch (e) {
+          Log.error(
+            'IO error exporting habits: $e',
+          );
+          return null;
+        } catch (e) {
+          Log.error('Error exporting habits: $e');
+          return null;
+        }
       }
       
       return null;
@@ -242,10 +287,25 @@ class ExportService {
       );
       
       if (result != null) {
-        final file = await File(result).create(recursive: true);
-        await file.writeAsString(jsonString);
-        Log.info('Exported settings to: $result');
-        return result;
+        try {
+          final file = await File(result).create(recursive: true);
+          await file.writeAsString(jsonString);
+          Log.info('Exported settings to: $result');
+          return result;
+        } on FileSystemException catch (e) {
+          Log.error(
+            'File system error exporting settings (permissions or disk space): $e',
+          );
+          return null;
+        } on IOException catch (e) {
+          Log.error(
+            'IO error exporting settings: $e',
+          );
+          return null;
+        } catch (e) {
+          Log.error('Error exporting settings: $e');
+          return null;
+        }
       }
       
       return null;

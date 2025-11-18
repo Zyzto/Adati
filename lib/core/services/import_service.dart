@@ -71,8 +71,11 @@ class ImportService {
         dialogTitle: dialogTitle,
       );
 
-      if (result != null && result.files.single.path != null) {
-        return result.files.single.path;
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        if (file.path != null) {
+          return file.path;
+        }
       }
       return null;
     } catch (e) {
@@ -137,7 +140,22 @@ class ImportService {
       }
 
       final content = await file.readAsString();
-      final jsonData = jsonDecode(content) as Map<String, dynamic>;
+      Map<String, dynamic> jsonData;
+      try {
+        jsonData = jsonDecode(content) as Map<String, dynamic>;
+      } on FormatException catch (e) {
+        Log.error(
+          'Invalid JSON format in habits import file: $e',
+        );
+        result.errors.add('${'invalid_json_file'.tr()}: ${e.message}');
+        return result;
+      } catch (e) {
+        Log.error(
+          'Error parsing JSON in habits import: $e',
+        );
+        result.errors.add('${'import_error'.tr()}: ${e.toString()}');
+        return result;
+      }
 
       // Validate file type
       if (jsonData['type'] != 'habits' && jsonData['habits'] == null) {
@@ -207,7 +225,22 @@ class ImportService {
       }
 
       final content = await file.readAsString();
-      final jsonData = jsonDecode(content) as Map<String, dynamic>;
+      Map<String, dynamic> jsonData;
+      try {
+        jsonData = jsonDecode(content) as Map<String, dynamic>;
+      } on FormatException catch (e) {
+        Log.error(
+          'Invalid JSON format in settings import file: $e',
+        );
+        result.errors.add('${'invalid_json_file'.tr()}: ${e.message}');
+        return result;
+      } catch (e) {
+        Log.error(
+          'Error parsing JSON in settings import: $e',
+        );
+        result.errors.add('${'import_error'.tr()}: ${e.toString()}');
+        return result;
+      }
 
       // Validate file type
       if (jsonData['type'] != 'settings' && jsonData['settings'] == null) {
@@ -281,7 +314,22 @@ class ImportService {
     final result = ImportResult(success: false, errors: [], warnings: []);
 
     try {
-      final jsonData = jsonDecode(content) as Map<String, dynamic>;
+      Map<String, dynamic> jsonData;
+      try {
+        jsonData = jsonDecode(content) as Map<String, dynamic>;
+      } on FormatException catch (e) {
+        Log.error(
+          'Invalid JSON format in import file: $e',
+        );
+        result.errors.add('${'invalid_json_file'.tr()}: ${e.message}');
+        return result;
+      } catch (e) {
+        Log.error(
+          'Error parsing JSON in import: $e',
+        );
+        result.errors.add('${'import_error'.tr()}: ${e.toString()}');
+        return result;
+      }
 
       // Check if it's a full export or habits-only
       final isHabitsOnly = jsonData['type'] == 'habits';
@@ -522,7 +570,16 @@ class ImportService {
       for (final entryData in entry.value) {
         try {
           if (entryData['date']?.isNotEmpty == true) {
-            final date = DateTime.parse(entryData['date']!);
+            DateTime date;
+            try {
+              date = DateTime.parse(entryData['date']!);
+            } catch (e) {
+              result.entriesSkipped++;
+              result.errors.add(
+                '${'error_importing_entry'.tr()}: Invalid date format "${entryData['date']}" - $e',
+              );
+              continue;
+            }
             final completed = entryData['completed']?.toLowerCase() == 'yes';
             final notes = entryData['notes'];
 
@@ -541,6 +598,18 @@ class ImportService {
       }
     }
     result.entriesImported = entryCount;
+  }
+
+  /// Safely parse a DateTime string, falling back to DateTime.now() on error
+  static DateTime _parseDateTimeSafe(String dateStr) {
+    try {
+      return DateTime.parse(dateStr);
+    } catch (e) {
+      Log.warning(
+        'Failed to parse date "$dateStr", using current time: $e',
+      );
+      return DateTime.now();
+    }
   }
 
   static List<String> _parseCSVLine(String line) {
@@ -640,7 +709,16 @@ class ImportService {
       final dateStr = entryData['date'] as String?;
       if (dateStr == null) return;
 
-      final date = DateTime.parse(dateStr);
+      DateTime date;
+      try {
+        date = DateTime.parse(dateStr);
+      } catch (e) {
+        Log.error(
+          'Error parsing date in entry import: "$dateStr" - $e',
+        );
+        rethrow; // Re-throw to let caller handle it
+      }
+
       final completed = entryData['completed'] as bool? ?? false;
       final value = entryData['value'] as double?;
       final occurrenceData = entryData['occurrenceData'] as String?;
@@ -690,7 +768,7 @@ class ImportService {
         longestStreak: drift.Value(streakData['longestStreak'] as int? ?? 0),
         lastUpdated: drift.Value(
           streakData['lastUpdated'] != null
-              ? DateTime.parse(streakData['lastUpdated'] as String)
+              ? _parseDateTimeSafe(streakData['lastUpdated'] as String)
               : DateTime.now(),
         ),
       );

@@ -51,12 +51,31 @@ void main() async {
   }
 
   // Initialize localization
-  await EasyLocalization.ensureInitialized();
-  Log.debug('Localization initialized');
+  try {
+    await EasyLocalization.ensureInitialized();
+    Log.debug('Localization initialized');
+  } catch (e, stackTrace) {
+    Log.error(
+      'Failed to initialize localization, continuing with default locale',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    // Continue with default locale - app can still function
+  }
 
   // Initialize services
-  await PreferencesService.init();
-  Log.debug('PreferencesService initialized');
+  try {
+    await PreferencesService.init();
+    Log.debug('PreferencesService initialized');
+  } catch (e, stackTrace) {
+    Log.error(
+      'Failed to initialize PreferencesService',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    // This is critical - if preferences fail, app may not function correctly
+    // But we'll continue and let the app handle it gracefully
+  }
 
   // Initialize notifications (non-blocking - app continues even if it fails)
   try {

@@ -30,8 +30,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/timeline/day/:date',
         builder: (context, state) {
           final dateStr = state.pathParameters['date']!;
-          final date = DateTime.parse(dateStr);
-          return DayDetailPage(date: date);
+          try {
+            final date = DateTime.parse(dateStr);
+            return DayDetailPage(date: date);
+          } catch (e, stackTrace) {
+            Log.error(
+              'Failed to parse date parameter in route: $dateStr',
+              error: e,
+              stackTrace: stackTrace,
+            );
+            // Redirect to timeline on invalid date
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) {
+                context.go('/timeline');
+              }
+            });
+            // Return timeline page as fallback
+            return const MainTimelinePage();
+          }
         },
       ),
       GoRoute(
