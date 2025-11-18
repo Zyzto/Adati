@@ -64,7 +64,6 @@ class _TagFormModalState extends ConsumerState<TagFormModal> {
     if (!_formKey.currentState!.validate()) return;
 
     final repository = ref.read(habitRepositoryProvider);
-    final now = DateTime.now();
 
     final tag = db.TagsCompanion(
       id: widget.tagId == null
@@ -75,9 +74,6 @@ class _TagFormModalState extends ConsumerState<TagFormModal> {
       icon: _selectedIcon == null
           ? const drift.Value.absent()
           : drift.Value(_selectedIcon!),
-      createdAt: widget.tagId == null
-          ? drift.Value(now)
-          : const drift.Value.absent(),
     );
 
     if (widget.tagId == null) {

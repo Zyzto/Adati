@@ -51,6 +51,9 @@ class TagDao extends DatabaseAccessor<AppDatabase> with _$TagDaoMixin, Loggable 
   }
 
   Future<bool> updateTag(TagsCompanion tag) async {
+    if (!tag.id.present) {
+      throw ArgumentError('Tag id must be present for update');
+    }
     final id = tag.id.value;
     logDebug('updateTag(id=$id) called');
     try {

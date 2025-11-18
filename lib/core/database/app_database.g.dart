@@ -1606,7 +1606,11 @@ class Streak extends DataClass implements Insertable<Streak> {
   final int goodLongestStreak;
   final int badStreak;
   final int badLongestStreak;
+
+  /// @deprecated Use combinedStreak instead. This field is kept for backward compatibility only.
   final int currentStreak;
+
+  /// @deprecated Use combinedLongestStreak instead. This field is kept for backward compatibility only.
   final int longestStreak;
   final DateTime lastUpdated;
   const Streak({
@@ -2005,20 +2009,8 @@ class $TagsTable extends Tags with TableInfo<$TagsTable, Tag> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
   @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [id, name, color, icon, createdAt];
+  List<GeneratedColumn> get $columns => [id, name, color, icon];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2056,12 +2048,6 @@ class $TagsTable extends Tags with TableInfo<$TagsTable, Tag> {
         icon.isAcceptableOrUnknown(data['icon']!, _iconMeta),
       );
     }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
     return context;
   }
 
@@ -2087,10 +2073,6 @@ class $TagsTable extends Tags with TableInfo<$TagsTable, Tag> {
         DriftSqlType.string,
         data['${effectivePrefix}icon'],
       ),
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
     );
   }
 
@@ -2105,13 +2087,11 @@ class Tag extends DataClass implements Insertable<Tag> {
   final String name;
   final int color;
   final String? icon;
-  final DateTime createdAt;
   const Tag({
     required this.id,
     required this.name,
     required this.color,
     this.icon,
-    required this.createdAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2122,7 +2102,6 @@ class Tag extends DataClass implements Insertable<Tag> {
     if (!nullToAbsent || icon != null) {
       map['icon'] = Variable<String>(icon);
     }
-    map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
 
@@ -2132,7 +2111,6 @@ class Tag extends DataClass implements Insertable<Tag> {
       name: Value(name),
       color: Value(color),
       icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
-      createdAt: Value(createdAt),
     );
   }
 
@@ -2146,7 +2124,6 @@ class Tag extends DataClass implements Insertable<Tag> {
       name: serializer.fromJson<String>(json['name']),
       color: serializer.fromJson<int>(json['color']),
       icon: serializer.fromJson<String?>(json['icon']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
   @override
@@ -2157,7 +2134,6 @@ class Tag extends DataClass implements Insertable<Tag> {
       'name': serializer.toJson<String>(name),
       'color': serializer.toJson<int>(color),
       'icon': serializer.toJson<String?>(icon),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
@@ -2166,13 +2142,11 @@ class Tag extends DataClass implements Insertable<Tag> {
     String? name,
     int? color,
     Value<String?> icon = const Value.absent(),
-    DateTime? createdAt,
   }) => Tag(
     id: id ?? this.id,
     name: name ?? this.name,
     color: color ?? this.color,
     icon: icon.present ? icon.value : this.icon,
-    createdAt: createdAt ?? this.createdAt,
   );
   Tag copyWithCompanion(TagsCompanion data) {
     return Tag(
@@ -2180,7 +2154,6 @@ class Tag extends DataClass implements Insertable<Tag> {
       name: data.name.present ? data.name.value : this.name,
       color: data.color.present ? data.color.value : this.color,
       icon: data.icon.present ? data.icon.value : this.icon,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
 
@@ -2190,14 +2163,13 @@ class Tag extends DataClass implements Insertable<Tag> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('color: $color, ')
-          ..write('icon: $icon, ')
-          ..write('createdAt: $createdAt')
+          ..write('icon: $icon')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, color, icon, createdAt);
+  int get hashCode => Object.hash(id, name, color, icon);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2205,8 +2177,7 @@ class Tag extends DataClass implements Insertable<Tag> {
           other.id == this.id &&
           other.name == this.name &&
           other.color == this.color &&
-          other.icon == this.icon &&
-          other.createdAt == this.createdAt);
+          other.icon == this.icon);
 }
 
 class TagsCompanion extends UpdateCompanion<Tag> {
@@ -2214,20 +2185,17 @@ class TagsCompanion extends UpdateCompanion<Tag> {
   final Value<String> name;
   final Value<int> color;
   final Value<String?> icon;
-  final Value<DateTime> createdAt;
   const TagsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
-    this.createdAt = const Value.absent(),
   });
   TagsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     required int color,
     this.icon = const Value.absent(),
-    this.createdAt = const Value.absent(),
   }) : name = Value(name),
        color = Value(color);
   static Insertable<Tag> custom({
@@ -2235,14 +2203,12 @@ class TagsCompanion extends UpdateCompanion<Tag> {
     Expression<String>? name,
     Expression<int>? color,
     Expression<String>? icon,
-    Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (color != null) 'color': color,
       if (icon != null) 'icon': icon,
-      if (createdAt != null) 'created_at': createdAt,
     });
   }
 
@@ -2251,14 +2217,12 @@ class TagsCompanion extends UpdateCompanion<Tag> {
     Value<String>? name,
     Value<int>? color,
     Value<String?>? icon,
-    Value<DateTime>? createdAt,
   }) {
     return TagsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       color: color ?? this.color,
       icon: icon ?? this.icon,
-      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -2277,9 +2241,6 @@ class TagsCompanion extends UpdateCompanion<Tag> {
     if (icon.present) {
       map['icon'] = Variable<String>(icon.value);
     }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
     return map;
   }
 
@@ -2289,8 +2250,7 @@ class TagsCompanion extends UpdateCompanion<Tag> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('color: $color, ')
-          ..write('icon: $icon, ')
-          ..write('createdAt: $createdAt')
+          ..write('icon: $icon')
           ..write(')'))
         .toString();
   }
@@ -4053,7 +4013,6 @@ typedef $$TagsTableCreateCompanionBuilder =
       required String name,
       required int color,
       Value<String?> icon,
-      Value<DateTime> createdAt,
     });
 typedef $$TagsTableUpdateCompanionBuilder =
     TagsCompanion Function({
@@ -4061,7 +4020,6 @@ typedef $$TagsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<int> color,
       Value<String?> icon,
-      Value<DateTime> createdAt,
     });
 
 final class $$TagsTableReferences
@@ -4112,11 +4070,6 @@ class $$TagsTableFilterComposer extends Composer<_$AppDatabase, $TagsTable> {
 
   ColumnFilters<String> get icon => $composableBuilder(
     column: $table.icon,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4173,11 +4126,6 @@ class $$TagsTableOrderingComposer extends Composer<_$AppDatabase, $TagsTable> {
     column: $table.icon,
     builder: (column) => ColumnOrderings(column),
   );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
 }
 
 class $$TagsTableAnnotationComposer
@@ -4200,9 +4148,6 @@ class $$TagsTableAnnotationComposer
 
   GeneratedColumn<String> get icon =>
       $composableBuilder(column: $table.icon, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
   Expression<T> habitTagsRefs<T extends Object>(
     Expression<T> Function($$HabitTagsTableAnnotationComposer a) f,
@@ -4262,27 +4207,18 @@ class $$TagsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<int> color = const Value.absent(),
                 Value<String?> icon = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => TagsCompanion(
-                id: id,
-                name: name,
-                color: color,
-                icon: icon,
-                createdAt: createdAt,
-              ),
+              }) => TagsCompanion(id: id, name: name, color: color, icon: icon),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
                 required int color,
                 Value<String?> icon = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
               }) => TagsCompanion.insert(
                 id: id,
                 name: name,
                 color: color,
                 icon: icon,
-                createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
               .map(
