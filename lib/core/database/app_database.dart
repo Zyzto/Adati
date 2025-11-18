@@ -22,13 +22,23 @@ class AppDatabase extends _$AppDatabase with Loggable {
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
-        await m.createAll();
-        logInfo('Database created');
+        try {
+          await m.createAll();
+          logInfo('Database created successfully');
+        } catch (e, stackTrace) {
+          logError(
+            'Database creation failed',
+            error: e,
+            stackTrace: stackTrace,
+          );
+          rethrow; // Re-throw to let Drift handle the error
+        }
       },
       onUpgrade: (Migrator m, int from, int to) async {
         logInfo('Database upgraded from $from to $to');
 
-        if (from < 2) {
+        try {
+          if (from < 2) {
           // Migration 1->2: Make tracking_entries.id nullable
           // SQLite doesn't support ALTER COLUMN, so we need to recreate the table
           await m.database.executor.runCustom('''
@@ -63,35 +73,62 @@ class AppDatabase extends _$AppDatabase with Loggable {
               icon TEXT,
               created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
             );
-            
-            -- Copy all categories to tags
-            -- If created_at is already in milliseconds, use as-is; otherwise convert from seconds
-            INSERT INTO tags (id, name, color, icon, created_at)
-            SELECT 
-              id, 
-              name, 
-              color, 
-              icon, 
-              CASE 
-                WHEN created_at < 10000000000 THEN created_at * 1000 
-                ELSE created_at 
-              END as created_at
-            FROM categories;
-            
-            -- Create habit_tags junction table
+            ''');
+          
+          // Check if categories table exists before copying data
+          final categoriesTableExists = await m.database.executor.runSelect(
+            'SELECT name FROM sqlite_master WHERE type="table" AND name="categories"',
+            [],
+          ).then((result) => result.isNotEmpty);
+          
+          if (categoriesTableExists) {
+            // Copy all categories to tags
+            // If created_at is already in milliseconds, use as-is; otherwise convert from seconds
+            await m.database.executor.runCustom('''
+              INSERT INTO tags (id, name, color, icon, created_at)
+              SELECT 
+                id, 
+                name, 
+                color, 
+                icon, 
+                CASE 
+                  WHEN created_at < 10000000000 THEN created_at * 1000 
+                  ELSE created_at 
+                END as created_at
+              FROM categories;
+            ''');
+            logInfo('Migration 2->3: Copied categories to tags');
+          } else {
+            logInfo('Migration 2->3: Categories table does not exist, skipping data copy');
+          }
+          
+          // Create habit_tags junction table
+          await m.database.executor.runCustom('''
             CREATE TABLE habit_tags (
               habit_id INTEGER NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
               tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
               PRIMARY KEY (habit_id, tag_id)
             );
-            
-            -- Migrate existing category relationships to tags
-            INSERT INTO habit_tags (habit_id, tag_id)
-            SELECT id, category_id FROM habits WHERE category_id IS NOT NULL;
-            
-            -- Note: We keep categories table for now to avoid breaking existing code
-            -- It can be removed in a future migration if needed
+          ''');
+          
+          // Check if habits table has category_id column before migrating relationships
+          final habitsColumns = await m.database.executor.runSelect(
+            'PRAGMA table_info(habits)',
+            [],
+          );
+          final hasCategoryIdColumn = habitsColumns.any((row) => row['name'] == 'category_id');
+          
+          if (hasCategoryIdColumn) {
+            // Migrate existing category relationships to tags
+            await m.database.executor.runCustom('''
+              INSERT INTO habit_tags (habit_id, tag_id)
+              SELECT id, category_id FROM habits WHERE category_id IS NOT NULL;
             ''');
+            logInfo('Migration 2->3: Migrated category relationships to tags');
+          } else {
+            logInfo('Migration 2->3: Habits table does not have category_id column, skipping relationship migration');
+          }
+          
           logInfo('Migration 2->3: Converted categories to tags system');
         }
 
@@ -189,6 +226,14 @@ class AppDatabase extends _$AppDatabase with Loggable {
             ALTER TABLE streaks_new RENAME TO streaks;
             ''');
           logInfo('Migration 3->4: Removed unused components and added new tracking system');
+          }
+        } catch (e, stackTrace) {
+          logError(
+            'Database migration failed from $from to $to',
+            error: e,
+            stackTrace: stackTrace,
+          );
+          rethrow; // Re-throw to let Drift handle the error
         }
       },
     );
