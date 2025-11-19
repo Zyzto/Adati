@@ -77,7 +77,6 @@ flutter:
   assets:
     - assets/translations/
     - assets/icon.png
-    - .env
   
   fonts:
     - family: Almarai
