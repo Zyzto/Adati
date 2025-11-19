@@ -32,7 +32,8 @@ class DisplaySectionContent extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DisplaySectionContent> createState() => _DisplaySectionContentState();
+  ConsumerState<DisplaySectionContent> createState() =>
+      _DisplaySectionContentState();
 }
 
 class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
@@ -64,7 +65,9 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     final mainTimelineFillLines = ref.watch(mainTimelineFillLinesProvider);
     final mainTimelineLines = ref.watch(mainTimelineLinesProvider);
     final habitCardLayoutMode = ref.watch(habitCardLayoutModeProvider);
-    final habitCardTimelineFillLines = ref.watch(habitCardTimelineFillLinesProvider);
+    final habitCardTimelineFillLines = ref.watch(
+      habitCardTimelineFillLinesProvider,
+    );
     final habitCardTimelineLines = ref.watch(habitCardTimelineLinesProvider);
     final showStreakOnCard = ref.watch(showStreakOnCardProvider);
 
@@ -126,7 +129,8 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           title: Text('timeline_days'.tr()),
           subtitle: Text('$timelineDays ${'days'.tr()}'),
           enabled: !mainTimelineFillLines,
-          trailing: !mainTimelineFillLines && timelineDays != defaultTimelineDays
+          trailing:
+              !mainTimelineFillLines && timelineDays != defaultTimelineDays
               ? IconButton(
                   icon: const Icon(Icons.refresh),
                   tooltip: 'reset_to_default'.tr(),
@@ -140,7 +144,8 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           title: Text('modal_timeline_days'.tr()),
           subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
           enabled: !habitCardTimelineFillLines,
-          trailing: !habitCardTimelineFillLines &&
+          trailing:
+              !habitCardTimelineFillLines &&
                   modalTimelineDays != defaultModalTimelineDays
               ? IconButton(
                   icon: const Icon(Icons.refresh),
@@ -155,12 +160,14 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           title: Text('habit_card_timeline_days'.tr()),
           subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
           enabled: !habitCardTimelineFillLines,
-          trailing: !habitCardTimelineFillLines &&
+          trailing:
+              !habitCardTimelineFillLines &&
                   habitCardTimelineDays != defaultHabitCardTimelineDays
               ? IconButton(
                   icon: const Icon(Icons.refresh),
                   tooltip: 'reset_to_default'.tr(),
-                  onPressed: () => widget.revertHabitCardTimelineDays(context, ref),
+                  onPressed: () =>
+                      widget.revertHabitCardTimelineDays(context, ref),
                 )
               : null,
           onTap: () => widget.showHabitCardTimelineDaysDialog(context, ref),
@@ -257,7 +264,9 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         ListTile(
           leading: const Icon(Icons.check_box),
           title: Text('habit_checkbox_style'.tr()),
-          subtitle: Text(SettingsFormatters.getCheckboxStyleName(habitCheckboxStyle)),
+          subtitle: Text(
+            SettingsFormatters.getCheckboxStyleName(habitCheckboxStyle),
+          ),
           onTap: () => widget.showHabitCheckboxStyleDialog(context, ref),
         ),
         SwitchListTile(
@@ -288,7 +297,9 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
           value: habitCardTimelineFillLines,
           onChanged: (value) async {
-            final notifier = ref.read(habitCardTimelineFillLinesNotifierProvider);
+            final notifier = ref.read(
+              habitCardTimelineFillLinesNotifierProvider,
+            );
             await notifier.setHabitCardTimelineFillLines(value);
             ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
           },
@@ -312,7 +323,11 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         ListTile(
           leading: const Icon(Icons.trending_up),
           title: Text('progress_indicator_style'.tr()),
-          subtitle: Text(SettingsFormatters.getProgressIndicatorStyleName(progressIndicatorStyle)),
+          subtitle: Text(
+            SettingsFormatters.getProgressIndicatorStyleName(
+              progressIndicatorStyle,
+            ),
+          ),
           onTap: () => widget.showProgressIndicatorStyleDialog(context, ref),
         ),
         SwitchListTile(
@@ -342,7 +357,10 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           title: Text('main_timeline_lines'.tr()),
           subtitle: Text('$mainTimelineLines'),
           enabled: mainTimelineFillLines,
-          onTap: () => _showMainTimelineLinesDialog(mainTimelineFillLines, mainTimelineLines),
+          onTap: () => _showMainTimelineLinesDialog(
+            mainTimelineFillLines,
+            mainTimelineLines,
+          ),
         ),
         ListTile(
           leading: const Icon(Icons.view_agenda),
@@ -367,32 +385,27 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: Text('habits_layout_mode'.tr()),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<String>(
-                    title: Text('habits_layout_list'.tr()),
-                    value: 'list',
-                    groupValue: temp,
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setDialogState(() {
-                        temp = value;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: Text('habits_layout_grid'.tr()),
-                    value: 'grid',
-                    groupValue: temp,
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setDialogState(() {
-                        temp = value;
-                      });
-                    },
-                  ),
-                ],
+              content: RadioGroup<String>(
+                groupValue: temp,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setDialogState(() {
+                    temp = value;
+                  });
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('habits_layout_list'.tr()),
+                      value: 'list',
+                    ),
+                    RadioListTile<String>(
+                      title: Text('habits_layout_grid'.tr()),
+                      value: 'grid',
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -426,32 +439,27 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: Text('habit_card_layout_mode'.tr()),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<String>(
-                    title: Text('habit_card_layout_mode_classic'.tr()),
-                    value: 'classic',
-                    groupValue: temp,
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setDialogState(() {
-                        temp = value;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: Text('habit_card_layout_mode_top_row'.tr()),
-                    value: 'topRow',
-                    groupValue: temp,
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setDialogState(() {
-                        temp = value;
-                      });
-                    },
-                  ),
-                ],
+              content: RadioGroup<String>(
+                groupValue: temp,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setDialogState(() {
+                    temp = value;
+                  });
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('habit_card_layout_mode_classic'.tr()),
+                      value: 'classic',
+                    ),
+                    RadioListTile<String>(
+                      title: Text('habit_card_layout_mode_top_row'.tr()),
+                      value: 'topRow',
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -476,7 +484,10 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     }
   }
 
-  Future<void> _showHabitCardTimelineLinesDialog(bool fillLinesEnabled, int current) async {
+  Future<void> _showHabitCardTimelineLinesDialog(
+    bool fillLinesEnabled,
+    int current,
+  ) async {
     if (!fillLinesEnabled) return;
 
     int temp = current.clamp(1, 5);
@@ -502,9 +513,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
                       });
                     },
                   ),
-                  Text(
-                    'habit_card_timeline_lines_value'.tr(args: ['$temp']),
-                  ),
+                  Text('habit_card_timeline_lines_value'.tr(args: ['$temp'])),
                 ],
               );
             },
@@ -530,7 +539,10 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     }
   }
 
-  Future<void> _showMainTimelineLinesDialog(bool fillLinesEnabled, int current) async {
+  Future<void> _showMainTimelineLinesDialog(
+    bool fillLinesEnabled,
+    int current,
+  ) async {
     if (!fillLinesEnabled) return;
 
     int temp = current.clamp(1, 6);
@@ -582,4 +594,3 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     }
   }
 }
-

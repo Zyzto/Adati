@@ -156,7 +156,7 @@ class CalendarGrid extends ConsumerWidget {
                 completionColor:
                     ref.watch(mainTimelineCompletionColorProvider),
               ),
-              error: (_, __) => DaySquare(
+              error: (_, _) => DaySquare(
                 date: day,
                 completed: false,
                 completionColor:

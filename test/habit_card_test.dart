@@ -15,7 +15,7 @@ void main() {
         id: 1,
         name: 'Test Habit',
         description: 'A simple test habit',
-        color: Colors.blue.value,
+        color: Colors.blue.hashCode,
         icon: null,
         habitType: 0,
         trackingType: 'completed',

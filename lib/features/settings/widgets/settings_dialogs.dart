@@ -72,25 +72,27 @@ class SettingsDialogs {
           title: Text(title),
           content: StatefulBuilder(
             builder: (context, setDialogState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: options.map((option) {
-                  return RadioListTile<T>(
-                    title: Text(option.label),
-                    subtitle: option.subtitle != null
-                        ? Text(option.subtitle!)
-                        : null,
-                    value: option.value,
-                    groupValue: tempValue,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setDialogState(() {
-                          tempValue = value;
-                        });
-                      }
-                    },
-                  );
-                }).toList(),
+              return RadioGroup<T>(
+                groupValue: tempValue,
+                onChanged: (value) {
+                  if (value != null) {
+                    setDialogState(() {
+                      tempValue = value;
+                    });
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: options.map((option) {
+                    return RadioListTile<T>(
+                      title: Text(option.label),
+                      subtitle: option.subtitle != null
+                          ? Text(option.subtitle!)
+                          : null,
+                      value: option.value,
+                    );
+                  }).toList(),
+                ),
               );
             },
           ),

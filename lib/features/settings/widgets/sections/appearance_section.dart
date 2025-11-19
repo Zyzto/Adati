@@ -22,7 +22,8 @@ class AppearanceSectionContent extends ConsumerWidget {
     int currentColor,
     Future<void> Function(int) onColorChanged,
     Provider<dynamic> notifierProvider,
-  ) showCompletionColorDialog;
+  )
+  showCompletionColorDialog;
   final Function(BuildContext, WidgetRef) showStreakColorSchemeDialog;
 
   const AppearanceSectionContent({
@@ -47,17 +48,33 @@ class AppearanceSectionContent extends ConsumerWidget {
     final cardElevation = ref.watch(cardElevationProvider);
     final cardSpacing = ref.watch(cardSpacingProvider);
     final calendarCompletionColor = ref.watch(calendarCompletionColorProvider);
-    final habitCardCompletionColor = ref.watch(habitCardCompletionColorProvider);
-    final calendarTimelineCompletionColor = ref.watch(calendarTimelineCompletionColorProvider);
-    final mainTimelineCompletionColor = ref.watch(mainTimelineCompletionColorProvider);
-    final calendarBadHabitCompletionColor = ref.watch(calendarBadHabitCompletionColorProvider);
-    final habitCardBadHabitCompletionColor = ref.watch(habitCardBadHabitCompletionColorProvider);
-    final calendarTimelineBadHabitCompletionColor = ref.watch(calendarTimelineBadHabitCompletionColorProvider);
-    final mainTimelineBadHabitCompletionColor = ref.watch(mainTimelineBadHabitCompletionColorProvider);
+    final habitCardCompletionColor = ref.watch(
+      habitCardCompletionColorProvider,
+    );
+    final calendarTimelineCompletionColor = ref.watch(
+      calendarTimelineCompletionColorProvider,
+    );
+    final mainTimelineCompletionColor = ref.watch(
+      mainTimelineCompletionColorProvider,
+    );
+    final calendarBadHabitCompletionColor = ref.watch(
+      calendarBadHabitCompletionColorProvider,
+    );
+    final habitCardBadHabitCompletionColor = ref.watch(
+      habitCardBadHabitCompletionColorProvider,
+    );
+    final calendarTimelineBadHabitCompletionColor = ref.watch(
+      calendarTimelineBadHabitCompletionColorProvider,
+    );
+    final mainTimelineBadHabitCompletionColor = ref.watch(
+      mainTimelineBadHabitCompletionColorProvider,
+    );
     final streakColorScheme = ref.watch(streakColorSchemeProvider);
-    final useStreakColorsForSquares = ref.watch(useStreakColorsForSquaresProvider);
+    final useStreakColorsForSquares = ref.watch(
+      useStreakColorsForSquaresProvider,
+    );
 
-    const defaultDaySquareSize = 40.0;
+    const defaultDaySquareSize = 'large';
 
     return Column(
       children: [
@@ -65,7 +82,9 @@ class AppearanceSectionContent extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.text_fields),
           title: Text('font_size_scale'.tr()),
-          subtitle: Text(SettingsFormatters.getFontSizeScaleName(fontSizeScale)),
+          subtitle: Text(
+            SettingsFormatters.getFontSizeScaleName(fontSizeScale),
+          ),
           onTap: () => showFontSizeScaleDialog(context, ref),
         ),
         ListTile(
@@ -77,7 +96,9 @@ class AppearanceSectionContent extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.square),
           title: Text('day_square_size'.tr()),
-          subtitle: Text(SettingsFormatters.getDaySquareSizeName(daySquareSize)),
+          subtitle: Text(
+            SettingsFormatters.getDaySquareSizeName(daySquareSize),
+          ),
           trailing: daySquareSize != defaultDaySquareSize
               ? IconButton(
                   icon: const Icon(Icons.refresh),
@@ -143,7 +164,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'calendar_completion_color',
             calendarCompletionColor,
             (color) async {
-              final notifier = ref.read(calendarCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                calendarCompletionColorNotifierProvider,
+              );
               await notifier.setCalendarCompletionColor(color);
             },
             calendarCompletionColorNotifierProvider,
@@ -170,7 +193,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'habit_card_completion_color',
             habitCardCompletionColor,
             (color) async {
-              final notifier = ref.read(habitCardCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                habitCardCompletionColorNotifierProvider,
+              );
               await notifier.setHabitCardCompletionColor(color);
             },
             habitCardCompletionColorNotifierProvider,
@@ -197,7 +222,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'calendar_timeline_completion_color',
             calendarTimelineCompletionColor,
             (color) async {
-              final notifier = ref.read(calendarTimelineCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                calendarTimelineCompletionColorNotifierProvider,
+              );
               await notifier.setCalendarTimelineCompletionColor(color);
             },
             calendarTimelineCompletionColorNotifierProvider,
@@ -224,7 +251,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'main_timeline_completion_color',
             mainTimelineCompletionColor,
             (color) async {
-              final notifier = ref.read(mainTimelineCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                mainTimelineCompletionColorNotifierProvider,
+              );
               await notifier.setMainTimelineCompletionColor(color);
             },
             mainTimelineCompletionColorNotifierProvider,
@@ -257,7 +286,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'calendar_bad_habit_completion_color',
             calendarBadHabitCompletionColor,
             (color) async {
-              final notifier = ref.read(calendarBadHabitCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                calendarBadHabitCompletionColorNotifierProvider,
+              );
               await notifier.setCalendarBadHabitCompletionColor(color);
             },
             calendarBadHabitCompletionColorNotifierProvider,
@@ -284,7 +315,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'habit_card_bad_habit_completion_color',
             habitCardBadHabitCompletionColor,
             (color) async {
-              final notifier = ref.read(habitCardBadHabitCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                habitCardBadHabitCompletionColorNotifierProvider,
+              );
               await notifier.setHabitCardBadHabitCompletionColor(color);
             },
             habitCardBadHabitCompletionColorNotifierProvider,
@@ -311,7 +344,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'calendar_timeline_bad_habit_completion_color',
             calendarTimelineBadHabitCompletionColor,
             (color) async {
-              final notifier = ref.read(calendarTimelineBadHabitCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                calendarTimelineBadHabitCompletionColorNotifierProvider,
+              );
               await notifier.setCalendarTimelineBadHabitCompletionColor(color);
             },
             calendarTimelineBadHabitCompletionColorNotifierProvider,
@@ -338,7 +373,9 @@ class AppearanceSectionContent extends ConsumerWidget {
             'main_timeline_bad_habit_completion_color',
             mainTimelineBadHabitCompletionColor,
             (color) async {
-              final notifier = ref.read(mainTimelineBadHabitCompletionColorNotifierProvider);
+              final notifier = ref.read(
+                mainTimelineBadHabitCompletionColorNotifierProvider,
+              );
               await notifier.setMainTimelineBadHabitCompletionColor(color);
             },
             mainTimelineBadHabitCompletionColorNotifierProvider,
@@ -349,7 +386,9 @@ class AppearanceSectionContent extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.color_lens),
           title: Text('streak_color_scheme'.tr()),
-          subtitle: Text(SettingsFormatters.getStreakColorSchemeName(streakColorScheme)),
+          subtitle: Text(
+            SettingsFormatters.getStreakColorSchemeName(streakColorScheme),
+          ),
           onTap: () => showStreakColorSchemeDialog(context, ref),
         ),
         SwitchListTile(
@@ -358,7 +397,9 @@ class AppearanceSectionContent extends ConsumerWidget {
           subtitle: Text('use_streak_colors_for_squares_description'.tr()),
           value: useStreakColorsForSquares,
           onChanged: (value) async {
-            final notifier = ref.read(useStreakColorsForSquaresNotifierProvider);
+            final notifier = ref.read(
+              useStreakColorsForSquaresNotifierProvider,
+            );
             await notifier.setUseStreakColorsForSquares(value);
             ref.invalidate(useStreakColorsForSquaresNotifierProvider);
           },
@@ -367,4 +408,3 @@ class AppearanceSectionContent extends ConsumerWidget {
     );
   }
 }
-

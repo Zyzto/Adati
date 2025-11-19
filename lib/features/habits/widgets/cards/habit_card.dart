@@ -1021,7 +1021,7 @@ class HabitCard extends ConsumerWidget {
         },
       );
 
-    Widget _buildTrackingButton() {
+    Widget buildTrackingButton() {
       return todayEntryAsync.when(
         data: (isCompleted) {
           final entriesAsyncForButton = ref.watch(
@@ -1231,7 +1231,7 @@ class HabitCard extends ConsumerWidget {
                   ),
                 ),
               ),
-              _buildTrackingButton(),
+              buildTrackingButton(),
             ],
           ),
         ),
@@ -1259,7 +1259,7 @@ class HabitCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              _buildTrackingButton(),
+              buildTrackingButton(),
             ],
           ),
         ),
@@ -1669,7 +1669,7 @@ class HabitGridCard extends ConsumerWidget {
           constraints: const BoxConstraints(maxHeight: 72),
           child: HabitTimeline(
             habitId: habit.id,
-            compact: compact || settings.timelineCompactMode,
+            compact: compact ,
             daysToShow: settings.habitCardTimelineDays,
           ),
         ),
