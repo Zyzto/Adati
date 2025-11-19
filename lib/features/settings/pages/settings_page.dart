@@ -3126,6 +3126,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final useStreakColorsForSquares = ref.watch(
       useStreakColorsForSquaresProvider,
     );
+    final habitCardLayoutMode = ref.watch(habitCardLayoutModeProvider);
+    final habitCardTimelineFillLines = ref.watch(
+      habitCardTimelineFillLinesProvider,
+    );
+    final habitCardTimelineLines = ref.watch(
+      habitCardTimelineLinesProvider,
+    );
     final defaultView = ref.watch(defaultViewProvider);
     final showStreakOnCard = ref.watch(showStreakOnCardProvider);
     final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
@@ -3508,7 +3515,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               leading: const Icon(Icons.view_timeline),
               title: Text('modal_timeline_days'.tr()),
               subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
-              trailing: modalTimelineDays != defaultModalTimelineDays
+              enabled: !habitCardTimelineFillLines,
+              trailing: !habitCardTimelineFillLines &&
+                      modalTimelineDays != defaultModalTimelineDays
                   ? IconButton(
                       icon: const Icon(Icons.refresh),
                       tooltip: 'reset_to_default'.tr(),
@@ -3521,7 +3530,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               leading: const Icon(Icons.view_week),
               title: Text('habit_card_timeline_days'.tr()),
               subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
-              trailing: habitCardTimelineDays != defaultHabitCardTimelineDays
+              enabled: !habitCardTimelineFillLines,
+              trailing: !habitCardTimelineFillLines &&
+                      habitCardTimelineDays != defaultHabitCardTimelineDays
                   ? IconButton(
                       icon: const Icon(Icons.refresh),
                       tooltip: 'reset_to_default'.tr(),
@@ -3680,6 +3691,141 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 final notifier = ref.read(showStreakOnCardNotifierProvider);
                 await notifier.setShowStreakOnCard(value);
                 ref.invalidate(showStreakOnCardNotifierProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.view_agenda),
+              title: Text('habit_card_layout_mode'.tr()),
+              subtitle: Text(
+                habitCardLayoutMode == 'topRow'
+                    ? 'habit_card_layout_mode_top_row'.tr()
+                    : 'habit_card_layout_mode_classic'.tr(),
+              ),
+              onTap: () async {
+                final mode = await showDialog<String>(
+                  context: context,
+                  builder: (context) {
+                    String temp = habitCardLayoutMode;
+                    return AlertDialog(
+                      title: Text('habit_card_layout_mode'.tr()),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RadioListTile<String>(
+                            title: Text('habit_card_layout_mode_classic'.tr()),
+                            value: 'classic',
+                            groupValue: temp,
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() {
+                                temp = value;
+                              });
+                            },
+                          ),
+                          RadioListTile<String>(
+                            title: Text('habit_card_layout_mode_top_row'.tr()),
+                            value: 'topRow',
+                            groupValue: temp,
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() {
+                                temp = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('cancel'.tr()),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, temp),
+                          child: Text('ok'.tr()),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (mode != null && mode.isNotEmpty) {
+                  final notifier =
+                      ref.read(habitCardLayoutModeNotifierProvider);
+                  await notifier.setHabitCardLayoutMode(mode);
+                  ref.invalidate(habitCardLayoutModeNotifierProvider);
+                }
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.grid_on),
+              title: Text('habit_card_timeline_fill_lines'.tr()),
+              subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
+              value: habitCardTimelineFillLines,
+              onChanged: (value) async {
+                final notifier =
+                    ref.read(habitCardTimelineFillLinesNotifierProvider);
+                await notifier.setHabitCardTimelineFillLines(value);
+                ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.format_line_spacing),
+              title: Text('habit_card_timeline_lines'.tr()),
+              subtitle: Text('$habitCardTimelineLines'),
+              onTap: () async {
+                final current = habitCardTimelineLines;
+                int temp = current;
+                final result = await showDialog<int>(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('habit_card_timeline_lines'.tr()),
+                      content: StatefulBuilder(
+                        builder: (context, setDialogState) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Slider(
+                                min: 1,
+                                max: 5,
+                                divisions: 4,
+                                value: temp.toDouble().clamp(1, 5),
+                                label: '$temp',
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    temp = value.round();
+                                  });
+                                },
+                              ),
+                              Text(
+                                'habit_card_timeline_lines_value'
+                                    .tr(args: ['$temp']),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('cancel'.tr()),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, temp),
+                          child: Text('ok'.tr()),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (result != null && result != current) {
+                  final notifier =
+                      ref.read(habitCardTimelineLinesNotifierProvider);
+                  await notifier.setHabitCardTimelineLines(result);
+                  ref.invalidate(habitCardTimelineLinesNotifierProvider);
+                }
               },
             ),
           ],

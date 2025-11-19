@@ -56,6 +56,11 @@ class PreferencesService {
       'use_streak_colors_for_squares';
   static const String _keyDefaultView = 'default_view';
   static const String _keyShowStreakOnCard = 'show_streak_on_card';
+  static const String _keyHabitCardLayoutMode = 'habit_card_layout_mode';
+  static const String _keyHabitCardTimelineFillLines =
+      'habit_card_timeline_fill_lines';
+  static const String _keyHabitCardTimelineLines =
+      'habit_card_timeline_lines';
   static const String _keyBadHabitLogicMode = 'bad_habit_logic_mode';
   // Habit filtering/grouping (session-based but stored for convenience)
   static const String _keyHabitGroupBy = 'habit_group_by';
@@ -417,6 +422,26 @@ class PreferencesService {
 
   static Future<bool> setDefaultView(String view) =>
       prefs.setString(_keyDefaultView, view);
+
+  static String getHabitCardLayoutMode() {
+    final value = prefs.getString(_keyHabitCardLayoutMode);
+    return (value == null || value.isEmpty) ? 'classic' : value;
+  }
+
+  static Future<bool> setHabitCardLayoutMode(String mode) =>
+      prefs.setString(_keyHabitCardLayoutMode, mode);
+
+  static bool getHabitCardTimelineFillLines() =>
+      prefs.getBool(_keyHabitCardTimelineFillLines) ?? false;
+
+  static Future<bool> setHabitCardTimelineFillLines(bool value) =>
+      prefs.setBool(_keyHabitCardTimelineFillLines, value);
+
+  static int getHabitCardTimelineLines() =>
+      prefs.getInt(_keyHabitCardTimelineLines) ?? 3;
+
+  static Future<bool> setHabitCardTimelineLines(int lines) =>
+      prefs.setInt(_keyHabitCardTimelineLines, lines);
 
   static String getBadHabitLogicMode() {
     final value = prefs.getString(_keyBadHabitLogicMode);

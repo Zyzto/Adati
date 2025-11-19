@@ -930,6 +930,78 @@ final showStreakOnCardProvider = Provider<bool>((ref) {
   return ref.watch(showStreakOnCardNotifierProvider).value;
 });
 
+// Habit Card Layout Mode
+class HabitCardLayoutModeNotifier {
+  String _mode;
+
+  HabitCardLayoutModeNotifier()
+      : _mode = PreferencesService.getHabitCardLayoutMode();
+
+  String get mode => _mode;
+
+  Future<void> setHabitCardLayoutMode(String mode) async {
+    _mode = mode;
+    await PreferencesService.setHabitCardLayoutMode(mode);
+  }
+}
+
+final habitCardLayoutModeNotifierProvider =
+    Provider<HabitCardLayoutModeNotifier>((ref) {
+  return HabitCardLayoutModeNotifier();
+});
+
+final habitCardLayoutModeProvider = Provider<String>((ref) {
+  return ref.watch(habitCardLayoutModeNotifierProvider).mode;
+});
+
+// Habit Card Timeline Fill-Lines Mode
+class HabitCardTimelineFillLinesNotifier {
+  bool _value;
+
+  HabitCardTimelineFillLinesNotifier()
+      : _value = PreferencesService.getHabitCardTimelineFillLines();
+
+  bool get value => _value;
+
+  Future<void> setHabitCardTimelineFillLines(bool value) async {
+    _value = value;
+    await PreferencesService.setHabitCardTimelineFillLines(value);
+  }
+}
+
+final habitCardTimelineFillLinesNotifierProvider =
+    Provider<HabitCardTimelineFillLinesNotifier>((ref) {
+  return HabitCardTimelineFillLinesNotifier();
+});
+
+final habitCardTimelineFillLinesProvider = Provider<bool>((ref) {
+  return ref.watch(habitCardTimelineFillLinesNotifierProvider).value;
+});
+
+// Habit Card Timeline Lines (for fill-lines mode)
+class HabitCardTimelineLinesNotifier {
+  int _lines;
+
+  HabitCardTimelineLinesNotifier()
+      : _lines = PreferencesService.getHabitCardTimelineLines();
+
+  int get lines => _lines;
+
+  Future<void> setHabitCardTimelineLines(int lines) async {
+    _lines = lines;
+    await PreferencesService.setHabitCardTimelineLines(lines);
+  }
+}
+
+final habitCardTimelineLinesNotifierProvider =
+    Provider<HabitCardTimelineLinesNotifier>((ref) {
+  return HabitCardTimelineLinesNotifier();
+});
+
+final habitCardTimelineLinesProvider = Provider<int>((ref) {
+  return ref.watch(habitCardTimelineLinesNotifierProvider).lines;
+});
+
 // Bad Habit Logic Mode
 class BadHabitLogicModeNotifier {
   String _mode;

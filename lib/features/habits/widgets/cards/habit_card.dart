@@ -27,6 +27,9 @@ class _HabitCardSettings {
   final int habitCardTimelineDays;
   final String streakColorScheme;
   final int habitCardCompletionColor;
+  final String layoutMode;
+  final bool timelineFillLines;
+  final int timelineLines;
 
   const _HabitCardSettings({
     required this.showDescriptions,
@@ -39,6 +42,9 @@ class _HabitCardSettings {
     required this.habitCardTimelineDays,
     required this.streakColorScheme,
     required this.habitCardCompletionColor,
+    required this.layoutMode,
+    required this.timelineFillLines,
+    required this.timelineLines,
   });
 
   factory _HabitCardSettings.fromRef(WidgetRef ref, {required bool isGoodHabit}) {
@@ -60,6 +66,9 @@ class _HabitCardSettings {
     final habitCardTimelineDays = ref.watch(habitCardTimelineDaysProvider);
 
     final streakColorScheme = ref.watch(streakColorSchemeProvider);
+    final layoutMode = ref.watch(habitCardLayoutModeProvider);
+    final timelineFillLines = ref.watch(habitCardTimelineFillLinesProvider);
+    final timelineLines = ref.watch(habitCardTimelineLinesProvider);
     final completionColor = isGoodHabit
         ? ref.watch(habitCardCompletionColorProvider)
         : ref.watch(habitCardBadHabitCompletionColorProvider);
@@ -75,6 +84,9 @@ class _HabitCardSettings {
       habitCardTimelineDays: habitCardTimelineDays,
       streakColorScheme: streakColorScheme,
       habitCardCompletionColor: completionColor,
+      layoutMode: layoutMode,
+      timelineFillLines: timelineFillLines,
+      timelineLines: timelineLines,
     );
   }
 }
@@ -819,19 +831,25 @@ class HabitCard extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           ),
-        // Timeline visualization (disabled clicks)
-        SizedBox(height: compactCards ? 8 : 16),
-        ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: compactCards ? 80 : 120),
-          child: HabitTimeline(
-            habitId: habit.id,
-            compact: compactCards || settings.timelineCompactMode,
-            daysToShow: settings.habitCardTimelineDays,
-          ),
-        ),
       ],
+    );
+  }
+
+  Widget _buildTimelineSection(
+    BuildContext context,
+    WidgetRef ref,
+    _HabitCardSettings settings,
+  ) {
+    final compactCards = settings.compactCards;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: compactCards ? 80 : 120),
+      child: HabitTimeline(
+        habitId: habit.id,
+        compact: compactCards || settings.timelineCompactMode,
+        daysToShow: settings.habitCardTimelineDays,
+      ),
     );
   }
 
@@ -907,9 +925,9 @@ class HabitCard extends ConsumerWidget {
 
     final habitCardCompletionColor = settings.habitCardCompletionColor;
 
-    return Card(
-      margin: EdgeInsets.only(bottom: cardSpacing),
-      shape: streakAsync.maybeWhen(
+    final useTopRowLayout = settings.layoutMode == 'topRow';
+
+    final shape = streakAsync.maybeWhen(
         data: (streak) {
           // Show border with completion color when today is completed, or with streak color if streak borders are enabled
           return entriesAsync.maybeWhen(
@@ -1001,188 +1019,48 @@ class HabitCard extends ConsumerWidget {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           );
         },
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    useSafeArea: true,
-                    builder: (context) => HabitDetailPage(habitId: habit.id),
-                  );
-                },
-                hoverColor: Colors.transparent,
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: _buildCardContent(
-                    context,
-                    ref,
-                    settings,
-                  ),
-                ),
-              ),
-            ),
-            // Tracking display button - fills entire height
-            todayEntryAsync.when(
-              data: (isCompleted) {
-                // Get entry from tracking entries stream
-                final entriesAsync = ref.watch(
-                  trackingEntriesProvider(habit.id),
-                );
+      );
 
-                return entriesAsync.when(
-                  data: (entries) {
-                    final today = app_date_utils.DateUtils.getToday();
-                    final entry = entries
-                        .where(
-                          (e) =>
-                              app_date_utils.DateUtils.isSameDay(e.date, today),
-                        )
-                        .firstOrNull;
+    Widget _buildTrackingButton() {
+      return todayEntryAsync.when(
+        data: (isCompleted) {
+          final entriesAsyncForButton = ref.watch(
+            trackingEntriesProvider(habit.id),
+          );
 
-                    return Material(
-                      color: Colors.transparent,
-                      child: Semantics(
-                        label: 'track_habit'.tr(),
-                        button: true,
-                        child: InkWell(
-                          onTap: () => _toggleTodayCompletion(context, ref),
-                          hoverColor: Colors.transparent,
-                          splashColor: Colors.transparent,
-                          highlightColor: Colors.transparent,
-                          child: Container(
-                            width: 96,
-                            constraints: const BoxConstraints(minHeight: 44),
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.all(8),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 220),
-                              switchInCurve: Curves.easeOut,
-                              switchOutCurve: Curves.easeIn,
-                              transitionBuilder: (child, animation) {
-                                final curved =
-                                    CurvedAnimation(parent: animation, curve: Curves.easeInOut);
-                                return FadeTransition(
-                                  opacity: curved,
-                                  child: ScaleTransition(
-                                    scale: Tween<double>(
-                                      begin: 0.9,
-                                      end: 1.0,
-                                    ).animate(curved),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: KeyedSubtree(
-                                key: ValueKey(
-                                  '${habit.trackingType}_${entry?.completed}_${entry?.value}_${entry?.occurrenceData}',
-                                ),
-                                child:
-                                    _buildTrackingDisplay(context, ref, entry),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                  loading: () => Container(
-                    width: 96,
-                    alignment: Alignment.center,
-                    child: SkeletonLoader(
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.grey,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  ),
-                  error: (_, _) => Material(
-                    color: Colors.transparent,
-                    child: Semantics(
-                      label: 'track_habit'.tr(),
-                      button: true,
-                      child: InkWell(
-                        onTap: () => _toggleTodayCompletion(context, ref),
-                        hoverColor: Colors.transparent,
-                        splashColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                        child: Container(
-                          width: 96,
-                          constraints: const BoxConstraints(minHeight: 44),
-                          alignment: Alignment.center,
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 220),
-                            switchInCurve: Curves.easeOut,
-                            switchOutCurve: Curves.easeIn,
-                            transitionBuilder: (child, animation) {
-                              final curved =
-                                  CurvedAnimation(parent: animation, curve: Curves.easeInOut);
-                              return FadeTransition(
-                                opacity: curved,
-                                child: ScaleTransition(
-                                  scale: Tween<double>(
-                                    begin: 0.9,
-                                    end: 1.0,
-                                  ).animate(curved),
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: KeyedSubtree(
-                              key: const ValueKey('tracking_display_error'),
-                              child:
-                                  _buildTrackingDisplay(context, ref, null),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-              loading: () => Container(
-                width: 96,
-                alignment: Alignment.center,
-                child: SkeletonLoader(
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.grey,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-              error: (_, _) => Material(
+          return entriesAsyncForButton.when(
+            data: (entries) {
+              final today = app_date_utils.DateUtils.getToday();
+              final entry = entries
+                  .where(
+                    (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
+                  )
+                  .firstOrNull;
+
+              return Material(
                 color: Colors.transparent,
                 child: Semantics(
                   label: 'track_habit'.tr(),
                   button: true,
                   child: InkWell(
                     onTap: () => _toggleTodayCompletion(context, ref),
+                    hoverColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
                     child: Container(
                       width: 96,
                       constraints: const BoxConstraints(minHeight: 44),
                       alignment: Alignment.center,
+                      padding: const EdgeInsets.all(8),
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 220),
                         switchInCurve: Curves.easeOut,
                         switchOutCurve: Curves.easeIn,
                         transitionBuilder: (child, animation) {
-                          final curved =
-                              CurvedAnimation(parent: animation, curve: Curves.easeInOut);
+                          final curved = CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeInOut,
+                          );
                           return FadeTransition(
                             opacity: curved,
                             child: ScaleTransition(
@@ -1195,18 +1073,207 @@ class HabitCard extends ConsumerWidget {
                           );
                         },
                         child: KeyedSubtree(
-                          key: const ValueKey('tracking_display_error'),
-                          child: _buildTrackingDisplay(context, ref, null),
+                          key: ValueKey(
+                            '${habit.trackingType}_${entry?.completed}_${entry?.value}_${entry?.occurrenceData}',
+                          ),
+                          child: _buildTrackingDisplay(context, ref, entry),
                         ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+            loading: () => Container(
+              width: 96,
+              alignment: Alignment.center,
+              child: SkeletonLoader(
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+            error: (_, __) => Material(
+              color: Colors.transparent,
+              child: Semantics(
+                label: 'track_habit'.tr(),
+                button: true,
+                child: InkWell(
+                  onTap: () => _toggleTodayCompletion(context, ref),
+                  hoverColor: Colors.transparent,
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                  child: Container(
+                    width: 96,
+                    constraints: const BoxConstraints(minHeight: 44),
+                    alignment: Alignment.center,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, animation) {
+                        final curved = CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeInOut,
+                        );
+                        return FadeTransition(
+                          opacity: curved,
+                          child: ScaleTransition(
+                            scale: Tween<double>(
+                              begin: 0.9,
+                              end: 1.0,
+                            ).animate(curved),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: KeyedSubtree(
+                        key: const ValueKey('tracking_display_error'),
+                        child: _buildTrackingDisplay(context, ref, null),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ],
+          );
+        },
+        loading: () => Container(
+          width: 96,
+          alignment: Alignment.center,
+          child: SkeletonLoader(
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
         ),
-      ),
+        error: (_, __) => Material(
+          color: Colors.transparent,
+          child: Semantics(
+            label: 'track_habit'.tr(),
+            button: true,
+            child: InkWell(
+              onTap: () => _toggleTodayCompletion(context, ref),
+              child: Container(
+                width: 96,
+                constraints: const BoxConstraints(minHeight: 44),
+                alignment: Alignment.center,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  transitionBuilder: (child, animation) {
+                    final curved = CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeInOut,
+                    );
+                    return FadeTransition(
+                      opacity: curved,
+                      child: ScaleTransition(
+                        scale: Tween<double>(
+                          begin: 0.9,
+                          end: 1.0,
+                        ).animate(curved),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: const ValueKey('tracking_display_error'),
+                    child: _buildTrackingDisplay(context, ref, null),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget classicBody = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      useSafeArea: true,
+                      builder: (context) => HabitDetailPage(habitId: habit.id),
+                    );
+                  },
+                  hoverColor: Colors.transparent,
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _buildCardContent(
+                      context,
+                      ref,
+                      settings,
+                    ),
+                  ),
+                ),
+              ),
+              _buildTrackingButton(),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: _buildTimelineSection(context, ref, settings),
+        ),
+      ],
+    );
+
+    Widget topRowBody = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _buildCardContent(
+                  context,
+                  ref,
+                  settings,
+                ),
+              ),
+              const SizedBox(width: 12),
+              _buildTrackingButton(),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: _buildTimelineSection(context, ref, settings),
+        ),
+      ],
+    );
+
+    return Card(
+      margin: EdgeInsets.only(bottom: cardSpacing),
+      shape: shape,
+      child: useTopRowLayout ? topRowBody : classicBody,
     );
   }
 }
