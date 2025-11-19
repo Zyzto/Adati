@@ -274,15 +274,28 @@ jobs:
           $version = "${{ steps.version.outputs.VERSION }}"
           $releaseDir = "build\windows\x64\runner\Release"
           $zipName = "adati-$version-windows-x64.zip"
+          $exeName = "adati-$version-windows-x64.exe"
           
+          # Create ZIP with all dependencies
           Compress-Archive -Path "$releaseDir\*" -DestinationPath $zipName -Force
           Write-Host "Created: $zipName"
+          
+          # Copy standalone exe (note: requires DLLs and data folder to run)
+          Copy-Item "$releaseDir\adati.exe" -Destination $exeName
+          Write-Host "Created: $exeName"
 
       - name: Upload Windows ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: windows-exe
+          name: windows-zip
           path: adati-*-windows-x64.zip
+          retention-days: 30
+
+      - name: Upload Windows EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: adati-*-windows-x64.exe
           retention-days: 30
 
   deploy-play-store:
@@ -344,6 +357,7 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
           
+          # Android APK and AAB
           if [ -f android-apk-release/app-release.apk ]; then
             cp android-apk-release/app-release.apk adati-${VERSION}-android.apk
           fi
@@ -352,12 +366,20 @@ jobs:
             cp android-aab-release/app-release.aab adati-${VERSION}-android.aab
           fi
           
+          # Linux AppImage
           if [ -f linux-appimage/adati-x86_64.AppImage ]; then
             cp linux-appimage/adati-x86_64.AppImage adati-${VERSION}-linux-x86_64.AppImage
+            chmod +x adati-${VERSION}-linux-x86_64.AppImage
           fi
           
-          if ls windows-exe/adati-*-windows-x64.zip 1> /dev/null 2>&1; then
-            cp windows-exe/adati-*-windows-x64.zip adati-${VERSION}-windows-x64.zip
+          # Windows ZIP (full package with DLLs)
+          if ls windows-zip/adati-*-windows-x64.zip 1> /dev/null 2>&1; then
+            cp windows-zip/adati-*-windows-x64.zip adati-${VERSION}-windows-x64.zip
+          fi
+          
+          # Windows EXE (standalone, for reference)
+          if ls windows-exe/adati-*-windows-x64.exe 1> /dev/null 2>&1; then
+            cp windows-exe/adati-*-windows-x64.exe adati-${VERSION}-windows-x64.exe
           fi
           
           ls -lh adati-*
@@ -371,9 +393,16 @@ jobs:
             ## Beta Release ${{ steps.version.outputs.VERSION }}
             
             This is a beta release for testing. Includes:
-            - Android APK and AAB (also on Play Store beta track)
-            - Linux AppImage
-            - Windows executable
+            - **Android APK**: Direct install (`adati-${{ steps.version.outputs.VERSION }}-android.apk`)
+            - **Android AAB**: For Google Play Store (`adati-${{ steps.version.outputs.VERSION }}-android.aab`)
+            - **Linux AppImage**: Make executable and run (`adati-${{ steps.version.outputs.VERSION }}-linux-x86_64.AppImage`)
+            - **Windows ZIP**: Extract and run adati.exe (`adati-${{ steps.version.outputs.VERSION }}-windows-x64.zip`)
+            - **Windows EXE**: Standalone executable, requires DLLs from ZIP (`adati-${{ steps.version.outputs.VERSION }}-windows-x64.exe`)
+            
+            ### Installation
+            - **Android**: Install the APK directly or get it from Play Store beta track
+            - **Linux**: `chmod +x adati-*.AppImage && ./adati-*.AppImage`
+            - **Windows**: Extract the ZIP and run `adati.exe` (recommended) or use standalone EXE with DLLs
             
             **Testing**: Please test and report issues before promotion to production.
           files: adati-*
