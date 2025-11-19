@@ -3,16 +3,81 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../../../core/database/app_database.dart' as db;
-import '../../../../core/database/models/tracking_types.dart';
-import '../providers/tracking_providers.dart';
-import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../providers/habit_providers.dart';
-import '../widgets/habit_timeline.dart';
-import '../pages/habit_detail_page.dart';
-import 'checkbox_style.dart';
-import '../../settings/providers/settings_providers.dart';
-import '../../../../core/widgets/skeleton_loader.dart';
+import 'package:collection/collection.dart';
+import '../../../../../core/database/app_database.dart' as db;
+import '../../../../../core/database/models/tracking_types.dart';
+import '../../providers/tracking_providers.dart';
+import '../../../../../core/utils/date_utils.dart' as app_date_utils;
+import '../../providers/habit_providers.dart';
+import 'habit_timeline.dart';
+import '../../pages/habit_detail_page.dart';
+import '../components/checkbox_style.dart';
+import '../../../settings/providers/settings_providers.dart';
+import '../../../../../core/widgets/skeleton_loader.dart';
+
+/// Aggregated settings that control how a habit card looks and behaves.
+class _HabitCardSettings {
+  final bool showDescriptions;
+  final bool showStreakOnCard;
+  final String iconSize;
+  final bool compactCards;
+  final bool showStreakBorders;
+  final double cardSpacing;
+  final bool timelineCompactMode;
+  final int habitCardTimelineDays;
+  final String streakColorScheme;
+  final int habitCardCompletionColor;
+
+  const _HabitCardSettings({
+    required this.showDescriptions,
+    required this.showStreakOnCard,
+    required this.iconSize,
+    required this.compactCards,
+    required this.showStreakBorders,
+    required this.cardSpacing,
+    required this.timelineCompactMode,
+    required this.habitCardTimelineDays,
+    required this.streakColorScheme,
+    required this.habitCardCompletionColor,
+  });
+
+  factory _HabitCardSettings.fromRef(WidgetRef ref, {required bool isGoodHabit}) {
+    final sessionOptions = ref.watch(sessionViewOptionsProvider);
+    final globalShowDescriptions = ref.watch(showDescriptionsProvider);
+    final showDescriptions =
+        sessionOptions.showDescriptions ?? globalShowDescriptions;
+
+    final iconSize = ref.watch(iconSizeProvider);
+
+    final globalCompactCards = ref.watch(compactCardsProvider);
+    final compactCards = sessionOptions.compactCards ?? globalCompactCards;
+
+    final showStreakOnCard = ref.watch(showStreakOnCardProvider);
+    final showStreakBorders = ref.watch(showStreakBordersProvider);
+    final cardSpacing = ref.watch(cardSpacingProvider);
+
+    final timelineCompactMode = ref.watch(timelineCompactModeProvider);
+    final habitCardTimelineDays = ref.watch(habitCardTimelineDaysProvider);
+
+    final streakColorScheme = ref.watch(streakColorSchemeProvider);
+    final completionColor = isGoodHabit
+        ? ref.watch(habitCardCompletionColorProvider)
+        : ref.watch(habitCardBadHabitCompletionColorProvider);
+
+    return _HabitCardSettings(
+      showDescriptions: showDescriptions,
+      showStreakOnCard: showStreakOnCard,
+      iconSize: iconSize,
+      compactCards: compactCards,
+      showStreakBorders: showStreakBorders,
+      cardSpacing: cardSpacing,
+      timelineCompactMode: timelineCompactMode,
+      habitCardTimelineDays: habitCardTimelineDays,
+      streakColorScheme: streakColorScheme,
+      habitCardCompletionColor: completionColor,
+    );
+  }
+}
 
 class HabitCard extends ConsumerWidget {
   final db.Habit habit;
@@ -28,23 +93,33 @@ class HabitCard extends ConsumerWidget {
     final today = app_date_utils.DateUtils.getToday();
     final trackingType = TrackingType.fromValue(habit.trackingType);
 
-    // Get current status
-    final entry = await repository.getEntry(habit.id, today);
-    final isCompleted = entry?.completed ?? false;
+    try {
+      // Get current status
+      final entry = await repository.getEntry(habit.id, today);
+      final isCompleted = entry?.completed ?? false;
 
-    // Handle different tracking types
-    if (trackingType == TrackingType.completed) {
-      // Simple toggle for completed tracking
-      await repository.toggleCompletion(habit.id, today, !isCompleted);
-    } else if (trackingType == TrackingType.measurable) {
-      // For measurable, open input dialog
-      if (context.mounted) {
-        _showMeasurableInputDialog(context, ref, entry);
+      // Handle different tracking types
+      if (trackingType == TrackingType.completed) {
+        // Simple toggle for completed tracking
+        await repository.toggleCompletion(habit.id, today, !isCompleted);
+      } else if (trackingType == TrackingType.measurable) {
+        // For measurable, open input dialog
+        if (context.mounted) {
+          _showMeasurableInputDialog(context, ref, entry);
+        }
+      } else if (trackingType == TrackingType.occurrences) {
+        // For occurrences, open selection dialog
+        if (context.mounted) {
+          _showOccurrencesInputDialog(context, ref, entry);
+        }
       }
-    } else if (trackingType == TrackingType.occurrences) {
-      // For occurrences, open selection dialog
+    } catch (e) {
       if (context.mounted) {
-        _showOccurrencesInputDialog(context, ref, entry);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('error_updating_habit'.tr(args: [habit.name])),
+          ),
+        );
       }
     }
   }
@@ -84,10 +159,23 @@ class HabitCard extends ConsumerWidget {
             ),
             TextButton(
               onPressed: () async {
-                final value = double.tryParse(controller.text.trim()) ?? 0.0;
-                await repository.trackMeasurable(habit.id, today, value);
-                if (context.mounted) {
-                  Navigator.pop(context);
+                try {
+                  final value =
+                      double.tryParse(controller.text.trim()) ?? 0.0;
+                  await repository.trackMeasurable(habit.id, today, value);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'error_updating_habit'.tr(args: [habit.name]),
+                        ),
+                      ),
+                    );
+                  }
                 }
               },
               child: Text('save'.tr()),
@@ -363,13 +451,25 @@ class HabitCard extends ConsumerWidget {
             ),
             TextButton(
               onPressed: () async {
-                await repository.trackOccurrences(
-                  habit.id,
-                  today,
-                  selectedOccurrences,
-                );
-                if (context.mounted) {
-                  Navigator.pop(context);
+                try {
+                  await repository.trackOccurrences(
+                    habit.id,
+                    today,
+                    selectedOccurrences,
+                  );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'error_updating_habit'.tr(args: [habit.name]),
+                        ),
+                      ),
+                    );
+                  }
                 }
               },
               child: Text('save'.tr()),
@@ -589,15 +689,16 @@ class HabitCard extends ConsumerWidget {
     return const SizedBox.shrink();
   }
 
-  Widget _buildCardContent(BuildContext context, WidgetRef ref) {
+  Widget _buildCardContent(
+    BuildContext context,
+    WidgetRef ref,
+    _HabitCardSettings settings,
+  ) {
     final sessionOptions = ref.watch(sessionViewOptionsProvider);
-    final globalShowDescriptions = ref.watch(showDescriptionsProvider);
-    final showDescriptions =
-        sessionOptions.showDescriptions ?? globalShowDescriptions;
-    final showStreakOnCard = ref.watch(showStreakOnCardProvider);
-    final iconSize = ref.watch(iconSizeProvider);
-    final globalCompactCards = ref.watch(compactCardsProvider);
-    final compactCards = sessionOptions.compactCards ?? globalCompactCards;
+    final showDescriptions = settings.showDescriptions;
+    final showStreakOnCard = settings.showStreakOnCard;
+    final iconSize = settings.iconSize;
+    final compactCards = settings.compactCards;
     final streakAsync = ref.watch(streakProvider(habit.id));
     final tagsAsync = ref.watch(habitTagsProvider(habit.id));
 
@@ -723,13 +824,11 @@ class HabitCard extends ConsumerWidget {
         // Timeline visualization (disabled clicks)
         SizedBox(height: compactCards ? 8 : 16),
         ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: compactCards ? 80 : 120,
-          ),
+          constraints: BoxConstraints(maxHeight: compactCards ? 80 : 120),
           child: HabitTimeline(
             habitId: habit.id,
-            compact: compactCards || ref.watch(timelineCompactModeProvider),
-            daysToShow: ref.watch(habitCardTimelineDaysProvider),
+            compact: compactCards || settings.timelineCompactMode,
+            daysToShow: settings.habitCardTimelineDays,
           ),
         ),
       ],
@@ -737,13 +836,16 @@ class HabitCard extends ConsumerWidget {
   }
 
   Color _getStreakColor(WidgetRef ref, int streakLength) {
-    final scheme = ref.watch(streakColorSchemeProvider);
-    return _getStreakColorForLength(streakLength, scheme);
+    final settings = _HabitCardSettings.fromRef(
+      ref,
+      isGoodHabit: habit.habitType == HabitType.good.value,
+    );
+    return _getStreakColorForLength(streakLength, settings.streakColorScheme);
   }
 
   Color _getStreakColorForLength(int length, String scheme) {
     Color baseColor;
-    
+
     // Determine base color based on streak length
     if (length >= 30) {
       baseColor = Colors.purple; // Longest streaks
@@ -754,7 +856,7 @@ class HabitCard extends ConsumerWidget {
     } else {
       baseColor = Colors.green; // Very short streaks
     }
-    
+
     // Apply color scheme transformation
     switch (scheme) {
       case 'vibrant':
@@ -767,7 +869,11 @@ class HabitCard extends ConsumerWidget {
         );
       case 'subtle':
         // Muted, desaturated colors
-        final gray = ((baseColor.r * 255.0 * 0.299 + baseColor.g * 255.0 * 0.587 + baseColor.b * 255.0 * 0.114)).round();
+        final gray =
+            ((baseColor.r * 255.0 * 0.299 +
+                    baseColor.g * 255.0 * 0.587 +
+                    baseColor.b * 255.0 * 0.114))
+                .round();
         return Color.fromARGB(
           255,
           ((gray + baseColor.r * 255.0) / 2).clamp(0, 255).round(),
@@ -776,7 +882,11 @@ class HabitCard extends ConsumerWidget {
         );
       case 'monochrome':
         // Grayscale
-        final gray = ((baseColor.r * 255.0 * 0.299 + baseColor.g * 255.0 * 0.587 + baseColor.b * 255.0 * 0.114)).round();
+        final gray =
+            ((baseColor.r * 255.0 * 0.299 +
+                    baseColor.g * 255.0 * 0.587 +
+                    baseColor.b * 255.0 * 0.114))
+                .round();
         return Color.fromARGB(255, gray, gray, gray);
       case 'default':
       default:
@@ -790,12 +900,12 @@ class HabitCard extends ConsumerWidget {
     final streakAsync = ref.watch(streakProvider(habit.id));
     final entriesAsync = ref.watch(trackingEntriesProvider(habit.id));
     final isGoodHabit = habit.habitType == HabitType.good.value;
-    final showStreakBorders = ref.watch(showStreakBordersProvider);
-    final cardSpacing = ref.watch(cardSpacingProvider);
+    final settings = _HabitCardSettings.fromRef(ref, isGoodHabit: isGoodHabit);
 
-    final habitCardCompletionColor = isGoodHabit
-        ? ref.watch(habitCardCompletionColorProvider)
-        : ref.watch(habitCardBadHabitCompletionColorProvider);
+    final showStreakBorders = settings.showStreakBorders;
+    final cardSpacing = settings.cardSpacing;
+
+    final habitCardCompletionColor = settings.habitCardCompletionColor;
 
     return Card(
       margin: EdgeInsets.only(bottom: cardSpacing),
@@ -911,7 +1021,11 @@ class HabitCard extends ConsumerWidget {
                 highlightColor: Colors.transparent,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: _buildCardContent(context, ref),
+                  child: _buildCardContent(
+                    context,
+                    ref,
+                    settings,
+                  ),
                 ),
               ),
             ),
@@ -948,7 +1062,32 @@ class HabitCard extends ConsumerWidget {
                             constraints: const BoxConstraints(minHeight: 44),
                             alignment: Alignment.center,
                             padding: const EdgeInsets.all(8),
-                            child: _buildTrackingDisplay(context, ref, entry),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              switchInCurve: Curves.easeOut,
+                              switchOutCurve: Curves.easeIn,
+                              transitionBuilder: (child, animation) {
+                                final curved =
+                                    CurvedAnimation(parent: animation, curve: Curves.easeInOut);
+                                return FadeTransition(
+                                  opacity: curved,
+                                  child: ScaleTransition(
+                                    scale: Tween<double>(
+                                      begin: 0.9,
+                                      end: 1.0,
+                                    ).animate(curved),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: KeyedSubtree(
+                                key: ValueKey(
+                                  '${habit.trackingType}_${entry?.completed}_${entry?.value}_${entry?.occurrenceData}',
+                                ),
+                                child:
+                                    _buildTrackingDisplay(context, ref, entry),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -982,7 +1121,30 @@ class HabitCard extends ConsumerWidget {
                           width: 96,
                           constraints: const BoxConstraints(minHeight: 44),
                           alignment: Alignment.center,
-                          child: _buildTrackingDisplay(context, ref, null),
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            switchInCurve: Curves.easeOut,
+                            switchOutCurve: Curves.easeIn,
+                            transitionBuilder: (child, animation) {
+                              final curved =
+                                  CurvedAnimation(parent: animation, curve: Curves.easeInOut);
+                              return FadeTransition(
+                                opacity: curved,
+                                child: ScaleTransition(
+                                  scale: Tween<double>(
+                                    begin: 0.9,
+                                    end: 1.0,
+                                  ).animate(curved),
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: KeyedSubtree(
+                              key: const ValueKey('tracking_display_error'),
+                              child:
+                                  _buildTrackingDisplay(context, ref, null),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1014,7 +1176,29 @@ class HabitCard extends ConsumerWidget {
                       width: 96,
                       constraints: const BoxConstraints(minHeight: 44),
                       alignment: Alignment.center,
-                      child: _buildTrackingDisplay(context, ref, null),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) {
+                          final curved =
+                              CurvedAnimation(parent: animation, curve: Curves.easeInOut);
+                          return FadeTransition(
+                            opacity: curved,
+                            child: ScaleTransition(
+                              scale: Tween<double>(
+                                begin: 0.9,
+                                end: 1.0,
+                              ).animate(curved),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: KeyedSubtree(
+                          key: const ValueKey('tracking_display_error'),
+                          child: _buildTrackingDisplay(context, ref, null),
+                        ),
+                      ),
                     ),
                   ),
                 ),

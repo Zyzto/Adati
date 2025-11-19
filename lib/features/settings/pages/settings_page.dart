@@ -13,9 +13,9 @@ import '../../../../core/services/import_service.dart';
 import '../../../../core/services/logging_service.dart';
 import '../../../../core/database/app_database.dart' as db;
 import '../providers/settings_providers.dart';
-import '../../habits/widgets/checkbox_style.dart';
+import '../../habits/widgets/components/checkbox_style.dart';
 import '../../habits/providers/habit_providers.dart';
-import '../../habits/widgets/tag_management.dart';
+import '../../habits/widgets/forms/tag_management.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});

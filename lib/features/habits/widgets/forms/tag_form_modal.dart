@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:drift/drift.dart' as drift;
-import '../../../../core/database/app_database.dart' as db;
-import '../providers/habit_providers.dart';
-import 'icon_constants.dart';
-import 'color_picker.dart';
-import 'icon_picker.dart';
+import '../../../../../core/database/app_database.dart' as db;
+import '../../providers/habit_providers.dart';
+import '../components/icon_constants.dart';
+import '../components/color_picker.dart';
+import '../components/icon_picker.dart';
 
 class TagFormModal extends ConsumerStatefulWidget {
   final int? tagId;

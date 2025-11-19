@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../providers/habit_providers.dart';
+import '../../../../../core/utils/date_utils.dart' as app_date_utils;
+import '../../providers/habit_providers.dart';
 
 class NoteEditorWidget extends ConsumerStatefulWidget {
   final int habitId;
