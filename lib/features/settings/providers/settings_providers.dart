@@ -1002,6 +1002,54 @@ final habitCardTimelineLinesProvider = Provider<int>((ref) {
   return ref.watch(habitCardTimelineLinesNotifierProvider).lines;
 });
 
+// Main Timeline Fill-Lines Mode
+class MainTimelineFillLinesNotifier {
+  bool _value;
+
+  MainTimelineFillLinesNotifier()
+      : _value = PreferencesService.getMainTimelineFillLines();
+
+  bool get value => _value;
+
+  Future<void> setMainTimelineFillLines(bool value) async {
+    _value = value;
+    await PreferencesService.setMainTimelineFillLines(value);
+  }
+}
+
+final mainTimelineFillLinesNotifierProvider =
+    Provider<MainTimelineFillLinesNotifier>((ref) {
+  return MainTimelineFillLinesNotifier();
+});
+
+final mainTimelineFillLinesProvider = Provider<bool>((ref) {
+  return ref.watch(mainTimelineFillLinesNotifierProvider).value;
+});
+
+// Main Timeline Lines (for fill-lines mode)
+class MainTimelineLinesNotifier {
+  int _lines;
+
+  MainTimelineLinesNotifier()
+      : _lines = PreferencesService.getMainTimelineLines();
+
+  int get lines => _lines;
+
+  Future<void> setMainTimelineLines(int lines) async {
+    _lines = lines;
+    await PreferencesService.setMainTimelineLines(lines);
+  }
+}
+
+final mainTimelineLinesNotifierProvider =
+    Provider<MainTimelineLinesNotifier>((ref) {
+  return MainTimelineLinesNotifier();
+});
+
+final mainTimelineLinesProvider = Provider<int>((ref) {
+  return ref.watch(mainTimelineLinesNotifierProvider).lines;
+});
+
 // Bad Habit Logic Mode
 class BadHabitLogicModeNotifier {
   String _mode;

@@ -61,6 +61,9 @@ class PreferencesService {
       'habit_card_timeline_fill_lines';
   static const String _keyHabitCardTimelineLines =
       'habit_card_timeline_lines';
+  static const String _keyMainTimelineFillLines =
+      'main_timeline_fill_lines';
+  static const String _keyMainTimelineLines = 'main_timeline_lines';
   static const String _keyBadHabitLogicMode = 'bad_habit_logic_mode';
   // Habit filtering/grouping (session-based but stored for convenience)
   static const String _keyHabitGroupBy = 'habit_group_by';
@@ -442,6 +445,18 @@ class PreferencesService {
 
   static Future<bool> setHabitCardTimelineLines(int lines) =>
       prefs.setInt(_keyHabitCardTimelineLines, lines);
+
+  static bool getMainTimelineFillLines() =>
+      prefs.getBool(_keyMainTimelineFillLines) ?? false;
+
+  static Future<bool> setMainTimelineFillLines(bool value) =>
+      prefs.setBool(_keyMainTimelineFillLines, value);
+
+  static int getMainTimelineLines() =>
+      prefs.getInt(_keyMainTimelineLines) ?? 3;
+
+  static Future<bool> setMainTimelineLines(int lines) =>
+      prefs.setInt(_keyMainTimelineLines, lines);
 
   static String getBadHabitLogicMode() {
     final value = prefs.getString(_keyBadHabitLogicMode);

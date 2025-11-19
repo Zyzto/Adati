@@ -15,7 +15,8 @@ class CalendarGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitsProvider);
     final daysToShow = ref.watch(timelineDaysProvider);
-    final days = app_date_utils.DateUtils.getLastNDays(daysToShow);
+    final fillLines = ref.watch(mainTimelineFillLinesProvider);
+    final lineCount = ref.watch(mainTimelineLinesProvider);
 
     return habitsAsync.when(
       data: (habits) {
@@ -23,17 +24,28 @@ class CalendarGrid extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
+        final titleText = fillLines
+            ? 'timeline'.tr()
+            : 'last_days'.tr(namedArgs: {'days': daysToShow.toString()});
+
         return Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'last_days'.tr(namedArgs: {'days': daysToShow.toString()}),
+                titleText,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
-              _buildGrid(context, ref, days, habits),
+              _buildGrid(
+                context,
+                ref,
+                daysToShow,
+                fillLines,
+                lineCount,
+                habits,
+              ),
             ],
           ),
         );
@@ -46,54 +58,114 @@ class CalendarGrid extends ConsumerWidget {
   Widget _buildGrid(
     BuildContext context,
     WidgetRef ref,
-    List<DateTime> days,
+    int daysToShow,
+    bool fillLines,
+    int lineCount,
     List habits,
   ) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: days.map<Widget>((day) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        List<DateTime> days;
+
+        if (fillLines) {
+          final maxWidth = constraints.maxWidth;
+
+          // Match DaySquare sizing logic (non-compact squares).
+          double squareSize;
+          final sizePreference = ref.watch(daySquareSizeProvider);
+          switch (sizePreference) {
+            case 'small':
+              squareSize = 12.0;
+              break;
+            case 'large':
+              squareSize = 20.0;
+              break;
+            case 'medium':
+            default:
+              squareSize = 16.0;
+              break;
+          }
+
+          const spacing = 6.0;
+
+          int perLine;
+          if (!maxWidth.isFinite || maxWidth <= 0 || squareSize <= 0) {
+            perLine = 10;
+          } else {
+            perLine = 1;
+            while (perLine < 1000) {
+              final widthNeeded =
+                  perLine * squareSize + (perLine - 1) * spacing;
+              if (widthNeeded > maxWidth) {
+                perLine = perLine - 1;
+                break;
+              }
+              perLine++;
+            }
+            if (perLine < 1) perLine = 1;
+          }
+
+          final totalDays =
+              (perLine * lineCount).clamp(1, 365);
+          days = app_date_utils.DateUtils.getLastNDays(totalDays);
+        } else {
+          days = app_date_utils.DateUtils.getLastNDays(daysToShow);
+        }
+
+        return Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: days.map<Widget>((day) {
         // Use provider to watch for changes reactively
         final dayEntriesAsync = ref.watch(dayEntriesProvider(day));
 
-        return dayEntriesAsync.when(
-          data: (entries) {
-            final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
-            final completionRate = _calculateWeightedCompletionRate(
-              habits,
-              entries,
-              badHabitLogicMode,
-            );
-            
-            // Check if only bad habits exist
-            final hasGoodHabits = habits.any((h) => h.habitType == HabitType.good.value);
-            final hasBadHabits = habits.any((h) => h.habitType == HabitType.bad.value);
-            final onlyBadHabits = !hasGoodHabits && hasBadHabits;
-            
-            // Use bad habit color if only bad habits exist, otherwise use good habit color
-            final completionColor = onlyBadHabits
-                ? ref.watch(mainTimelineBadHabitCompletionColorProvider)
-                : ref.watch(mainTimelineCompletionColorProvider);
+            return dayEntriesAsync.when(
+              data: (entries) {
+                final badHabitLogicMode =
+                    ref.watch(badHabitLogicModeProvider);
+                final completionRate = _calculateWeightedCompletionRate(
+                  habits,
+                  entries,
+                  badHabitLogicMode,
+                );
 
-            return DaySquare(
-              date: day,
-              completed: completionRate > 0,
-              onTap: null, // Disabled for now, might be used later
-              completionColor: completionColor,
+                // Check if only bad habits exist
+                final hasGoodHabits = habits.any(
+                  (h) => h.habitType == HabitType.good.value,
+                );
+                final hasBadHabits = habits.any(
+                  (h) => h.habitType == HabitType.bad.value,
+                );
+                final onlyBadHabits = !hasGoodHabits && hasBadHabits;
+
+                // Use bad habit color if only bad habits exist, otherwise use good habit color
+                final completionColor = onlyBadHabits
+                    ? ref.watch(mainTimelineBadHabitCompletionColorProvider)
+                    : ref.watch(mainTimelineCompletionColorProvider);
+
+                return DaySquare(
+                  date: day,
+                  completed: completionRate > 0,
+                  onTap: null, // Disabled for now, might be used later
+                  completionColor: completionColor,
+                );
+              },
+              loading: () => DaySquare(
+                date: day,
+                completed: false,
+                completionColor:
+                    ref.watch(mainTimelineCompletionColorProvider),
+              ),
+              error: (_, __) => DaySquare(
+                date: day,
+                completed: false,
+                completionColor:
+                    ref.watch(mainTimelineCompletionColorProvider),
+              ),
             );
-          },
-          loading: () => DaySquare(
-            date: day,
-            completed: false,
-            completionColor: ref.watch(mainTimelineCompletionColorProvider),
-          ),
-          error: (_, _) => DaySquare(
-            date: day,
-            completed: false,
-            completionColor: ref.watch(mainTimelineCompletionColorProvider),
-          ),
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 

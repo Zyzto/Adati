@@ -3126,6 +3126,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final useStreakColorsForSquares = ref.watch(
       useStreakColorsForSquaresProvider,
     );
+    final mainTimelineFillLines = ref.watch(mainTimelineFillLinesProvider);
+    final mainTimelineLines = ref.watch(mainTimelineLinesProvider);
     final habitCardLayoutMode = ref.watch(habitCardLayoutModeProvider);
     final habitCardTimelineFillLines = ref.watch(
       habitCardTimelineFillLinesProvider,
@@ -3502,7 +3504,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               leading: const Icon(Icons.calendar_view_week),
               title: Text('timeline_days'.tr()),
               subtitle: Text('$timelineDays ${'days'.tr()}'),
-              trailing: timelineDays != defaultTimelineDays
+              enabled: !mainTimelineFillLines,
+              trailing: !mainTimelineFillLines &&
+                      timelineDays != defaultTimelineDays
                   ? IconButton(
                       icon: const Icon(Icons.refresh),
                       tooltip: 'reset_to_default'.tr(),
@@ -3676,6 +3680,79 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ref.invalidate(showMainTimelineNotifierProvider);
               },
             ),
+            SwitchListTile(
+              secondary: const Icon(Icons.grid_4x4),
+              title: Text('main_timeline_fill_lines'.tr()),
+              subtitle: Text('main_timeline_fill_lines_description'.tr()),
+              value: mainTimelineFillLines,
+              onChanged: (value) async {
+                final notifier =
+                    ref.read(mainTimelineFillLinesNotifierProvider);
+                await notifier.setMainTimelineFillLines(value);
+                ref.invalidate(mainTimelineFillLinesNotifierProvider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.format_line_spacing),
+              title: Text('main_timeline_lines'.tr()),
+              subtitle: Text('$mainTimelineLines'),
+              enabled: mainTimelineFillLines,
+              onTap: () async {
+                if (!mainTimelineFillLines) return;
+                final current = mainTimelineLines;
+                int temp = current.clamp(1, 6);
+                final result = await showDialog<int>(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('main_timeline_lines'.tr()),
+                      content: StatefulBuilder(
+                        builder: (context, setDialogState) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Slider(
+                                min: 1,
+                                max: 6,
+                                divisions: 5,
+                                value: temp.toDouble(),
+                                label: '$temp',
+                                onChanged: (value) {
+                                  setDialogState(() {
+                                    temp = value.round();
+                                  });
+                                },
+                              ),
+                              Text(
+                                'main_timeline_lines_value'
+                                    .tr(args: ['$temp']),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('cancel'.tr()),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, temp),
+                          child: Text('ok'.tr()),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (result != null && result != current) {
+                  final notifier =
+                      ref.read(mainTimelineLinesNotifierProvider);
+                  await notifier.setMainTimelineLines(result);
+                  ref.invalidate(mainTimelineLinesNotifierProvider);
+                }
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.home),
               title: Text('default_view'.tr()),
@@ -3773,9 +3850,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               leading: const Icon(Icons.format_line_spacing),
               title: Text('habit_card_timeline_lines'.tr()),
               subtitle: Text('$habitCardTimelineLines'),
+              enabled: habitCardTimelineFillLines,
               onTap: () async {
+                if (!habitCardTimelineFillLines) return;
+
                 final current = habitCardTimelineLines;
-                int temp = current;
+                int temp = current.clamp(1, 5);
                 final result = await showDialog<int>(
                   context: context,
                   builder: (context) {
@@ -3790,7 +3870,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 min: 1,
                                 max: 5,
                                 divisions: 4,
-                                value: temp.toDouble().clamp(1, 5),
+                                value: temp.toDouble(),
                                 label: '$temp',
                                 onChanged: (value) {
                                   setDialogState(() {
