@@ -32,8 +32,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Expansion state for each section
   bool _generalExpanded = true;
   bool _appearanceExpanded = false;
+  bool _dateTimeExpanded = false;
   bool _displayLayoutExpanded = false;
   bool _notificationsExpanded = false;
+  bool _tagsExpanded = false;
   bool _dataExportExpanded = false;
   bool _advancedExpanded = false;
   bool _aboutExpanded = false;
@@ -80,8 +82,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _displayLayoutExpanded =
             PreferencesService.getSettingsDisplayLayoutExpanded();
       }
+      // Use the legacy display-expanded key to store Date & Time section state
+      _dateTimeExpanded = oldDisplayExpanded;
       _notificationsExpanded =
           PreferencesService.getSettingsNotificationsExpanded();
+      _tagsExpanded = PreferencesService.getSettingsTagsExpanded();
       _dataExportExpanded = PreferencesService.getSettingsDataExportExpanded();
       _advancedExpanded = PreferencesService.getSettingsAdvancedExpanded();
       _aboutExpanded = PreferencesService.getSettingsAboutExpanded();
@@ -164,8 +169,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final result = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       final child = children[i];
-      final tagText =
-          (tags != null && i < tags.length) ? tags[i] : null;
+      final tagText = (tags != null && i < tags.length) ? tags[i] : null;
       if (widgetMatches(child, tagText)) {
         result.add(child);
       }
@@ -180,6 +184,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         break;
       case 'appearance':
         await PreferencesService.setSettingsAppearanceExpanded(expanded);
+        break;
+      case 'dateTime':
+        await PreferencesService.setSettingsDisplayExpanded(expanded);
         break;
       case 'displayLayout':
         await PreferencesService.setSettingsDisplayLayoutExpanded(expanded);
@@ -609,6 +616,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  // Helper to render a subsection header inside a section
+  Widget _buildSubsectionHeader(
+    BuildContext context,
+    String titleKey, {
+    IconData? icon,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            titleKey.tr(),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Default values
   static const String defaultDaySquareSize = 'large';
   static const int defaultTimelineDays = 100;
@@ -653,16 +687,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String _getDateFormatName(String format) {
     switch (format) {
       case 'yyyy-MM-dd':
-        return 'YYYY-MM-DD';
+        return 'date_format_yyyy_mm_dd'.tr();
       case 'MM/dd/yyyy':
-        return 'MM/DD/YYYY';
+        return 'date_format_mm_dd_yyyy'.tr();
       case 'dd/MM/yyyy':
-        return 'DD/MM/YYYY';
+        return 'date_format_dd_mm_yyyy'.tr();
       case 'dd.MM.yyyy':
-        return 'DD.MM.YYYY';
+        return 'date_format_dd_mm_yyyy_dots'.tr();
       default:
-        // Return default format if invalid
-        return 'YYYY-MM-DD';
+        // Return default format key if invalid
+        return 'date_format_yyyy_mm_dd'.tr();
     }
   }
 
@@ -2590,17 +2624,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  String _getDefaultViewName(String view) {
-    switch (view) {
-      case 'habits':
-        return 'habits'.tr();
-      case 'timeline':
-        return 'timeline'.tr();
-      default:
-        return 'habits'.tr();
-    }
-  }
-
   // Display Preferences Dialog Methods
   void _showTimelineSpacingDialog(BuildContext context, WidgetRef ref) {
     final currentSpacing = ref.watch(timelineSpacingProvider);
@@ -3062,56 +3085,45 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  void _showDefaultViewDialog(BuildContext context, WidgetRef ref) {
-    final currentView = ref.watch(defaultViewProvider);
-    final notifier = ref.read(defaultViewNotifierProvider);
+  void _showCardBorderRadiusDialog(BuildContext context, WidgetRef ref) {
+    final currentRadius = ref.watch(cardBorderRadiusProvider);
+    final notifier = ref.read(cardStyleNotifierProvider);
     final navigator = Navigator.of(context);
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('default_view'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildRadioListItem<String>(
-              context: dialogContext,
-              title: Text('habits'.tr()),
-              value: 'habits',
-              groupValue: currentView,
-              onChanged: (value) async {
-                if (value != null) {
-                  await notifier.setDefaultView(value);
-                  ref.invalidate(defaultViewNotifierProvider);
-                  if (dialogContext.mounted) {
-                    navigator.pop();
-                  }
-                }
-              },
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          double radius = currentRadius;
+          return AlertDialog(
+            title: Text('border_radius'.tr()),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${radius.toStringAsFixed(1)}px'),
+                Slider(
+                  value: radius,
+                  min: 0.0,
+                  max: 32.0,
+                  divisions: 32,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      radius = value;
+                    });
+                    notifier.setBorderRadius(value);
+                    ref.invalidate(cardStyleNotifierProvider);
+                  },
+                ),
+              ],
             ),
-            _buildRadioListItem<String>(
-              context: dialogContext,
-              title: Text('timeline'.tr()),
-              value: 'timeline',
-              groupValue: currentView,
-              onChanged: (value) async {
-                if (value != null) {
-                  await notifier.setDefaultView(value);
-                  ref.invalidate(defaultViewNotifierProvider);
-                  if (dialogContext.mounted) {
-                    navigator.pop();
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => navigator.pop(),
-            child: Text('cancel'.tr()),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => navigator.pop(),
+                child: Text('done'.tr()),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -3227,6 +3239,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final showPercentage = ref.watch(showPercentageProvider);
     final fontSizeScale = ref.watch(fontSizeScaleProvider);
     final cardSpacing = ref.watch(cardSpacingProvider);
+    final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
     final showStatisticsCard = ref.watch(showStatisticsCardProvider);
     final showMainTimeline = ref.watch(showMainTimelineProvider);
     final useStreakColorsForSquares = ref.watch(
@@ -3242,10 +3255,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final habitCardTimelineFillLines = ref.watch(
       habitCardTimelineFillLinesProvider,
     );
-    final habitCardTimelineLines = ref.watch(
-      habitCardTimelineLinesProvider,
-    );
-    final defaultView = ref.watch(defaultViewProvider);
+    final habitCardTimelineLines = ref.watch(habitCardTimelineLinesProvider);
     final showStreakOnCard = ref.watch(showStreakOnCardProvider);
     final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
 
@@ -3301,6 +3311,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final appearanceTitle = 'appearance'.tr();
     final appearanceChildren = <Widget>[
       ListTile(
+        leading: const Icon(Icons.text_fields),
+        title: Text('font_size_scale'.tr()),
+        subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
+        onTap: () => _showFontSizeScaleDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.image),
+        title: Text('icon_size'.tr()),
+        subtitle: Text(_getIconSizeName(iconSize)),
+        onTap: () => _showIconSizeDialog(context, ref),
+      ),
+      ListTile(
         leading: const Icon(Icons.square),
         title: Text('day_square_size'.tr()),
         subtitle: Text(_getDaySquareSizeName(daySquareSize)),
@@ -3313,17 +3335,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             : null,
         onTap: () => _showDaySquareSizeDialog(context, ref),
       ),
-      ListTile(
-        leading: const Icon(Icons.check_box),
-        title: Text('habit_checkbox_style'.tr()),
-        subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
-        onTap: () => _showHabitCheckboxStyleDialog(context, ref),
+      // Card Style subsection
+      const Divider(),
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_card_style',
+        icon: Icons.credit_card,
       ),
       ListTile(
-        leading: const Icon(Icons.image),
-        title: Text('icon_size'.tr()),
-        subtitle: Text(_getIconSizeName(iconSize)),
-        onTap: () => _showIconSizeDialog(context, ref),
+        leading: const Icon(Icons.rounded_corner),
+        title: Text('border_radius'.tr()),
+        subtitle: Text('${cardBorderRadius.toStringAsFixed(1)}px'),
+        onTap: () => _showCardBorderRadiusDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_agenda),
+        title: Text('card_spacing'.tr()),
+        subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
+        onTap: () => _showCardSpacingDialog(context, ref),
+      ),
+      // Completion Colors subsection
+      const Divider(),
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_completion_colors',
+        icon: Icons.color_lens,
+      ),
+      // Positive Habits sub-subsection
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_completion_colors_positive',
+        icon: Icons.thumb_up,
       ),
       ListTile(
         leading: const Icon(Icons.calendar_today),
@@ -3346,9 +3388,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           'calendar_completion_color',
           calendarCompletionColor,
           (color) async {
-            final notifier = ref.read(
-              calendarCompletionColorNotifierProvider,
-            );
+            final notifier = ref.read(calendarCompletionColorNotifierProvider);
             await notifier.setCalendarCompletionColor(color);
           },
           calendarCompletionColorNotifierProvider,
@@ -3375,9 +3415,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           'habit_card_completion_color',
           habitCardCompletionColor,
           (color) async {
-            final notifier = ref.read(
-              habitCardCompletionColorNotifierProvider,
-            );
+            final notifier = ref.read(habitCardCompletionColorNotifierProvider);
             await notifier.setHabitCardCompletionColor(color);
           },
           habitCardCompletionColorNotifierProvider,
@@ -3441,9 +3479,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           mainTimelineCompletionColorNotifierProvider,
         ),
       ),
+      // Negative Habits sub-subsection
       const Divider(),
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_completion_colors_negative',
+        icon: Icons.thumb_down,
+      ),
       ListTile(
-        leading: const Icon(Icons.thumb_down),
+        leading: const Icon(Icons.calendar_today),
         title: Text('calendar_bad_habit_completion_color'.tr()),
         trailing: Container(
           width: 32,
@@ -3524,9 +3568,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             final notifier = ref.read(
               calendarTimelineBadHabitCompletionColorNotifierProvider,
             );
-            await notifier.setCalendarTimelineBadHabitCompletionColor(
-              color,
-            );
+            await notifier.setCalendarTimelineBadHabitCompletionColor(color);
           },
           calendarTimelineBadHabitCompletionColorNotifierProvider,
         ),
@@ -3560,22 +3602,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           mainTimelineBadHabitCompletionColorNotifierProvider,
         ),
       ),
+      // Streak Color Scheme
+      const Divider(),
       ListTile(
         leading: const Icon(Icons.color_lens),
         title: Text('streak_color_scheme'.tr()),
         subtitle: Text(_getStreakColorSchemeName(streakColorScheme)),
         onTap: () => _showStreakColorSchemeDialog(context, ref),
       ),
-      ListTile(
-        leading: const Icon(Icons.text_fields),
-        title: Text('font_size_scale'.tr()),
-        subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
-        onTap: () => _showFontSizeScaleDialog(context, ref),
+      SwitchListTile(
+        secondary: const Icon(Icons.palette),
+        title: Text('use_streak_colors_for_squares'.tr()),
+        subtitle: Text('use_streak_colors_for_squares_description'.tr()),
+        value: useStreakColorsForSquares,
+        onChanged: (value) async {
+          final notifier = ref.read(useStreakColorsForSquaresNotifierProvider);
+          await notifier.setUseStreakColorsForSquares(value);
+          ref.invalidate(useStreakColorsForSquaresNotifierProvider);
+        },
       ),
     ];
     final appearanceTags = <String>[
       _keyToSearchText('day_square_size'),
-      _keyToSearchText('habit_checkbox_style'),
       _keyToSearchText('icon_size'),
       _keyToSearchText('calendar_completion_color'),
       _keyToSearchText('habit_card_completion_color'),
@@ -3587,6 +3635,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('calendar_timeline_bad_habit_completion_color'),
       _keyToSearchText('main_timeline_bad_habit_completion_color'),
       _keyToSearchText('streak_color_scheme'),
+      _keyToSearchText('card_spacing'),
+      _keyToSearchText('use_streak_colors_for_squares'),
       _keyToSearchText('font_size_scale'),
     ];
     final appearanceFiltered = _filterSectionChildren(
@@ -3595,8 +3645,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       tags: appearanceTags,
     );
 
-    final displayTitle = 'display_layout'.tr();
-    final displayChildren = <Widget>[
+    // Date & Time section
+    final dateTimeTitle = 'date_time'.tr();
+    final dateTimeChildren = <Widget>[
       ListTile(
         leading: const Icon(Icons.calendar_today),
         title: Text('date_format'.tr()),
@@ -3609,7 +3660,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         subtitle: Text(_getFirstDayOfWeekName(firstDayOfWeek)),
         onTap: () => _showFirstDayOfWeekDialog(context, ref),
       ),
-      const Divider(),
+    ];
+    final dateTimeTags = <String>[
+      _keyToSearchText('date_format'),
+      _keyToSearchText('first_day_of_week'),
+    ];
+    final dateTimeFiltered = _filterSectionChildren(
+      dateTimeTitle,
+      dateTimeChildren,
+      tags: dateTimeTags,
+    );
+
+    // Display section (habits, habit cards, timelines, statistics)
+    final displayTitle = 'display'.tr();
+    final displayChildren = <Widget>[
+      // Habits subsection
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_habits',
+        icon: Icons.view_agenda,
+      ),
       ListTile(
         leading: const Icon(Icons.view_agenda),
         title: Text('habits_layout_mode'.tr()),
@@ -3667,8 +3737,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           );
 
           if (mode != null && mode.isNotEmpty) {
-            final notifier =
-                ref.read(habitsLayoutModeNotifierProvider);
+            final notifier = ref.read(habitsLayoutModeNotifierProvider);
             await notifier.setHabitsLayoutMode(mode);
             ref.invalidate(habitsLayoutModeNotifierProvider);
           }
@@ -3705,13 +3774,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         },
       ),
       const Divider(),
+      // Timelines
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_timelines',
+        icon: Icons.timeline,
+      ),
       ListTile(
         leading: const Icon(Icons.calendar_view_week),
         title: Text('timeline_days'.tr()),
         subtitle: Text('$timelineDays ${'days'.tr()}'),
         enabled: !mainTimelineFillLines,
-        trailing: !mainTimelineFillLines &&
-                timelineDays != defaultTimelineDays
+        trailing: !mainTimelineFillLines && timelineDays != defaultTimelineDays
             ? IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: 'reset_to_default'.tr(),
@@ -3725,7 +3799,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         title: Text('modal_timeline_days'.tr()),
         subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
         enabled: !habitCardTimelineFillLines,
-        trailing: !habitCardTimelineFillLines &&
+        trailing:
+            !habitCardTimelineFillLines &&
                 modalTimelineDays != defaultModalTimelineDays
             ? IconButton(
                 icon: const Icon(Icons.refresh),
@@ -3740,13 +3815,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         title: Text('habit_card_timeline_days'.tr()),
         subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
         enabled: !habitCardTimelineFillLines,
-        trailing: !habitCardTimelineFillLines &&
+        trailing:
+            !habitCardTimelineFillLines &&
                 habitCardTimelineDays != defaultHabitCardTimelineDays
             ? IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: 'reset_to_default'.tr(),
-                onPressed: () =>
-                    _revertHabitCardTimelineDays(context, ref),
+                onPressed: () => _revertHabitCardTimelineDays(context, ref),
               )
             : null,
         onTap: () => _showHabitCardTimelineDaysDialog(context, ref),
@@ -3756,12 +3831,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         title: Text('timeline_spacing'.tr()),
         subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
         onTap: () => _showTimelineSpacingDialog(context, ref),
-      ),
-      ListTile(
-        leading: const Icon(Icons.format_line_spacing),
-        title: Text('card_spacing'.tr()),
-        subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
-        onTap: () => _showCardSpacingDialog(context, ref),
       ),
       SwitchListTile(
         secondary: const Icon(Icons.compress),
@@ -3786,27 +3855,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         },
       ),
       SwitchListTile(
-        secondary: const Icon(Icons.palette),
-        title: Text('use_streak_colors_for_squares'.tr()),
-        subtitle: Text('use_streak_colors_for_squares_description'.tr()),
-        value: useStreakColorsForSquares,
-        onChanged: (value) async {
-          final notifier = ref.read(
-            useStreakColorsForSquaresNotifierProvider,
-          );
-          await notifier.setUseStreakColorsForSquares(value);
-          ref.invalidate(useStreakColorsForSquaresNotifierProvider);
-        },
-      ),
-      SwitchListTile(
         secondary: const Icon(Icons.highlight),
         title: Text('show_week_month_highlights'.tr()),
         subtitle: Text('show_week_month_highlights_description'.tr()),
         value: showWeekMonthHighlights,
         onChanged: (value) async {
-          final notifier = ref.read(
-            showWeekMonthHighlightsNotifierProvider,
-          );
+          final notifier = ref.read(showWeekMonthHighlightsNotifierProvider);
           await notifier.setShowWeekMonthHighlights(value);
           ref.invalidate(showWeekMonthHighlightsNotifierProvider);
         },
@@ -3821,6 +3875,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           await notifier.setShowStreakNumbers(value);
           ref.invalidate(showStreakNumbersNotifierProvider);
         },
+      ),
+      const Divider(),
+      // Habit cards
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_habit_cards',
+        icon: Icons.view_module,
       ),
       SwitchListTile(
         secondary: const Icon(Icons.description),
@@ -3856,22 +3917,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         },
       ),
       ListTile(
-        leading: const Icon(Icons.trending_up),
-        title: Text('progress_indicator_style'.tr()),
-        subtitle: Text(
-          _getProgressIndicatorStyleName(progressIndicatorStyle),
-        ),
-        onTap: () => _showProgressIndicatorStyleDialog(context, ref),
+        leading: const Icon(Icons.check_box),
+        title: Text('habit_checkbox_style'.tr()),
+        subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
+        onTap: () => _showHabitCheckboxStyleDialog(context, ref),
       ),
       SwitchListTile(
-        secondary: const Icon(Icons.bar_chart),
-        title: Text('show_statistics_card'.tr()),
-        subtitle: Text('show_statistics_card_description'.tr()),
-        value: showStatisticsCard,
+        secondary: const Icon(Icons.local_fire_department),
+        title: Text('show_streak_on_card'.tr()),
+        subtitle: Text('show_streak_on_card_description'.tr()),
+        value: showStreakOnCard,
         onChanged: (value) async {
-          final notifier = ref.read(showStatisticsCardNotifierProvider);
-          await notifier.setShowStatisticsCard(value);
-          ref.invalidate(showStatisticsCardNotifierProvider);
+          final notifier = ref.read(showStreakOnCardNotifierProvider);
+          await notifier.setShowStreakOnCard(value);
+          ref.invalidate(showStreakOnCardNotifierProvider);
         },
       ),
       SwitchListTile(
@@ -3886,13 +3945,107 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         },
       ),
       SwitchListTile(
+        secondary: const Icon(Icons.grid_on),
+        title: Text('habit_card_timeline_fill_lines'.tr()),
+        subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
+        value: habitCardTimelineFillLines,
+        onChanged: (value) async {
+          final notifier = ref.read(habitCardTimelineFillLinesNotifierProvider);
+          await notifier.setHabitCardTimelineFillLines(value);
+          ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.format_line_spacing),
+        title: Text('habit_card_timeline_lines'.tr()),
+        subtitle: Text('$habitCardTimelineLines'),
+        enabled: habitCardTimelineFillLines,
+        onTap: () async {
+          if (!habitCardTimelineFillLines) return;
+
+          final current = habitCardTimelineLines;
+          int temp = current.clamp(1, 5);
+          final result = await showDialog<int>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('habit_card_timeline_lines'.tr()),
+                content: StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Slider(
+                          min: 1,
+                          max: 5,
+                          divisions: 4,
+                          value: temp.toDouble(),
+                          label: '$temp',
+                          onChanged: (value) {
+                            setDialogState(() {
+                              temp = value.round();
+                            });
+                          },
+                        ),
+                        Text(
+                          'habit_card_timeline_lines_value'.tr(args: ['$temp']),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('cancel'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, temp),
+                    child: Text('ok'.tr()),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (result != null && result != current) {
+            final notifier = ref.read(habitCardTimelineLinesNotifierProvider);
+            await notifier.setHabitCardTimelineLines(result);
+            ref.invalidate(habitCardTimelineLinesNotifierProvider);
+          }
+        },
+      ),
+      const Divider(),
+      // Statistics
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_statistics',
+        icon: Icons.bar_chart,
+      ),
+      ListTile(
+        leading: const Icon(Icons.trending_up),
+        title: Text('progress_indicator_style'.tr()),
+        subtitle: Text(_getProgressIndicatorStyleName(progressIndicatorStyle)),
+        onTap: () => _showProgressIndicatorStyleDialog(context, ref),
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.bar_chart),
+        title: Text('show_statistics_card'.tr()),
+        subtitle: Text('show_statistics_card_description'.tr()),
+        value: showStatisticsCard,
+        onChanged: (value) async {
+          final notifier = ref.read(showStatisticsCardNotifierProvider);
+          await notifier.setShowStatisticsCard(value);
+          ref.invalidate(showStatisticsCardNotifierProvider);
+        },
+      ),
+      SwitchListTile(
         secondary: const Icon(Icons.grid_4x4),
         title: Text('main_timeline_fill_lines'.tr()),
         subtitle: Text('main_timeline_fill_lines_description'.tr()),
         value: mainTimelineFillLines,
         onChanged: (value) async {
-          final notifier =
-              ref.read(mainTimelineFillLinesNotifierProvider);
+          final notifier = ref.read(mainTimelineFillLinesNotifierProvider);
           await notifier.setMainTimelineFillLines(value);
           ref.invalidate(mainTimelineFillLinesNotifierProvider);
         },
@@ -3928,10 +4081,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             });
                           },
                         ),
-                        Text(
-                          'main_timeline_lines_value'
-                              .tr(args: ['$temp']),
-                        ),
+                        Text('main_timeline_lines_value'.tr(args: ['$temp'])),
                       ],
                     );
                   },
@@ -3951,28 +4101,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           );
 
           if (result != null && result != current) {
-            final notifier =
-                ref.read(mainTimelineLinesNotifierProvider);
+            final notifier = ref.read(mainTimelineLinesNotifierProvider);
             await notifier.setMainTimelineLines(result);
             ref.invalidate(mainTimelineLinesNotifierProvider);
           }
-        },
-      ),
-      ListTile(
-        leading: const Icon(Icons.home),
-        title: Text('default_view'.tr()),
-        subtitle: Text(_getDefaultViewName(defaultView)),
-        onTap: () => _showDefaultViewDialog(context, ref),
-      ),
-      SwitchListTile(
-        secondary: const Icon(Icons.local_fire_department),
-        title: Text('show_streak_on_card'.tr()),
-        subtitle: Text('show_streak_on_card_description'.tr()),
-        value: showStreakOnCard,
-        onChanged: (value) async {
-          final notifier = ref.read(showStreakOnCardNotifierProvider);
-          await notifier.setShowStreakOnCard(value);
-          ref.invalidate(showStreakOnCardNotifierProvider);
         },
       ),
       ListTile(
@@ -4032,8 +4164,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           );
 
           if (mode != null && mode.isNotEmpty) {
-            final notifier =
-                ref.read(habitCardLayoutModeNotifierProvider);
+            final notifier = ref.read(habitCardLayoutModeNotifierProvider);
             await notifier.setHabitCardLayoutMode(mode);
             ref.invalidate(habitCardLayoutModeNotifierProvider);
           }
@@ -4045,8 +4176,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
         value: habitCardTimelineFillLines,
         onChanged: (value) async {
-          final notifier =
-              ref.read(habitCardTimelineFillLinesNotifierProvider);
+          final notifier = ref.read(habitCardTimelineFillLinesNotifierProvider);
           await notifier.setHabitCardTimelineFillLines(value);
           ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
         },
@@ -4084,8 +4214,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           },
                         ),
                         Text(
-                          'habit_card_timeline_lines_value'
-                              .tr(args: ['$temp']),
+                          'habit_card_timeline_lines_value'.tr(args: ['$temp']),
                         ),
                       ],
                     );
@@ -4106,8 +4235,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           );
 
           if (result != null && result != current) {
-            final notifier =
-                ref.read(habitCardTimelineLinesNotifierProvider);
+            final notifier = ref.read(habitCardTimelineLinesNotifierProvider);
             await notifier.setHabitCardTimelineLines(result);
             ref.invalidate(habitCardTimelineLinesNotifierProvider);
           }
@@ -4115,9 +4243,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
     ];
     final displayTags = <String>[
-      _keyToSearchText('date_format'),
-      _keyToSearchText('first_day_of_week'),
-      '', // Divider
       _keyToSearchText('habits_layout_mode'),
       _keyToSearchText('grid_show_icon'),
       _keyToSearchText('grid_show_completion'),
@@ -4127,10 +4252,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('modal_timeline_days'),
       _keyToSearchText('habit_card_timeline_days'),
       _keyToSearchText('timeline_spacing'),
-      _keyToSearchText('card_spacing'),
       _keyToSearchText('timeline_compact_mode'),
       _keyToSearchText('show_streak_borders'),
-      _keyToSearchText('use_streak_colors_for_squares'),
       _keyToSearchText('show_week_month_highlights'),
       _keyToSearchText('show_streak_numbers'),
       _keyToSearchText('show_descriptions'),
@@ -4141,7 +4264,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('show_main_timeline'),
       _keyToSearchText('main_timeline_fill_lines'),
       _keyToSearchText('main_timeline_lines'),
-      _keyToSearchText('default_view'),
       _keyToSearchText('show_streak_on_card'),
       _keyToSearchText('habit_card_layout_mode'),
       _keyToSearchText('habit_card_timeline_fill_lines'),
@@ -4153,8 +4275,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       tags: displayTags,
     );
 
-    final featuresTitle = 'features'.tr();
-    final featuresChildren = <Widget>[
+    // Notifications & behavior
+    final notificationsTitle = 'notifications'.tr();
+    final notificationsChildren = <Widget>[
       SwitchListTile(
         secondary: const Icon(Icons.notifications),
         title: Text('enable_notifications'.tr()),
@@ -4176,24 +4299,40 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _showBadHabitLogicModeDialog(context, ref),
       ),
+    ];
+    final notificationsTags = <String>[
+      _keyToSearchText('enable_notifications'),
+      _keyToSearchText('bad_habit_logic_mode'),
+    ];
+    final notificationsFiltered = _filterSectionChildren(
+      notificationsTitle,
+      notificationsChildren,
+      tags: notificationsTags,
+    );
+
+    // Tags management
+    final tagsTitle = 'tags'.tr();
+    final tagsChildren = <Widget>[
       const Padding(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: TagManagementWidget(),
       ),
     ];
-    final featuresTags = <String>[
-      _keyToSearchText('enable_notifications'),
-      _keyToSearchText('bad_habit_logic_mode'),
-      _keyToSearchText('tags'),
-    ];
-    final featuresFiltered = _filterSectionChildren(
-      featuresTitle,
-      featuresChildren,
-      tags: featuresTags,
+    final tagsTags = <String>[_keyToSearchText('tags')];
+    final tagsFiltered = _filterSectionChildren(
+      tagsTitle,
+      tagsChildren,
+      tags: tagsTags,
     );
 
     final dataTitle = 'data_management'.tr();
     final dataChildren = <Widget>[
+      // Export
+      _buildSubsectionHeader(
+        context,
+        'settings_section_data_export',
+        icon: Icons.file_download,
+      ),
       ListTile(
         leading: const Icon(Icons.file_download),
         title: Text('export_data'.tr()),
@@ -4201,12 +4340,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _showExportDialog(context, ref),
       ),
+      // Import
+      _buildSubsectionHeader(
+        context,
+        'settings_section_data_import',
+        icon: Icons.file_upload,
+      ),
       ListTile(
         leading: const Icon(Icons.file_upload),
         title: Text('import_data'.tr()),
         subtitle: Text('import_data_description'.tr()),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _showImportDialog(context, ref),
+      ),
+      // Database
+      _buildSubsectionHeader(
+        context,
+        'settings_section_data_database',
+        icon: Icons.storage,
       ),
       ListTile(
         leading: const Icon(Icons.info_outline),
@@ -4341,6 +4492,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             },
             children: appearanceFiltered,
           ),
+        // Date & Time before Display
+        if (!hasSearch || dateTimeFiltered.isNotEmpty)
+          _buildCollapsibleSection(
+            title: dateTimeTitle,
+            icon: Icons.calendar_today,
+            isExpanded: hasSearch ? true : _dateTimeExpanded,
+            onExpansionChanged: (expanded) {
+              if (hasSearch) return;
+              setState(() {
+                _dateTimeExpanded = expanded;
+              });
+              _saveExpansionState('dateTime', expanded);
+            },
+            children: dateTimeFiltered,
+          ),
         if (!hasSearch || displayFiltered.isNotEmpty)
           _buildCollapsibleSection(
             title: displayTitle,
@@ -4355,10 +4521,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             },
             children: displayFiltered,
           ),
-        if (!hasSearch || featuresFiltered.isNotEmpty)
+        if (!hasSearch || notificationsFiltered.isNotEmpty)
           _buildCollapsibleSection(
-            title: featuresTitle,
-            icon: Icons.extension,
+            title: notificationsTitle,
+            icon: Icons.notifications,
             isExpanded: hasSearch ? true : _notificationsExpanded,
             onExpansionChanged: (expanded) {
               if (hasSearch) return;
@@ -4367,7 +4533,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               });
               _saveExpansionState('notifications', expanded);
             },
-            children: featuresFiltered,
+            children: notificationsFiltered,
+          ),
+        if (!hasSearch || tagsFiltered.isNotEmpty)
+          _buildCollapsibleSection(
+            title: tagsTitle,
+            icon: Icons.label,
+            isExpanded: hasSearch ? true : _tagsExpanded,
+            onExpansionChanged: (expanded) {
+              if (hasSearch) return;
+              setState(() {
+                _tagsExpanded = expanded;
+              });
+              _saveExpansionState('tags', expanded);
+            },
+            children: tagsFiltered,
           ),
         if (!hasSearch || dataFiltered.isNotEmpty)
           _buildCollapsibleSection(
@@ -4460,8 +4640,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       ListTile(
                         leading: const Icon(Icons.code_off),
                         title: Text('open_source_libraries'.tr()),
-                        subtitle:
-                            Text('open_source_libraries_description'.tr()),
+                        subtitle: Text(
+                          'open_source_libraries_description'.tr(),
+                        ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => _showLibrariesDialog(context),
                       ),
