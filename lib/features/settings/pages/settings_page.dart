@@ -3128,6 +3128,49 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  void _showCardElevationDialog(BuildContext context, WidgetRef ref) {
+    final currentElevation = ref.watch(cardElevationProvider);
+    final notifier = ref.read(cardStyleNotifierProvider);
+    final navigator = Navigator.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          double elevation = currentElevation;
+          return AlertDialog(
+            title: Text('elevation'.tr()),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(elevation.toStringAsFixed(1)),
+                Slider(
+                  value: elevation,
+                  min: 0.0,
+                  max: 16.0,
+                  divisions: 16,
+                  onChanged: (value) {
+                    setDialogState(() {
+                      elevation = value;
+                    });
+                    notifier.setElevation(value);
+                    ref.invalidate(cardStyleNotifierProvider);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => navigator.pop(),
+                child: Text('done'.tr()),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _showBadHabitLogicModeDialog(BuildContext context, WidgetRef ref) {
     final currentMode = ref.watch(badHabitLogicModeProvider);
     final notifier = ref.read(badHabitLogicModeNotifierProvider);
@@ -3240,6 +3283,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final fontSizeScale = ref.watch(fontSizeScaleProvider);
     final cardSpacing = ref.watch(cardSpacingProvider);
     final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
+    final cardElevation = ref.watch(cardElevationProvider);
     final showStatisticsCard = ref.watch(showStatisticsCardProvider);
     final showMainTimeline = ref.watch(showMainTimelineProvider);
     final useStreakColorsForSquares = ref.watch(
@@ -3347,6 +3391,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         title: Text('border_radius'.tr()),
         subtitle: Text('${cardBorderRadius.toStringAsFixed(1)}px'),
         onTap: () => _showCardBorderRadiusDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.layers),
+        title: Text('elevation'.tr()),
+        subtitle: Text(cardElevation.toStringAsFixed(1)),
+        onTap: () => _showCardElevationDialog(context, ref),
       ),
       ListTile(
         leading: const Icon(Icons.view_agenda),
