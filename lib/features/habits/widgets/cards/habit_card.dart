@@ -831,7 +831,7 @@ class HabitCard extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_,_) => const SizedBox.shrink(),
           ),
       ],
     );
@@ -1098,7 +1098,7 @@ class HabitCard extends ConsumerWidget {
                 ),
               ),
             ),
-            error: (_, __) => Material(
+            error: (_, _) => Material(
               color: Colors.transparent,
               child: Semantics(
                 label: 'track_habit'.tr(),
@@ -1157,7 +1157,7 @@ class HabitCard extends ConsumerWidget {
             ),
           ),
         ),
-        error: (_, __) => Material(
+        error: (_, _) => Material(
           color: Colors.transparent,
           child: Semantics(
             label: 'track_habit'.tr(),
@@ -1537,7 +1537,7 @@ class HabitGridCard extends ConsumerWidget {
                 ),
               ),
             ),
-            error: (_, __) => Container(
+            error: (_, _) => Container(
               width: 72,
               alignment: Alignment.center,
               child: Icon(
@@ -1562,7 +1562,7 @@ class HabitGridCard extends ConsumerWidget {
             ),
           ),
         ),
-        error: (_, __) => Container(
+        error: (_, _) => Container(
           width: 72,
           alignment: Alignment.center,
           child: Icon(
@@ -1653,7 +1653,7 @@ class HabitGridCard extends ConsumerWidget {
                 );
               },
               loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
             ),
         ],
       );

@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/settings_providers.dart';
+import '../../utils/settings_formatters.dart';
+import '../../../../core/services/preferences_service.dart';
 
 /// General settings section widget
 class GeneralSectionContent extends ConsumerWidget {
-  final Function(BuildContext, WidgetRef) showLanguageDialog;
+  final Function(BuildContext) showLanguageDialog;
   final Function(BuildContext, WidgetRef) showThemeDialog;
   final Function(BuildContext, WidgetRef) showThemeColorDialog;
 
@@ -17,31 +19,9 @@ class GeneralSectionContent extends ConsumerWidget {
     required this.showThemeColorDialog,
   });
 
-  String _getLanguageName(String? code) {
-    switch (code) {
-      case 'en':
-        return 'english'.tr();
-      case 'ar':
-        return 'arabic'.tr();
-      default:
-        return 'english'.tr();
-    }
-  }
-
-  String _getThemeName(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'light'.tr();
-      case ThemeMode.dark:
-        return 'dark'.tr();
-      case ThemeMode.system:
-        return 'system'.tr();
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentLanguage = context.locale.languageCode;
+    final currentLanguage = PreferencesService.getLanguage() ?? 'en';
     final themeMode = ref.watch(themeModeProvider);
     final themeColor = ref.watch(themeColorProvider);
 
@@ -50,13 +30,13 @@ class GeneralSectionContent extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.language),
           title: Text('language'.tr()),
-          subtitle: Text(_getLanguageName(currentLanguage)),
-          onTap: () => showLanguageDialog(context, ref),
+          subtitle: Text(SettingsFormatters.getLanguageName(currentLanguage)),
+          onTap: () => showLanguageDialog(context),
         ),
         ListTile(
           leading: const Icon(Icons.dark_mode),
           title: Text('theme'.tr()),
-          subtitle: Text(_getThemeName(themeMode)),
+          subtitle: Text(SettingsFormatters.getThemeName(themeMode)),
           onTap: () => showThemeDialog(context, ref),
         ),
         ListTile(
@@ -80,4 +60,3 @@ class GeneralSectionContent extends ConsumerWidget {
     );
   }
 }
-

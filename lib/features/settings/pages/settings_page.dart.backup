@@ -15,6 +15,7 @@ import '../../../../core/database/app_database.dart' as db;
 import '../providers/settings_providers.dart';
 import '../../habits/widgets/components/checkbox_style.dart';
 import '../../habits/providers/habit_providers.dart';
+import '../../habits/widgets/forms/tag_management.dart';
 
 // Modular section widgets
 import '../widgets/sections/general_section.dart';
@@ -626,11 +627,73 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  // Helper to render a subsection header inside a section
+  Widget _buildSubsectionHeader(
+    BuildContext context,
+    String titleKey, {
+    IconData? icon,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            titleKey.tr(),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Default values
   static const String defaultDaySquareSize = 'large';
   static const int defaultTimelineDays = 100;
   static const int defaultModalTimelineDays = 100;
   static const int defaultHabitCardTimelineDays = 50;
+
+  String _getLanguageName(String? code) {
+    switch (code) {
+      case 'en':
+        return 'english'.tr();
+      case 'ar':
+        return 'arabic'.tr();
+      default:
+        return 'english'.tr();
+    }
+  }
+
+  String _getThemeName(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.light:
+        return 'light'.tr();
+      case ThemeMode.dark:
+        return 'dark'.tr();
+      case ThemeMode.system:
+        return 'system'.tr();
+    }
+  }
+
+  String _getDaySquareSizeName(String size) {
+    switch (size) {
+      case 'small':
+        return 'small'.tr();
+      case 'medium':
+        return 'medium'.tr();
+      case 'large':
+        return 'large'.tr();
+      default:
+        return 'medium'.tr();
+    }
+  }
 
   String _getDateFormatName(String format) {
     switch (format) {
@@ -646,6 +709,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         // Return default format key if invalid
         return 'date_format_yyyy_mm_dd'.tr();
     }
+  }
+
+  String _getFirstDayOfWeekName(int day) {
+    return day == 0 ? 'sunday'.tr() : 'monday'.tr();
   }
 
   Future<void> _showExportDialog(BuildContext context, WidgetRef ref) async {
@@ -2513,6 +2580,61 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  // Display Preferences Helper Methods
+  String _getIconSizeName(String size) {
+    switch (size) {
+      case 'small':
+        return 'small'.tr();
+      case 'medium':
+        return 'medium'.tr();
+      case 'large':
+        return 'large'.tr();
+      default:
+        return 'medium'.tr();
+    }
+  }
+
+  String _getProgressIndicatorStyleName(String style) {
+    switch (style) {
+      case 'circular':
+        return 'circular'.tr();
+      case 'linear':
+        return 'linear'.tr();
+      default:
+        return 'circular'.tr();
+    }
+  }
+
+  String _getStreakColorSchemeName(String scheme) {
+    switch (scheme) {
+      case 'default':
+        return 'default'.tr();
+      case 'vibrant':
+        return 'vibrant'.tr();
+      case 'subtle':
+        return 'subtle'.tr();
+      case 'monochrome':
+        return 'monochrome'.tr();
+      default:
+        return 'default'.tr();
+    }
+  }
+
+  String _getFontSizeScaleName(String scale) {
+    switch (scale) {
+      case 'small':
+        return 'small'.tr();
+      case 'normal':
+        return 'normal'.tr();
+      case 'large':
+        return 'large'.tr();
+      case 'extra_large':
+        return 'extra_large'.tr();
+      default:
+        return 'normal'.tr();
+    }
+  }
+
   // Display Preferences Dialog Methods
   void _showTimelineSpacingDialog(BuildContext context, WidgetRef ref) {
     final currentSpacing = ref.watch(timelineSpacingProvider);
@@ -3148,16 +3270,322 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     final appearanceTitle = 'appearance'.tr();
     final appearanceChildren = <Widget>[
-      AppearanceSectionContent(
-        showFontSizeScaleDialog: _showFontSizeScaleDialog,
-        showIconSizeDialog: _showIconSizeDialog,
-        showDaySquareSizeDialog: _showDaySquareSizeDialog,
-        revertDaySquareSize: _revertDaySquareSize,
-        showCardBorderRadiusDialog: _showCardBorderRadiusDialog,
-        showCardElevationDialog: _showCardElevationDialog,
-        showCardSpacingDialog: _showCardSpacingDialog,
-        showCompletionColorDialog: _showCompletionColorDialog,
-        showStreakColorSchemeDialog: _showStreakColorSchemeDialog,
+      ListTile(
+        leading: const Icon(Icons.text_fields),
+        title: Text('font_size_scale'.tr()),
+        subtitle: Text(_getFontSizeScaleName(fontSizeScale)),
+        onTap: () => _showFontSizeScaleDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.image),
+        title: Text('icon_size'.tr()),
+        subtitle: Text(_getIconSizeName(iconSize)),
+        onTap: () => _showIconSizeDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.square),
+        title: Text('day_square_size'.tr()),
+        subtitle: Text(_getDaySquareSizeName(daySquareSize)),
+        trailing: daySquareSize != defaultDaySquareSize
+            ? IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'reset_to_default'.tr(),
+                onPressed: () => _revertDaySquareSize(context, ref),
+              )
+            : null,
+        onTap: () => _showDaySquareSizeDialog(context, ref),
+      ),
+      // Card Style subsection
+      const Divider(),
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_card_style',
+        icon: Icons.credit_card,
+      ),
+      ListTile(
+        leading: const Icon(Icons.rounded_corner),
+        title: Text('border_radius'.tr()),
+        subtitle: Text('${cardBorderRadius.toStringAsFixed(1)}px'),
+        onTap: () => _showCardBorderRadiusDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.layers),
+        title: Text('elevation'.tr()),
+        subtitle: Text(cardElevation.toStringAsFixed(1)),
+        onTap: () => _showCardElevationDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_agenda),
+        title: Text('card_spacing'.tr()),
+        subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
+        onTap: () => _showCardSpacingDialog(context, ref),
+      ),
+      // Completion Colors subsection
+      const Divider(),
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_completion_colors',
+        icon: Icons.color_lens,
+      ),
+      // Positive Habits sub-subsection
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_completion_colors_positive',
+        icon: Icons.thumb_up,
+      ),
+      ListTile(
+        leading: const Icon(Icons.calendar_today),
+        title: Text('calendar_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(calendarCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'calendar_completion_color',
+          calendarCompletionColor,
+          (color) async {
+            final notifier = ref.read(calendarCompletionColorNotifierProvider);
+            await notifier.setCalendarCompletionColor(color);
+          },
+          calendarCompletionColorNotifierProvider,
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.credit_card),
+        title: Text('habit_card_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(habitCardCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'habit_card_completion_color',
+          habitCardCompletionColor,
+          (color) async {
+            final notifier = ref.read(habitCardCompletionColorNotifierProvider);
+            await notifier.setHabitCardCompletionColor(color);
+          },
+          habitCardCompletionColorNotifierProvider,
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.timeline),
+        title: Text('calendar_timeline_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(calendarTimelineCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'calendar_timeline_completion_color',
+          calendarTimelineCompletionColor,
+          (color) async {
+            final notifier = ref.read(
+              calendarTimelineCompletionColorNotifierProvider,
+            );
+            await notifier.setCalendarTimelineCompletionColor(color);
+          },
+          calendarTimelineCompletionColorNotifierProvider,
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_timeline),
+        title: Text('main_timeline_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(mainTimelineCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'main_timeline_completion_color',
+          mainTimelineCompletionColor,
+          (color) async {
+            final notifier = ref.read(
+              mainTimelineCompletionColorNotifierProvider,
+            );
+            await notifier.setMainTimelineCompletionColor(color);
+          },
+          mainTimelineCompletionColorNotifierProvider,
+        ),
+      ),
+      // Negative Habits sub-subsection
+      const Divider(),
+      _buildSubsectionHeader(
+        context,
+        'settings_section_appearance_completion_colors_negative',
+        icon: Icons.thumb_down,
+      ),
+      ListTile(
+        leading: const Icon(Icons.calendar_today),
+        title: Text('calendar_bad_habit_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(calendarBadHabitCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'calendar_bad_habit_completion_color',
+          calendarBadHabitCompletionColor,
+          (color) async {
+            final notifier = ref.read(
+              calendarBadHabitCompletionColorNotifierProvider,
+            );
+            await notifier.setCalendarBadHabitCompletionColor(color);
+          },
+          calendarBadHabitCompletionColorNotifierProvider,
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.thumb_down),
+        title: Text('habit_card_bad_habit_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(habitCardBadHabitCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'habit_card_bad_habit_completion_color',
+          habitCardBadHabitCompletionColor,
+          (color) async {
+            final notifier = ref.read(
+              habitCardBadHabitCompletionColorNotifierProvider,
+            );
+            await notifier.setHabitCardBadHabitCompletionColor(color);
+          },
+          habitCardBadHabitCompletionColorNotifierProvider,
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.thumb_down),
+        title: Text('calendar_timeline_bad_habit_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(calendarTimelineBadHabitCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'calendar_timeline_bad_habit_completion_color',
+          calendarTimelineBadHabitCompletionColor,
+          (color) async {
+            final notifier = ref.read(
+              calendarTimelineBadHabitCompletionColorNotifierProvider,
+            );
+            await notifier.setCalendarTimelineBadHabitCompletionColor(color);
+          },
+          calendarTimelineBadHabitCompletionColorNotifierProvider,
+        ),
+      ),
+      ListTile(
+        leading: const Icon(Icons.thumb_down),
+        title: Text('main_timeline_bad_habit_completion_color'.tr()),
+        trailing: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Color(mainTimelineBadHabitCompletionColor),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1.5,
+            ),
+          ),
+        ),
+        onTap: () => _showCompletionColorDialog(
+          context,
+          ref,
+          'main_timeline_bad_habit_completion_color',
+          mainTimelineBadHabitCompletionColor,
+          (color) async {
+            final notifier = ref.read(
+              mainTimelineBadHabitCompletionColorNotifierProvider,
+            );
+            await notifier.setMainTimelineBadHabitCompletionColor(color);
+          },
+          mainTimelineBadHabitCompletionColorNotifierProvider,
+        ),
+      ),
+      // Streak Color Scheme
+      const Divider(),
+      ListTile(
+        leading: const Icon(Icons.color_lens),
+        title: Text('streak_color_scheme'.tr()),
+        subtitle: Text(_getStreakColorSchemeName(streakColorScheme)),
+        onTap: () => _showStreakColorSchemeDialog(context, ref),
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.palette),
+        title: Text('use_streak_colors_for_squares'.tr()),
+        subtitle: Text('use_streak_colors_for_squares_description'.tr()),
+        value: useStreakColorsForSquares,
+        onChanged: (value) async {
+          final notifier = ref.read(useStreakColorsForSquaresNotifierProvider);
+          await notifier.setUseStreakColorsForSquares(value);
+          ref.invalidate(useStreakColorsForSquaresNotifierProvider);
+        },
       ),
     ];
     final appearanceTags = <String>[
@@ -3186,9 +3614,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Date & Time section
     final dateTimeTitle = 'date_time'.tr();
     final dateTimeChildren = <Widget>[
-      DateTimeSectionContent(
-        showDateFormatDialog: _showDateFormatDialog,
-        showFirstDayOfWeekDialog: _showFirstDayOfWeekDialog,
+      ListTile(
+        leading: const Icon(Icons.calendar_today),
+        title: Text('date_format'.tr()),
+        subtitle: Text(_getDateFormatName(dateFormat)),
+        onTap: () => _showDateFormatDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_week),
+        title: Text('first_day_of_week'.tr()),
+        subtitle: Text(_getFirstDayOfWeekName(firstDayOfWeek)),
+        onTap: () => _showFirstDayOfWeekDialog(context, ref),
       ),
     ];
     final dateTimeTags = <String>[
@@ -3204,16 +3640,572 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Display section (habits, habit cards, timelines, statistics)
     final displayTitle = 'display'.tr();
     final displayChildren = <Widget>[
-      DisplaySectionContent(
-        showTimelineDaysDialog: _showTimelineDaysDialog,
-        showModalTimelineDaysDialog: _showModalTimelineDaysDialog,
-        showHabitCardTimelineDaysDialog: _showHabitCardTimelineDaysDialog,
-        showTimelineSpacingDialog: _showTimelineSpacingDialog,
-        showHabitCheckboxStyleDialog: _showHabitCheckboxStyleDialog,
-        showProgressIndicatorStyleDialog: _showProgressIndicatorStyleDialog,
-        revertTimelineDays: _revertTimelineDays,
-        revertModalTimelineDays: _revertModalTimelineDays,
-        revertHabitCardTimelineDays: _revertHabitCardTimelineDays,
+      // Habits subsection
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_habits',
+        icon: Icons.view_agenda,
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_agenda),
+        title: Text('habits_layout_mode'.tr()),
+        subtitle: Text(
+          habitsLayoutMode == 'grid'
+              ? 'habits_layout_grid'.tr()
+              : 'habits_layout_list'.tr(),
+        ),
+        onTap: () async {
+          final mode = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              String temp = habitsLayoutMode;
+              return AlertDialog(
+                title: Text('habits_layout_mode'.tr()),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('habits_layout_list'.tr()),
+                      value: 'list',
+                      groupValue: temp,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          temp = value;
+                        });
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: Text('habits_layout_grid'.tr()),
+                      value: 'grid',
+                      groupValue: temp,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          temp = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('cancel'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, temp),
+                    child: Text('ok'.tr()),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (mode != null && mode.isNotEmpty) {
+            final notifier = ref.read(habitsLayoutModeNotifierProvider);
+            await notifier.setHabitsLayoutMode(mode);
+            ref.invalidate(habitsLayoutModeNotifierProvider);
+          }
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.image),
+        title: Text('grid_show_icon'.tr()),
+        value: gridShowIcon,
+        onChanged: (value) async {
+          final notifier = ref.read(gridShowIconNotifierProvider);
+          await notifier.setGridShowIcon(value);
+          ref.invalidate(gridShowIconNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.check_circle),
+        title: Text('grid_show_completion'.tr()),
+        value: gridShowCompletion,
+        onChanged: (value) async {
+          final notifier = ref.read(gridShowCompletionNotifierProvider);
+          await notifier.setGridShowCompletion(value);
+          ref.invalidate(gridShowCompletionNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.timeline),
+        title: Text('grid_show_timeline'.tr()),
+        value: gridShowTimeline,
+        onChanged: (value) async {
+          final notifier = ref.read(gridShowTimelineNotifierProvider);
+          await notifier.setGridShowTimeline(value);
+          ref.invalidate(gridShowTimelineNotifierProvider);
+        },
+      ),
+      const Divider(),
+      // Timelines
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_timelines',
+        icon: Icons.timeline,
+      ),
+      ListTile(
+        leading: const Icon(Icons.calendar_view_week),
+        title: Text('timeline_days'.tr()),
+        subtitle: Text('$timelineDays ${'days'.tr()}'),
+        enabled: !mainTimelineFillLines,
+        trailing: !mainTimelineFillLines && timelineDays != defaultTimelineDays
+            ? IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'reset_to_default'.tr(),
+                onPressed: () => _revertTimelineDays(context, ref),
+              )
+            : null,
+        onTap: () => _showTimelineDaysDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_timeline),
+        title: Text('modal_timeline_days'.tr()),
+        subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
+        enabled: !habitCardTimelineFillLines,
+        trailing:
+            !habitCardTimelineFillLines &&
+                modalTimelineDays != defaultModalTimelineDays
+            ? IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'reset_to_default'.tr(),
+                onPressed: () => _revertModalTimelineDays(context, ref),
+              )
+            : null,
+        onTap: () => _showModalTimelineDaysDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_week),
+        title: Text('habit_card_timeline_days'.tr()),
+        subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
+        enabled: !habitCardTimelineFillLines,
+        trailing:
+            !habitCardTimelineFillLines &&
+                habitCardTimelineDays != defaultHabitCardTimelineDays
+            ? IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'reset_to_default'.tr(),
+                onPressed: () => _revertHabitCardTimelineDays(context, ref),
+              )
+            : null,
+        onTap: () => _showHabitCardTimelineDaysDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.space_bar),
+        title: Text('timeline_spacing'.tr()),
+        subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
+        onTap: () => _showTimelineSpacingDialog(context, ref),
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.compress),
+        title: Text('timeline_compact_mode'.tr()),
+        subtitle: Text('timeline_compact_mode_description'.tr()),
+        value: timelineCompactMode,
+        onChanged: (value) async {
+          final notifier = ref.read(timelineCompactModeNotifierProvider);
+          await notifier.setTimelineCompactMode(value);
+          ref.invalidate(timelineCompactModeNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.border_color),
+        title: Text('show_streak_borders'.tr()),
+        subtitle: Text('show_streak_borders_description'.tr()),
+        value: showStreakBorders,
+        onChanged: (value) async {
+          final notifier = ref.read(showStreakBordersNotifierProvider);
+          await notifier.setShowStreakBorders(value);
+          ref.invalidate(showStreakBordersNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.highlight),
+        title: Text('show_week_month_highlights'.tr()),
+        subtitle: Text('show_week_month_highlights_description'.tr()),
+        value: showWeekMonthHighlights,
+        onChanged: (value) async {
+          final notifier = ref.read(showWeekMonthHighlightsNotifierProvider);
+          await notifier.setShowWeekMonthHighlights(value);
+          ref.invalidate(showWeekMonthHighlightsNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.numbers),
+        title: Text('show_streak_numbers'.tr()),
+        subtitle: Text('show_streak_numbers_description'.tr()),
+        value: showStreakNumbers,
+        onChanged: (value) async {
+          final notifier = ref.read(showStreakNumbersNotifierProvider);
+          await notifier.setShowStreakNumbers(value);
+          ref.invalidate(showStreakNumbersNotifierProvider);
+        },
+      ),
+      const Divider(),
+      // Habit cards
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_habit_cards',
+        icon: Icons.view_module,
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.description),
+        title: Text('show_descriptions'.tr()),
+        subtitle: Text('show_descriptions_description'.tr()),
+        value: showDescriptions,
+        onChanged: (value) async {
+          final notifier = ref.read(showDescriptionsNotifierProvider);
+          await notifier.setShowDescriptions(value);
+          ref.invalidate(showDescriptionsNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.view_compact),
+        title: Text('compact_cards'.tr()),
+        subtitle: Text('compact_cards_description'.tr()),
+        value: compactCards,
+        onChanged: (value) async {
+          final notifier = ref.read(compactCardsNotifierProvider);
+          await notifier.setCompactCards(value);
+          ref.invalidate(compactCardsNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.percent),
+        title: Text('show_percentage'.tr()),
+        subtitle: Text('show_percentage_description'.tr()),
+        value: showPercentage,
+        onChanged: (value) async {
+          final notifier = ref.read(showPercentageNotifierProvider);
+          await notifier.setShowPercentage(value);
+          ref.invalidate(showPercentageNotifierProvider);
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.check_box),
+        title: Text('habit_checkbox_style'.tr()),
+        subtitle: Text(_getCheckboxStyleName(habitCheckboxStyle)),
+        onTap: () => _showHabitCheckboxStyleDialog(context, ref),
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.local_fire_department),
+        title: Text('show_streak_on_card'.tr()),
+        subtitle: Text('show_streak_on_card_description'.tr()),
+        value: showStreakOnCard,
+        onChanged: (value) async {
+          final notifier = ref.read(showStreakOnCardNotifierProvider);
+          await notifier.setShowStreakOnCard(value);
+          ref.invalidate(showStreakOnCardNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.calendar_view_month),
+        title: Text('show_main_timeline'.tr()),
+        subtitle: Text('show_main_timeline_description'.tr()),
+        value: showMainTimeline,
+        onChanged: (value) async {
+          final notifier = ref.read(showMainTimelineNotifierProvider);
+          await notifier.setShowMainTimeline(value);
+          ref.invalidate(showMainTimelineNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.grid_on),
+        title: Text('habit_card_timeline_fill_lines'.tr()),
+        subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
+        value: habitCardTimelineFillLines,
+        onChanged: (value) async {
+          final notifier = ref.read(habitCardTimelineFillLinesNotifierProvider);
+          await notifier.setHabitCardTimelineFillLines(value);
+          ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.format_line_spacing),
+        title: Text('habit_card_timeline_lines'.tr()),
+        subtitle: Text('$habitCardTimelineLines'),
+        enabled: habitCardTimelineFillLines,
+        onTap: () async {
+          if (!habitCardTimelineFillLines) return;
+
+          final current = habitCardTimelineLines;
+          int temp = current.clamp(1, 5);
+          final result = await showDialog<int>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('habit_card_timeline_lines'.tr()),
+                content: StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Slider(
+                          min: 1,
+                          max: 5,
+                          divisions: 4,
+                          value: temp.toDouble(),
+                          label: '$temp',
+                          onChanged: (value) {
+                            setDialogState(() {
+                              temp = value.round();
+                            });
+                          },
+                        ),
+                        Text(
+                          'habit_card_timeline_lines_value'.tr(args: ['$temp']),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('cancel'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, temp),
+                    child: Text('ok'.tr()),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (result != null && result != current) {
+            final notifier = ref.read(habitCardTimelineLinesNotifierProvider);
+            await notifier.setHabitCardTimelineLines(result);
+            ref.invalidate(habitCardTimelineLinesNotifierProvider);
+          }
+        },
+      ),
+      const Divider(),
+      // Statistics
+      _buildSubsectionHeader(
+        context,
+        'settings_section_display_statistics',
+        icon: Icons.bar_chart,
+      ),
+      ListTile(
+        leading: const Icon(Icons.trending_up),
+        title: Text('progress_indicator_style'.tr()),
+        subtitle: Text(_getProgressIndicatorStyleName(progressIndicatorStyle)),
+        onTap: () => _showProgressIndicatorStyleDialog(context, ref),
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.bar_chart),
+        title: Text('show_statistics_card'.tr()),
+        subtitle: Text('show_statistics_card_description'.tr()),
+        value: showStatisticsCard,
+        onChanged: (value) async {
+          final notifier = ref.read(showStatisticsCardNotifierProvider);
+          await notifier.setShowStatisticsCard(value);
+          ref.invalidate(showStatisticsCardNotifierProvider);
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.grid_4x4),
+        title: Text('main_timeline_fill_lines'.tr()),
+        subtitle: Text('main_timeline_fill_lines_description'.tr()),
+        value: mainTimelineFillLines,
+        onChanged: (value) async {
+          final notifier = ref.read(mainTimelineFillLinesNotifierProvider);
+          await notifier.setMainTimelineFillLines(value);
+          ref.invalidate(mainTimelineFillLinesNotifierProvider);
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.format_line_spacing),
+        title: Text('main_timeline_lines'.tr()),
+        subtitle: Text('$mainTimelineLines'),
+        enabled: mainTimelineFillLines,
+        onTap: () async {
+          if (!mainTimelineFillLines) return;
+          final current = mainTimelineLines;
+          int temp = current.clamp(1, 6);
+          final result = await showDialog<int>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('main_timeline_lines'.tr()),
+                content: StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Slider(
+                          min: 1,
+                          max: 6,
+                          divisions: 5,
+                          value: temp.toDouble(),
+                          label: '$temp',
+                          onChanged: (value) {
+                            setDialogState(() {
+                              temp = value.round();
+                            });
+                          },
+                        ),
+                        Text('main_timeline_lines_value'.tr(args: ['$temp'])),
+                      ],
+                    );
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('cancel'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, temp),
+                    child: Text('ok'.tr()),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (result != null && result != current) {
+            final notifier = ref.read(mainTimelineLinesNotifierProvider);
+            await notifier.setMainTimelineLines(result);
+            ref.invalidate(mainTimelineLinesNotifierProvider);
+          }
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.view_agenda),
+        title: Text('habit_card_layout_mode'.tr()),
+        subtitle: Text(
+          habitCardLayoutMode == 'topRow'
+              ? 'habit_card_layout_mode_top_row'.tr()
+              : 'habit_card_layout_mode_classic'.tr(),
+        ),
+        onTap: () async {
+          final mode = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              String temp = habitCardLayoutMode;
+              return AlertDialog(
+                title: Text('habit_card_layout_mode'.tr()),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('habit_card_layout_mode_classic'.tr()),
+                      value: 'classic',
+                      groupValue: temp,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          temp = value;
+                        });
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: Text('habit_card_layout_mode_top_row'.tr()),
+                      value: 'topRow',
+                      groupValue: temp,
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          temp = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('cancel'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, temp),
+                    child: Text('ok'.tr()),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (mode != null && mode.isNotEmpty) {
+            final notifier = ref.read(habitCardLayoutModeNotifierProvider);
+            await notifier.setHabitCardLayoutMode(mode);
+            ref.invalidate(habitCardLayoutModeNotifierProvider);
+          }
+        },
+      ),
+      SwitchListTile(
+        secondary: const Icon(Icons.grid_on),
+        title: Text('habit_card_timeline_fill_lines'.tr()),
+        subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
+        value: habitCardTimelineFillLines,
+        onChanged: (value) async {
+          final notifier = ref.read(habitCardTimelineFillLinesNotifierProvider);
+          await notifier.setHabitCardTimelineFillLines(value);
+          ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.format_line_spacing),
+        title: Text('habit_card_timeline_lines'.tr()),
+        subtitle: Text('$habitCardTimelineLines'),
+        enabled: habitCardTimelineFillLines,
+        onTap: () async {
+          if (!habitCardTimelineFillLines) return;
+
+          final current = habitCardTimelineLines;
+          int temp = current.clamp(1, 5);
+          final result = await showDialog<int>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: Text('habit_card_timeline_lines'.tr()),
+                content: StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Slider(
+                          min: 1,
+                          max: 5,
+                          divisions: 4,
+                          value: temp.toDouble(),
+                          label: '$temp',
+                          onChanged: (value) {
+                            setDialogState(() {
+                              temp = value.round();
+                            });
+                          },
+                        ),
+                        Text(
+                          'habit_card_timeline_lines_value'.tr(args: ['$temp']),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('cancel'.tr()),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, temp),
+                    child: Text('ok'.tr()),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (result != null && result != current) {
+            final notifier = ref.read(habitCardTimelineLinesNotifierProvider);
+            await notifier.setHabitCardTimelineLines(result);
+            ref.invalidate(habitCardTimelineLinesNotifierProvider);
+          }
+        },
       ),
     ];
     final displayTags = <String>[
@@ -3252,8 +4244,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // Notifications & behavior
     final notificationsTitle = 'notifications'.tr();
     final notificationsChildren = <Widget>[
-      NotificationsSectionContent(
-        showBadHabitLogicModeDialog: _showBadHabitLogicModeDialog,
+      SwitchListTile(
+        secondary: const Icon(Icons.notifications),
+        title: Text('enable_notifications'.tr()),
+        subtitle: Text('receive_habit_reminders'.tr()),
+        value: notificationsEnabled,
+        onChanged: (value) async {
+          await notificationsNotifier.setNotificationsEnabled(value);
+          ref.invalidate(notificationsEnabledNotifierProvider);
+        },
+      ),
+      ListTile(
+        leading: const Icon(Icons.psychology),
+        title: Text('bad_habit_logic_mode'.tr()),
+        subtitle: Text(
+          badHabitLogicMode == 'negative'
+              ? 'bad_habit_logic_mode_negative'.tr()
+              : 'bad_habit_logic_mode_positive'.tr(),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showBadHabitLogicModeDialog(context, ref),
       ),
     ];
     final notificationsTags = <String>[
@@ -3268,7 +4278,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     // Tags management
     final tagsTitle = 'tags'.tr();
-    final tagsChildren = <Widget>[const TagsSectionContent()];
+    final tagsChildren = <Widget>[
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: TagManagementWidget(),
+      ),
+    ];
     final tagsTags = <String>[_keyToSearchText('tags')];
     final tagsFiltered = _filterSectionChildren(
       tagsTitle,
@@ -3278,11 +4293,51 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     final dataTitle = 'data_management'.tr();
     final dataChildren = <Widget>[
-      DataSectionContent(
-        showExportDialog: _showExportDialog,
-        showImportDialog: _showImportDialog,
-        showDatabaseStatsDialog: _showDatabaseStatsDialog,
-        optimizeDatabase: _optimizeDatabase,
+      // Export
+      _buildSubsectionHeader(
+        context,
+        'settings_section_data_export',
+        icon: Icons.file_download,
+      ),
+      ListTile(
+        leading: const Icon(Icons.file_download),
+        title: Text('export_data'.tr()),
+        subtitle: Text('export_habit_data_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showExportDialog(context, ref),
+      ),
+      // Import
+      _buildSubsectionHeader(
+        context,
+        'settings_section_data_import',
+        icon: Icons.file_upload,
+      ),
+      ListTile(
+        leading: const Icon(Icons.file_upload),
+        title: Text('import_data'.tr()),
+        subtitle: Text('import_data_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showImportDialog(context, ref),
+      ),
+      // Database
+      _buildSubsectionHeader(
+        context,
+        'settings_section_data_database',
+        icon: Icons.storage,
+      ),
+      ListTile(
+        leading: const Icon(Icons.info_outline),
+        title: Text('database_statistics'.tr()),
+        subtitle: Text('view_database_stats'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showDatabaseStatsDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.cleaning_services),
+        title: Text('optimize_database'.tr()),
+        subtitle: Text('optimize_database_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _optimizeDatabase(context, ref),
       ),
     ];
     final dataTags = <String>[
@@ -3299,12 +4354,40 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     final advancedTitle = 'advanced'.tr();
     final advancedChildren = <Widget>[
-      AdvancedSectionContent(
-        showResetHabitsDialog: _showResetHabitsDialog,
-        showResetSettingsDialog: _showResetSettingsDialog,
-        showClearAllDataDialog: _showClearAllDataDialog,
-        showLogsDialog: _showLogsDialog,
-        returnToOnboarding: _returnToOnboarding,
+      ListTile(
+        leading: const Icon(Icons.delete_sweep),
+        title: Text('reset_all_habits'.tr()),
+        subtitle: Text('reset_all_habits_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showResetHabitsDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.settings_backup_restore),
+        title: Text('reset_all_settings'.tr()),
+        subtitle: Text('reset_all_settings_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showResetSettingsDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.delete_forever),
+        title: Text('clear_all_data'.tr()),
+        subtitle: Text('clear_all_data_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showClearAllDataDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.description),
+        title: Text('logs'.tr()),
+        subtitle: Text('logs_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _showLogsDialog(context, ref),
+      ),
+      ListTile(
+        leading: const Icon(Icons.school),
+        title: Text('return_to_onboarding'.tr()),
+        subtitle: Text('return_to_onboarding_description'.tr()),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _returnToOnboarding(context),
       ),
     ];
     final advancedTags = <String>[
@@ -3486,14 +4569,97 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     );
                   }
 
+                  // Use fallback values if PackageInfo fails (e.g., on Linux)
+                  final packageInfo = snapshot.data;
+                  final appName = packageInfo?.appName ?? 'Adati';
+                  final version = packageInfo?.version ?? '0.1.0';
+                  final buildNumber = packageInfo?.buildNumber ?? '1';
+                  final packageName = packageInfo?.packageName ?? 'adati';
+
                   return Column(
                     children: [
-                      AboutSectionContent(
-                        showLibrariesDialog: _showLibrariesDialog,
-                        showLicenseDialog: _showLicenseDialog,
-                        showUsageRightsDialog: _showUsageRightsDialog,
-                        showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
-                        launchUrl: (context, url) => _launchUrl(url),
+                      ListTile(
+                        leading: const Icon(Icons.apps),
+                        title: Text('app_name'.tr()),
+                        subtitle: Text(appName),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.tag),
+                        title: Text('version'.tr()),
+                        subtitle: Text('$version ($buildNumber)'),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.description),
+                        title: Text('description'.tr()),
+                        subtitle: Text('app_description'.tr()),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.code),
+                        title: Text('package_name'.tr()),
+                        subtitle: Text(packageName),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.person),
+                        title: Text('developer'.tr()),
+                        subtitle: const Text('Shenepoy'),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.code_off),
+                        title: Text('open_source_libraries'.tr()),
+                        subtitle: Text(
+                          'open_source_libraries_description'.tr(),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showLibrariesDialog(context),
+                      ),
+                      const Divider(),
+                      ListTile(
+                        leading: const Icon(Icons.gavel),
+                        title: Text('license'.tr()),
+                        subtitle: Text('license_description'.tr()),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showLicenseDialog(context),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.description_outlined),
+                        title: Text('usage_rights'.tr()),
+                        subtitle: Text('usage_rights_description'.tr()),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showUsageRightsDialog(context),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.privacy_tip),
+                        title: Text('privacy_policy'.tr()),
+                        subtitle: Text('privacy_policy_description'.tr()),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _showPrivacyPolicyDialog(context),
+                      ),
+                      const Divider(),
+                      ListTile(
+                        leading: const Icon(Icons.link),
+                        title: Text('github'.tr()),
+                        subtitle: Text('view_source_code_on_github'.tr()),
+                        trailing: const Icon(Icons.open_in_new),
+                        onTap: () =>
+                            _launchUrl('https://github.com/Zyzto/Adati'),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.bug_report),
+                        title: Text('report_issue'.tr()),
+                        subtitle: Text('report_issue_description'.tr()),
+                        trailing: const Icon(Icons.open_in_new),
+                        onTap: () => _launchUrl(
+                          'https://github.com/Zyzto/Adati/issues/new',
+                        ),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.lightbulb_outline),
+                        title: Text('suggest_feature'.tr()),
+                        subtitle: Text('suggest_feature_description'.tr()),
+                        trailing: const Icon(Icons.open_in_new),
+                        onTap: () => _launchUrl(
+                          'https://github.com/Zyzto/Adati/issues/new?template=feature_request.md',
+                        ),
                       ),
                     ],
                   );
