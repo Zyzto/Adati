@@ -1,0 +1,19 @@
+# Act configuration file for local GitHub Actions testing
+# This configures act to use a Docker image with Android SDK pre-installed
+
+# Use an image that includes Android SDK
+-P ubuntu-latest=reactnativecommunity/react-native-android:v13.0
+
+# Set container architecture (important for M1/M2 Macs and some Linux systems)
+--container-architecture linux/amd64
+
+# Android SDK environment variables (these are pre-configured in the image)
+--env ANDROID_HOME=/opt/android
+--env ANDROID_SDK_ROOT=/opt/android
+
+# Optional: Increase verbosity for debugging (comment out if too noisy)
+# --verbose
+
+# Optional: Use host network mode for better connectivity
+--network host
+

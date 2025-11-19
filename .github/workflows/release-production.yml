@@ -1,0 +1,109 @@
+name: Production Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease_tag:
+        description: 'Beta tag to promote (e.g., v0.2.0)'
+        required: true
+        type: string
+
+jobs:
+  promote-play-store:
+    name: Promote to Play Store Production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.prerelease_tag }}
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: android
+
+      - name: Promote to Production
+        env:
+          PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+        run: |
+          cd android
+          bundle exec fastlane promote_production
+
+  promote-github-release:
+    name: Promote GitHub Release
+    needs: promote-play-store
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get release details
+        id: get-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.prerelease_tag }}"
+          
+          # Get the release ID
+          RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/$TAG --jq '.id')
+          echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_OUTPUT
+          
+          # Get release body
+          gh api repos/${{ github.repository }}/releases/tags/$TAG --jq '.body' > release_body.txt
+          
+          # Extract version
+          VERSION=${TAG#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update release to production
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.inputs.prerelease_tag }}"
+          VERSION="${{ steps.get-release.outputs.VERSION }}"
+          
+          # Create release body with production notes
+          {
+            echo "## Release $VERSION"
+            echo ""
+            echo "Production release available on:"
+            echo "- **Play Store**: [com.shenepoy.adati](https://play.google.com/store/apps/details?id=com.shenepoy.adati)"
+            echo "- **GitHub**: Download platform-specific builds below"
+            echo ""
+            echo "### Downloads"
+            echo "- **Android APK**: Direct install"
+            echo "- **Android AAB**: For Google Play"
+            echo "- **Linux AppImage**: Make executable and run"
+            echo "- **Windows**: Extract ZIP and run adati.exe"
+            echo ""
+            echo "### Installation"
+            echo "- **Android**: Install the APK directly"
+            echo "- **Linux**: \`chmod +x adati-*.AppImage && ./adati-*.AppImage\`"
+            echo "- **Windows**: Extract and run \`adati.exe\`"
+            echo ""
+            echo "---"
+            echo "Previous beta notes:"
+            echo ""
+            cat release_body.txt
+          } > production_release_body.txt
+          
+          # Update release: remove prerelease flag and update body
+          gh api repos/${{ github.repository }}/releases/${{ steps.get-release.outputs.RELEASE_ID }} \
+            -X PATCH \
+            -f name="Release $VERSION" \
+            -f "body=@production_release_body.txt" \
+            -F prerelease=false \
+            -F draft=false
+
+      - name: Create release announcement
+        run: |
+          echo "✅ Release ${{ steps.get-release.outputs.VERSION }} promoted to production!"
+          echo "Play Store: https://play.google.com/store/apps/details?id=com.shenepoy.adati"
+          echo "GitHub: https://github.com/${{ github.repository }}/releases/tag/${{ github.event.inputs.prerelease_tag }}"
+

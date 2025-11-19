@@ -28,23 +28,18 @@ jobs:
           cache: 'gradle'
 
       - name: Setup Flutter
+        id: flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: 'stable'
+          flutter-version: '3.38.1'
           cache: true
 
-      - name: Cache Flutter pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            .dart_tool
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
+      - name: Get dependencies
+        run: flutter pub get
 
       - name: Cache build_runner
+        id: build-runner-cache
         uses: actions/cache@v4
         with:
           path: |
@@ -53,10 +48,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build_runner-
 
-      - name: Get dependencies
-        run: flutter pub get
-
       - name: Generate code
+        if: steps.build-runner-cache.outputs.cache-hit != 'true'
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Setup Android signing
@@ -166,23 +159,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Flutter
+        id: flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: 'stable'
+          flutter-version: '3.38.1'
           cache: true
 
-      - name: Cache Flutter pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-            .dart_tool
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
+      - name: Get dependencies
+        run: flutter pub get
 
       - name: Cache build_runner
+        id: build-runner-cache
         uses: actions/cache@v4
         with:
           path: |
@@ -191,7 +179,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build_runner-
 
+      - name: Generate code
+        if: steps.build-runner-cache.outputs.cache-hit != 'true'
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
       - name: Cache Linux dependencies
+        id: apt-cache
         uses: actions/cache@v4
         with:
           path: /var/cache/apt
@@ -200,27 +193,23 @@ jobs:
             ${{ runner.os }}-apt-
 
       - name: Install Linux dependencies
+        if: steps.apt-cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build libgtk-3-dev libblkid-dev liblzma-dev
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Generate code
-        run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Linux
         run: flutter build linux --release --no-tree-shake-icons
 
       - name: Cache AppImageTool
+        id: cache-appimagetool
         uses: actions/cache@v4
         with:
           path: /opt/appimagetool
           key: appimagetool-continuous
 
       - name: Install AppImageTool
-        if: cache-hit != 'true'
+        if: steps.cache-appimagetool.outputs.cache-hit != 'true'
         run: |
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
@@ -305,23 +294,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Flutter
+        id: flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: 'stable'
+          flutter-version: '3.38.1'
           cache: true
 
-      - name: Cache Flutter pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.LOCALAPPDATA }}/Pub/Cache
-            .dart_tool
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
+      - name: Get dependencies
+        run: flutter pub get
 
       - name: Cache build_runner
+        id: build-runner-cache
         uses: actions/cache@v4
         with:
           path: |
@@ -330,10 +314,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-build_runner-
 
-      - name: Get dependencies
-        run: flutter pub get
-
       - name: Generate code
+        if: steps.build-runner-cache.outputs.cache-hit != 'true'
         run: flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Build Windows

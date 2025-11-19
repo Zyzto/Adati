@@ -1,0 +1,145 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.38.1'
+          cache: true
+
+      - name: Fix git ownership (act only)
+        if: ${{ env.ACT }}
+        run: git config --global --add safe.directory '*'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Cache build_runner
+        id: build-runner-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .dart_tool/build
+          key: ${{ runner.os }}-build_runner-${{ hashFiles('**/*.dart') }}
+          restore-keys: |
+            ${{ runner.os }}-build_runner-
+
+      - name: Generate code
+        if: steps.build-runner-cache.outputs.cache-hit != 'true'
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build Debug APK
+        run: flutter build apk --debug --no-tree-shake-icons
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.38.1'
+          cache: true
+
+      - name: Fix git ownership (act only)
+        if: ${{ env.ACT }}
+        run: git config --global --add safe.directory '*'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Cache build_runner
+        id: build-runner-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .dart_tool/build
+          key: ${{ runner.os }}-build_runner-${{ hashFiles('**/*.dart') }}
+          restore-keys: |
+            ${{ runner.os }}-build_runner-
+
+      - name: Generate code
+        if: steps.build-runner-cache.outputs.cache-hit != 'true'
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libgtk-3-dev libblkid-dev liblzma-dev
+
+      - name: Build Linux
+        run: flutter build linux --debug --no-tree-shake-icons
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.38.1'
+          cache: true
+
+      - name: Fix git ownership (act only)
+        if: ${{ env.ACT }}
+        run: git config --global --add safe.directory '*'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Cache build_runner
+        id: build-runner-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .dart_tool/build
+          key: ${{ runner.os }}-build_runner-${{ hashFiles('**/*.dart') }}
+          restore-keys: |
+            ${{ runner.os }}-build_runner-
+
+      - name: Generate code
+        if: steps.build-runner-cache.outputs.cache-hit != 'true'
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Build Windows
+        run: flutter build windows --debug --no-tree-shake-icons
+
