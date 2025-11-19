@@ -30,6 +30,9 @@ dependencies:
   path_provider: ^2.1.2
   path: ^1.9.0
   
+  # Collections & utilities
+  collection: ^1.18.0
+  
   # Environment variables
   flutter_dotenv: ^6.0.0
   
@@ -73,6 +76,7 @@ flutter:
   assets:
     - assets/translations/
     - assets/icon.png
+    - .env
   
   fonts:
     - family: Almarai

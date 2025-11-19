@@ -69,11 +69,21 @@ android {
             // Use release signing config if it exists, otherwise fall back to debug
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             
+            // Enable debug symbols for crash reporting (doesn't affect release optimization)
+            isDebuggable = false
+            isMinifyEnabled = false
+            isShrinkResources = false
+            
             // ProGuard rules (even if minifyEnabled is false, rules help with compatibility)
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Generate debug symbols for crash reporting
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
     }
 }

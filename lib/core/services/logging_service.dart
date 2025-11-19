@@ -67,11 +67,22 @@ class LoggingService {
   static const Duration _aggregationTimeout = Duration(milliseconds: 100); // Reduced to 100ms for faster aggregation
   static bool _aggregationEnabled = true;
 
+  // Log level configuration
+  static int _minLogLevel = 0; // 0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR, 4=SEVERE
+  static const int _levelDebug = 0;
+  static const int _levelInfo = 1;
+  static const int _levelWarning = 2;
+  static const int _levelError = 3;
+  static const int _levelSevere = 4;
+
   /// Initialize logging service with file persistence
   static Future<void> init() async {
     if (_initialized) return;
 
     try {
+      // Load log level from environment variable
+      _loadLogLevelFromEnv();
+
       final directory = await getApplicationDocumentsDirectory();
       final logsDir = Directory(path.join(directory.path, 'logs'));
       if (!await logsDir.exists()) {
@@ -91,6 +102,49 @@ class LoggingService {
       _logger.error('[LoggingService] Failed to initialize LoggingService: $e');
       _initialized = false;
     }
+  }
+
+  /// Load log level from environment variable
+  static void _loadLogLevelFromEnv() {
+    try {
+      final logLevelStr = dotenv.env['LOG_LEVEL']?.toUpperCase();
+      if (logLevelStr == null || logLevelStr.isEmpty) {
+        // Default to DEBUG in debug mode, INFO in release mode
+        _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
+        return;
+      }
+
+      switch (logLevelStr) {
+        case 'DEBUG':
+          _minLogLevel = _levelDebug;
+          break;
+        case 'INFO':
+          _minLogLevel = _levelInfo;
+          break;
+        case 'WARNING':
+        case 'WARN':
+          _minLogLevel = _levelWarning;
+          break;
+        case 'ERROR':
+          _minLogLevel = _levelError;
+          break;
+        case 'SEVERE':
+        case 'FATAL':
+          _minLogLevel = _levelSevere;
+          break;
+        default:
+          // Invalid value, use default
+          _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
+      }
+    } catch (e) {
+      // If dotenv is not loaded yet or error occurs, use default
+      _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
+    }
+  }
+
+  /// Check if a log level should be logged
+  static bool _shouldLog(int level) {
+    return level >= _minLogLevel;
   }
 
   /// Load last crash information
@@ -570,6 +624,9 @@ class LoggingService {
     // Skip debug logs in release mode
     if (kReleaseMode) return;
 
+    // Check log level
+    if (!_shouldLog(_levelDebug)) return;
+
     // Check if this should be aggregated (before logging to console)
     final now = DateTime.now();
     final entry = _LogEntry(
@@ -610,6 +667,9 @@ class LoggingService {
   }
 
   static void info(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+    // Check log level
+    if (!_shouldLog(_levelInfo)) return;
+
     // Check if this should be aggregated (before logging to console)
     final now = DateTime.now();
     final entry = _LogEntry(
@@ -641,6 +701,9 @@ class LoggingService {
   }
 
   static void warning(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+    // Check log level
+    if (!_shouldLog(_levelWarning)) return;
+
     // Check if this should be aggregated (before logging to console)
     final now = DateTime.now();
     final entry = _LogEntry(
@@ -672,6 +735,9 @@ class LoggingService {
   }
 
   static void error(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+    // Check log level
+    if (!_shouldLog(_levelError)) return;
+
     // Errors are never aggregated - always log immediately
     final componentStr = component != null ? '[$component] ' : '';
     _logger.error('$componentStr$message');
@@ -682,6 +748,9 @@ class LoggingService {
   }
 
   static void severe(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+    // Check log level (severe errors are always logged, but we check anyway for consistency)
+    if (!_shouldLog(_levelSevere)) return;
+
     // Severe errors are never aggregated - always log immediately
     final componentStr = component != null ? '[$component] ' : '';
     _logger.error('$componentStr$message');

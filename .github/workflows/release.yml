@@ -15,6 +15,7 @@ jobs:
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,12 +25,33 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '17'
+          cache: 'gradle'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: 'stable'
           cache: true
+
+      - name: Cache Flutter pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Cache build_runner
+        uses: actions/cache@v4
+        with:
+          path: |
+            .dart_tool/build
+          key: ${{ runner.os }}-build_runner-${{ hashFiles('**/*.dart') }}
+          restore-keys: |
+            ${{ runner.os }}-build_runner-
 
       - name: Get dependencies
         run: flutter pub get
@@ -62,29 +84,83 @@ jobs:
             echo "⚠ No signing secrets found, will use debug signing"
           fi
 
-      - name: Build APK
+      - name: Build Release APK
         run: flutter build apk --release --no-tree-shake-icons
+        env:
+          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Build App Bundle
+      - name: Build Release App Bundle
         run: flutter build appbundle --release --no-tree-shake-icons
+        env:
+          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Upload APK
+      - name: Build Debug APK (for crash debugging)
+        run: flutter build apk --debug --no-tree-shake-icons
+        continue-on-error: true
+
+      - name: Collect debug symbols and mapping files
+        run: |
+          mkdir -p debug-artifacts
+          
+          # Copy ProGuard mapping file if it exists
+          if [ -f build/app/outputs/mapping/release/mapping.txt ]; then
+            cp build/app/outputs/mapping/release/mapping.txt debug-artifacts/proguard-mapping.txt
+            echo "✓ ProGuard mapping file found"
+          else
+            echo "⚠ ProGuard mapping file not found (minifyEnabled is false)"
+          fi
+          
+          # Copy native debug symbols if they exist
+          if [ -d build/app/intermediates/merged_native_libs/release/out/lib ]; then
+            mkdir -p debug-artifacts/native-libs
+            cp -r build/app/intermediates/merged_native_libs/release/out/lib/* debug-artifacts/native-libs/ 2>/dev/null || true
+            echo "✓ Native debug symbols collected"
+          fi
+          
+          # List collected files
+          echo "=== Debug artifacts collected ==="
+          find debug-artifacts -type f || echo "No debug artifacts found"
+
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
+          name: android-apk-release
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
-      - name: Upload App Bundle
+      - name: Upload Release App Bundle
         uses: actions/upload-artifact@v4
         with:
-          name: android-aab
+          name: android-aab-release
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Upload Debug Symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-symbols
+          path: debug-artifacts
+          retention-days: 90
+          if-no-files-found: ignore
 
   build-linux:
     name: Build Linux AppImage
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -93,7 +169,35 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          flutter-version: 'stable'
           cache: true
+
+      - name: Cache Flutter pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Cache build_runner
+        uses: actions/cache@v4
+        with:
+          path: |
+            .dart_tool/build
+          key: ${{ runner.os }}-build_runner-${{ hashFiles('**/*.dart') }}
+          restore-keys: |
+            ${{ runner.os }}-build_runner-
+
+      - name: Cache Linux dependencies
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
       - name: Install Linux dependencies
         run: |
@@ -109,11 +213,17 @@ jobs:
       - name: Build Linux
         run: flutter build linux --release --no-tree-shake-icons
 
+      - name: Cache AppImageTool
+        uses: actions/cache@v4
+        with:
+          path: /opt/appimagetool
+          key: appimagetool-continuous
+
       - name: Install AppImageTool
+        if: cache-hit != 'true'
         run: |
-          wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
-          # Extract AppImage to avoid FUSE requirement
           ./appimagetool-x86_64.AppImage --appimage-extract
           sudo mv squashfs-root /opt/appimagetool
 
@@ -189,6 +299,7 @@ jobs:
   build-windows:
     name: Build Windows
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -197,7 +308,27 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: false
+          flutter-version: 'stable'
+          cache: true
+
+      - name: Cache Flutter pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.LOCALAPPDATA }}/Pub/Cache
+            .dart_tool
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Cache build_runner
+        uses: actions/cache@v4
+        with:
+          path: |
+            .dart_tool/build
+          key: ${{ runner.os }}-build_runner-${{ hashFiles('**/*.dart') }}
+          restore-keys: |
+            ${{ runner.os }}-build_runner-
 
       - name: Get dependencies
         run: flutter pub get
@@ -290,26 +421,32 @@ jobs:
           
           # Debug: List all downloaded artifacts
           echo "=== Downloaded artifacts structure ==="
-          find . -type f -name "*.apk" -o -name "*.aab" -o -name "*.AppImage" -o -name "*.exe" | head -20
+          find . -type f -name "*.apk" -o -name "*.aab" -o -name "*.AppImage" -o -name "*.zip" | head -20
           echo ""
           echo "=== Artifact directories ==="
           ls -la
           echo ""
           
-          # Android APK
-          if [ -f android-apk/app-release.apk ]; then
-            cp android-apk/app-release.apk adati-${VERSION}-android.apk
-            echo "✓ Found Android APK"
+          # Android Release APK
+          if [ -f android-apk-release/app-release.apk ]; then
+            cp android-apk-release/app-release.apk adati-${VERSION}-android.apk
+            echo "✓ Found Android Release APK"
           else
-            echo "✗ Android APK not found"
+            echo "✗ Android Release APK not found"
           fi
           
-          # Android AAB
-          if [ -f android-aab/app-release.aab ]; then
-            cp android-aab/app-release.aab adati-${VERSION}-android.aab
-            echo "✓ Found Android AAB"
+          # Android Release AAB
+          if [ -f android-aab-release/app-release.aab ]; then
+            cp android-aab-release/app-release.aab adati-${VERSION}-android.aab
+            echo "✓ Found Android Release AAB"
           else
-            echo "✗ Android AAB not found"
+            echo "✗ Android Release AAB not found"
+          fi
+          
+          # Android Debug APK (for testing/debugging)
+          if [ -f android-apk-debug/app-debug.apk ]; then
+            cp android-apk-debug/app-debug.apk adati-${VERSION}-android-debug.apk
+            echo "✓ Found Android Debug APK"
           fi
           
           # Linux AppImage
@@ -340,12 +477,17 @@ jobs:
           
           if [ -f adati-${VERSION}-android.apk ]; then
             ARTIFACTS_LIST+=("adati-${VERSION}-android.apk")
-            BODY_NOTES="${BODY_NOTES}- **Android APK**: \`adati-${VERSION}-android.apk\`"$'\n'
+            BODY_NOTES="${BODY_NOTES}- **Android APK (Release)**: \`adati-${VERSION}-android.apk\`"$'\n'
           fi
           
           if [ -f adati-${VERSION}-android.aab ]; then
             ARTIFACTS_LIST+=("adati-${VERSION}-android.aab")
             BODY_NOTES="${BODY_NOTES}- **Android App Bundle**: \`adati-${VERSION}-android.aab\`"$'\n'
+          fi
+          
+          if [ -f adati-${VERSION}-android-debug.apk ]; then
+            ARTIFACTS_LIST+=("adati-${VERSION}-android-debug.apk")
+            BODY_NOTES="${BODY_NOTES}- **Android APK (Debug)**: \`adati-${VERSION}-android-debug.apk\` (for testing and crash debugging)"$'\n'
           fi
           
           if [ -f adati-${VERSION}-linux-x86_64.AppImage ]; then
@@ -399,11 +541,19 @@ jobs:
             ### Installation
             
             - **Android**: Install the APK directly or use the App Bundle for Google Play
+              - Use the **Debug APK** for testing and crash debugging (includes debug symbols)
+              - Use the **Release APK** for production distribution
             - **Linux**: Make the AppImage executable (`chmod +x adati-*.AppImage`) and run it
             - **Windows**: Extract the ZIP file and run `adati.exe` from the extracted folder
+            
+            ### Debugging Crashes
+            
+            If you encounter crashes with the release APK:
+            1. Try the debug APK first - it includes full debug symbols and will provide better crash logs
+            2. Check the debug symbols artifact in the workflow run for ProGuard mapping files
+            3. Use `adb logcat` to capture crash logs: `adb logcat | grep -i "flutter\|adati\|crash"`
             
             **Note**: Some platforms may have failed to build. Only successfully built artifacts are included.
           files: ${{ steps.prepare-artifacts.outputs.files }}
           draft: false
           prerelease: false
-

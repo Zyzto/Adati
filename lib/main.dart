@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +14,21 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize logging service first
+  // Load environment variables first (needed for log level configuration)
+  try {
+    // Check if .env file exists before trying to load it
+    final envFile = File('.env');
+    if (await envFile.exists()) {
+      await dotenv.load(fileName: '.env');
+    }
+    // .env file is optional, continue without it if it doesn't exist
+  } catch (e) {
+    debugPrint('Error loading environment variables: $e');
+    // Silently ignore errors - .env file is optional
+    // Error could be: file permission issues, invalid format, etc.
+  }
+
+  // Initialize logging service (will read LOG_LEVEL from .env if available)
   await LoggingService.init();
 
   // Set up error handlers for crash reporting
@@ -42,9 +57,8 @@ void main() async {
   tz.initializeTimeZones();
   Log.debug('Timezone initialized');
 
-  // Load environment variables
+  // Log environment variables status
   try {
-    await dotenv.load(fileName: '.env');
     Log.debug('Environment variables loaded');
   } catch (e) {
     Log.warning('No .env file found, continuing without it');
