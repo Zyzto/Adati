@@ -3126,6 +3126,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final useStreakColorsForSquares = ref.watch(
       useStreakColorsForSquaresProvider,
     );
+    final habitsLayoutMode = ref.watch(habitsLayoutModeProvider);
+    final gridShowIcon = ref.watch(gridShowIconProvider);
+    final gridShowCompletion = ref.watch(gridShowCompletionProvider);
+    final gridShowTimeline = ref.watch(gridShowTimelineProvider);
     final mainTimelineFillLines = ref.watch(mainTimelineFillLinesProvider);
     final mainTimelineLines = ref.watch(mainTimelineLinesProvider);
     final habitCardLayoutMode = ref.watch(habitCardLayoutModeProvider);
@@ -3500,6 +3504,102 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               subtitle: Text(_getFirstDayOfWeekName(firstDayOfWeek)),
               onTap: () => _showFirstDayOfWeekDialog(context, ref),
             ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.view_agenda),
+              title: Text('habits_layout_mode'.tr()),
+              subtitle: Text(
+                habitsLayoutMode == 'grid'
+                    ? 'habits_layout_grid'.tr()
+                    : 'habits_layout_list'.tr(),
+              ),
+              onTap: () async {
+                final mode = await showDialog<String>(
+                  context: context,
+                  builder: (context) {
+                    String temp = habitsLayoutMode;
+                    return AlertDialog(
+                      title: Text('habits_layout_mode'.tr()),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RadioListTile<String>(
+                            title: Text('habits_layout_list'.tr()),
+                            value: 'list',
+                            groupValue: temp,
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() {
+                                temp = value;
+                              });
+                            },
+                          ),
+                          RadioListTile<String>(
+                            title: Text('habits_layout_grid'.tr()),
+                            value: 'grid',
+                            groupValue: temp,
+                            onChanged: (value) {
+                              if (value == null) return;
+                              setState(() {
+                                temp = value;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('cancel'.tr()),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, temp),
+                          child: Text('ok'.tr()),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (mode != null && mode.isNotEmpty) {
+                  final notifier =
+                      ref.read(habitsLayoutModeNotifierProvider);
+                  await notifier.setHabitsLayoutMode(mode);
+                  ref.invalidate(habitsLayoutModeNotifierProvider);
+                }
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.image),
+              title: Text('grid_show_icon'.tr()),
+              value: gridShowIcon,
+              onChanged: (value) async {
+                final notifier = ref.read(gridShowIconNotifierProvider);
+                await notifier.setGridShowIcon(value);
+                ref.invalidate(gridShowIconNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.check_circle),
+              title: Text('grid_show_completion'.tr()),
+              value: gridShowCompletion,
+              onChanged: (value) async {
+                final notifier = ref.read(gridShowCompletionNotifierProvider);
+                await notifier.setGridShowCompletion(value);
+                ref.invalidate(gridShowCompletionNotifierProvider);
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.timeline),
+              title: Text('grid_show_timeline'.tr()),
+              value: gridShowTimeline,
+              onChanged: (value) async {
+                final notifier = ref.read(gridShowTimelineNotifierProvider);
+                await notifier.setGridShowTimeline(value);
+                ref.invalidate(gridShowTimelineNotifierProvider);
+              },
+            ),
+            const Divider(),
             ListTile(
               leading: const Icon(Icons.calendar_view_week),
               title: Text('timeline_days'.tr()),

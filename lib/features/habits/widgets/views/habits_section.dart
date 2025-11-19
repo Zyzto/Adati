@@ -37,6 +37,8 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
   @override
   void initState() {
     super.initState();
+    // Initialize layout mode from persisted setting
+    _cardLayout = ref.read(habitsLayoutModeProvider);
     // Show search if there's an active query
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final filterQuery = ref.read(habitFilterQueryProvider);
@@ -118,8 +120,13 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                 showDescriptions: _showDescriptions,
                 compactCards: _compactCards,
                 showTagFilter: _showTagFilter,
-                onCardLayoutChanged: (value) =>
-                    setState(() => _cardLayout = value),
+                onCardLayoutChanged: (value) {
+                  setState(() => _cardLayout = value);
+                  final notifier = ref.read(habitsLayoutModeNotifierProvider);
+                  notifier.setHabitsLayoutMode(value).then(
+                    (_) => ref.invalidate(habitsLayoutModeNotifierProvider),
+                  );
+                },
                 onShowTagsChanged: (value) => setState(() => _showTags = value),
                 onShowDescriptionsChanged: (value) =>
                     setState(() => _showDescriptions = value),
@@ -167,8 +174,13 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
               showDescriptions: _showDescriptions,
               compactCards: _compactCards,
               showTagFilter: _showTagFilter,
-              onCardLayoutChanged: (value) =>
-                  setState(() => _cardLayout = value),
+              onCardLayoutChanged: (value) {
+                setState(() => _cardLayout = value);
+                final notifier = ref.read(habitsLayoutModeNotifierProvider);
+                notifier.setHabitsLayoutMode(value).then(
+                  (_) => ref.invalidate(habitsLayoutModeNotifierProvider),
+                );
+              },
               onShowTagsChanged: (value) => setState(() => _showTags = value),
               onShowDescriptionsChanged: (value) =>
                   setState(() => _showDescriptions = value),

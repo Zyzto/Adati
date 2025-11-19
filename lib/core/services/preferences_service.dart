@@ -64,6 +64,10 @@ class PreferencesService {
   static const String _keyMainTimelineFillLines =
       'main_timeline_fill_lines';
   static const String _keyMainTimelineLines = 'main_timeline_lines';
+  static const String _keyHabitsLayoutMode = 'habits_layout_mode';
+  static const String _keyGridShowIcon = 'grid_show_icon';
+  static const String _keyGridShowCompletion = 'grid_show_completion';
+  static const String _keyGridShowTimeline = 'grid_show_timeline';
   static const String _keyBadHabitLogicMode = 'bad_habit_logic_mode';
   // Habit filtering/grouping (session-based but stored for convenience)
   static const String _keyHabitGroupBy = 'habit_group_by';
@@ -457,6 +461,32 @@ class PreferencesService {
 
   static Future<bool> setMainTimelineLines(int lines) =>
       prefs.setInt(_keyMainTimelineLines, lines);
+
+  static String getHabitsLayoutMode() {
+    final value = prefs.getString(_keyHabitsLayoutMode);
+    return (value == null || value.isEmpty) ? 'list' : value;
+  }
+
+  static Future<bool> setHabitsLayoutMode(String mode) =>
+      prefs.setString(_keyHabitsLayoutMode, mode);
+
+  static bool getGridShowIcon() =>
+      prefs.getBool(_keyGridShowIcon) ?? true;
+
+  static Future<bool> setGridShowIcon(bool value) =>
+      prefs.setBool(_keyGridShowIcon, value);
+
+  static bool getGridShowCompletion() =>
+      prefs.getBool(_keyGridShowCompletion) ?? true;
+
+  static Future<bool> setGridShowCompletion(bool value) =>
+      prefs.setBool(_keyGridShowCompletion, value);
+
+  static bool getGridShowTimeline() =>
+      prefs.getBool(_keyGridShowTimeline) ?? true;
+
+  static Future<bool> setGridShowTimeline(bool value) =>
+      prefs.setBool(_keyGridShowTimeline, value);
 
   static String getBadHabitLogicMode() {
     final value = prefs.getString(_keyBadHabitLogicMode);

@@ -1277,3 +1277,440 @@ class HabitCard extends ConsumerWidget {
     );
   }
 }
+
+class HabitGridCard extends ConsumerWidget {
+  final db.Habit habit;
+
+  const HabitGridCard({super.key, required this.habit});
+
+  Future<void> _toggleTodayCompletion(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    HapticFeedback.mediumImpact();
+    final repository = ref.read(habitRepositoryProvider);
+    final today = app_date_utils.DateUtils.getToday();
+    final trackingType = TrackingType.fromValue(habit.trackingType);
+
+    try {
+      // Get current status
+      final entry = await repository.getEntry(habit.id, today);
+      final isCompleted = entry?.completed ?? false;
+
+      // Handle different tracking types
+      if (trackingType == TrackingType.completed) {
+        await repository.toggleCompletion(habit.id, today, !isCompleted);
+      } else if (trackingType == TrackingType.measurable) {
+        if (context.mounted) {
+          // Reuse HabitCard's measurable dialog
+          final card = HabitCard(habit: habit);
+          // ignore: invalid_use_of_protected_member
+          (card as dynamic)._showMeasurableInputDialog(context, ref, entry);
+        }
+      } else if (trackingType == TrackingType.occurrences) {
+        if (context.mounted) {
+          final card = HabitCard(habit: habit);
+          // ignore: invalid_use_of_protected_member
+          (card as dynamic)._showOccurrencesInputDialog(context, ref, entry);
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('error_updating_habit'.tr(args: [habit.name])),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildTrackingDisplay(
+    BuildContext context,
+    WidgetRef ref,
+    db.TrackingEntry? entry,
+  ) {
+    final trackingType = TrackingType.fromValue(habit.trackingType);
+
+    if (trackingType == TrackingType.completed) {
+      final isCompleted = entry?.completed ?? false;
+      final isGoodHabit = habit.habitType == HabitType.good.value;
+
+      final color = isCompleted
+          ? (isGoodHabit ? Colors.green : Colors.red)
+          : Colors.grey;
+
+      return Icon(
+        isCompleted ? Icons.check_circle : Icons.circle_outlined,
+        color: color,
+        size: 32,
+      );
+    } else if (trackingType == TrackingType.measurable) {
+      final value = entry?.value ?? 0.0;
+      final goalValue = habit.goalValue;
+      final unit = habit.unit ?? '';
+
+      if (goalValue != null && goalValue > 0) {
+        final percentage = (value / goalValue * 100).clamp(0, 100);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: percentage / 100,
+                    backgroundColor: Colors.grey[300],
+                    strokeWidth: 3,
+                  ),
+                  Text(
+                    '${percentage.toStringAsFixed(0)}%',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 9,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            if (value > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  '${value.toStringAsFixed(1)} $unit',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 10,
+                      ),
+                ),
+              ),
+          ],
+        );
+      } else {
+        return Icon(
+          value > 0 ? Icons.check_circle : Icons.circle_outlined,
+          color: value > 0 ? Colors.green : Colors.grey,
+          size: 32,
+        );
+      }
+    } else if (trackingType == TrackingType.occurrences) {
+      List<String> completedOccurrences = [];
+      if (entry?.occurrenceData != null && entry!.occurrenceData!.isNotEmpty) {
+        try {
+          completedOccurrences = List<String>.from(
+            jsonDecode(entry.occurrenceData!),
+          );
+        } catch (_) {
+          completedOccurrences = [];
+        }
+      }
+
+      List<String> allOccurrences = [];
+      if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
+        try {
+          allOccurrences = List<String>.from(
+            jsonDecode(habit.occurrenceNames!),
+          );
+        } catch (_) {
+          allOccurrences = [];
+        }
+      }
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            completedOccurrences.isNotEmpty
+                ? Icons.check_circle
+                : Icons.circle_outlined,
+            color:
+                completedOccurrences.isNotEmpty ? Colors.green : Colors.grey,
+            size: 32,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${completedOccurrences.length}/${allOccurrences.length}',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(fontWeight: FontWeight.bold, fontSize: 10),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayEntryAsync = ref.watch(todayEntryProvider(habit.id));
+    final isGoodHabit = habit.habitType == HabitType.good.value;
+    final settings = _HabitCardSettings.fromRef(ref, isGoodHabit: isGoodHabit);
+
+    final cardSpacing = settings.cardSpacing;
+    final showIcon = ref.watch(gridShowIconProvider);
+    final showCompletion = ref.watch(gridShowCompletionProvider);
+    final showTimeline = ref.watch(gridShowTimelineProvider);
+    final showDescriptions = settings.showDescriptions;
+    final compactCards = settings.compactCards;
+    final sessionOptions = ref.watch(sessionViewOptionsProvider);
+    final tagsAsync = ref.watch(habitTagsProvider(habit.id));
+
+    Widget buildTrackingButton() {
+      if (!showCompletion) return const SizedBox.shrink();
+
+      return todayEntryAsync.when(
+        data: (_) {
+          final entriesAsyncForButton =
+              ref.watch(trackingEntriesProvider(habit.id));
+
+          return entriesAsyncForButton.when(
+            data: (entries) {
+              final today = app_date_utils.DateUtils.getToday();
+              final entry = entries
+                  .where(
+                    (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
+                  )
+                  .firstOrNull;
+
+              return Material(
+                color: Colors.transparent,
+                child: Semantics(
+                  label: 'track_habit'.tr(),
+                  button: true,
+                  child: InkWell(
+                    onTap: () => _toggleTodayCompletion(context, ref),
+                    hoverColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    child: Container(
+                      width: 72,
+                      constraints: const BoxConstraints(minHeight: 40),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(6),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) {
+                          final curved = CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeInOut,
+                          );
+                          return FadeTransition(
+                            opacity: curved,
+                            child: ScaleTransition(
+                              scale: Tween<double>(
+                                begin: 0.9,
+                                end: 1.0,
+                              ).animate(curved),
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: KeyedSubtree(
+                          key: ValueKey(
+                            '${habit.trackingType}_${entry?.completed}_${entry?.value}_${entry?.occurrenceData}',
+                          ),
+                          child: _buildTrackingDisplay(context, ref, entry),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+            loading: () => Container(
+              width: 72,
+              alignment: Alignment.center,
+              child: SkeletonLoader(
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ),
+            error: (_, __) => Container(
+              width: 72,
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.error_outline,
+                color: Theme.of(context).colorScheme.error,
+                size: 20,
+              ),
+            ),
+          );
+        },
+        loading: () => Container(
+          width: 72,
+          alignment: Alignment.center,
+          child: SkeletonLoader(
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+        ),
+        error: (_, __) => Container(
+          width: 72,
+          alignment: Alignment.center,
+          child: Icon(
+            Icons.error_outline,
+            color: Theme.of(context).colorScheme.error,
+            size: 20,
+          ),
+        ),
+      );
+    }
+
+    final iconSizeValue = 40.0;
+
+    Widget buildHeader() {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showIcon)
+            Container(
+              width: iconSizeValue,
+              height: iconSizeValue,
+              decoration: BoxDecoration(
+                color: Color(habit.color),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: habit.icon != null
+                  ? Icon(
+                      IconData(
+                        int.parse(habit.icon!),
+                        fontFamily: 'MaterialIcons',
+                      ),
+                      color: Colors.white,
+                      size: iconSizeValue * 0.6,
+                    )
+                  : null,
+            ),
+          const SizedBox(height: 6),
+          Text(
+            habit.name,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          if (showDescriptions &&
+              habit.description != null &&
+              habit.description!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              habit.description!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
+                  ),
+              maxLines: compactCards ? 1 : 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          if (sessionOptions.showTags ?? false)
+            tagsAsync.when(
+              data: (tags) {
+                if (tags.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Wrap(
+                    spacing: 4,
+                    runSpacing: 2,
+                    alignment: WrapAlignment.center,
+                    children: tags.take(3).map((tag) {
+                      return Chip(
+                        label: Text(
+                          tag.name,
+                          style: TextStyle(fontSize: compactCards ? 9 : 10),
+                        ),
+                        padding: EdgeInsets.zero,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      );
+                    }).toList(),
+                  ),
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+        ],
+      );
+    }
+
+    Widget buildTimeline() {
+      if (!showTimeline) return const SizedBox.shrink();
+
+      final compact = true;
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 72),
+          child: HabitTimeline(
+            habitId: habit.id,
+            compact: compact || settings.timelineCompactMode,
+            daysToShow: settings.habitCardTimelineDays,
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      margin: EdgeInsets.only(bottom: cardSpacing),
+      child: InkWell(
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            builder: (context) => HabitDetailPage(habitId: habit.id),
+          );
+        },
+        hoverColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Center(child: buildHeader()),
+                  ),
+                  if (showCompletion) const SizedBox(width: 8),
+                  if (showCompletion) buildTrackingButton(),
+                ],
+              ),
+              buildTimeline(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -1050,6 +1050,98 @@ final mainTimelineLinesProvider = Provider<int>((ref) {
   return ref.watch(mainTimelineLinesNotifierProvider).lines;
 });
 
+// Habits Layout Mode (list / grid)
+class HabitsLayoutModeNotifier {
+  String _mode;
+
+  HabitsLayoutModeNotifier()
+      : _mode = PreferencesService.getHabitsLayoutMode();
+
+  String get mode => _mode;
+
+  Future<void> setHabitsLayoutMode(String mode) async {
+    _mode = mode;
+    await PreferencesService.setHabitsLayoutMode(mode);
+  }
+}
+
+final habitsLayoutModeNotifierProvider =
+    Provider<HabitsLayoutModeNotifier>((ref) {
+  return HabitsLayoutModeNotifier();
+});
+
+final habitsLayoutModeProvider = Provider<String>((ref) {
+  return ref.watch(habitsLayoutModeNotifierProvider).mode;
+});
+
+// Grid View Display Settings
+class GridShowIconNotifier {
+  bool _value;
+
+  GridShowIconNotifier() : _value = PreferencesService.getGridShowIcon();
+
+  bool get value => _value;
+
+  Future<void> setGridShowIcon(bool value) async {
+    _value = value;
+    await PreferencesService.setGridShowIcon(value);
+  }
+}
+
+final gridShowIconNotifierProvider = Provider<GridShowIconNotifier>((ref) {
+  return GridShowIconNotifier();
+});
+
+final gridShowIconProvider = Provider<bool>((ref) {
+  return ref.watch(gridShowIconNotifierProvider).value;
+});
+
+class GridShowCompletionNotifier {
+  bool _value;
+
+  GridShowCompletionNotifier()
+      : _value = PreferencesService.getGridShowCompletion();
+
+  bool get value => _value;
+
+  Future<void> setGridShowCompletion(bool value) async {
+    _value = value;
+    await PreferencesService.setGridShowCompletion(value);
+  }
+}
+
+final gridShowCompletionNotifierProvider =
+    Provider<GridShowCompletionNotifier>((ref) {
+  return GridShowCompletionNotifier();
+});
+
+final gridShowCompletionProvider = Provider<bool>((ref) {
+  return ref.watch(gridShowCompletionNotifierProvider).value;
+});
+
+class GridShowTimelineNotifier {
+  bool _value;
+
+  GridShowTimelineNotifier()
+      : _value = PreferencesService.getGridShowTimeline();
+
+  bool get value => _value;
+
+  Future<void> setGridShowTimeline(bool value) async {
+    _value = value;
+    await PreferencesService.setGridShowTimeline(value);
+  }
+}
+
+final gridShowTimelineNotifierProvider =
+    Provider<GridShowTimelineNotifier>((ref) {
+  return GridShowTimelineNotifier();
+});
+
+final gridShowTimelineProvider = Provider<bool>((ref) {
+  return ref.watch(gridShowTimelineNotifierProvider).value;
+});
+
 // Bad Habit Logic Mode
 class BadHabitLogicModeNotifier {
   String _mode;

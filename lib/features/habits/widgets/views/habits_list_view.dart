@@ -78,11 +78,11 @@ class HabitsListView extends ConsumerWidget {
         crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.9,
       ),
       itemCount: habits.length,
       itemBuilder: (context, index) {
-        return HabitCard(habit: habits[index]);
+        return HabitGridCard(habit: habits[index]);
       },
     );
   }
