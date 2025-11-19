@@ -330,6 +330,7 @@ jobs:
   create-github-prerelease:
     name: Create GitHub Prerelease
     needs: [build-android, build-linux, build-windows]
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -352,37 +353,84 @@ jobs:
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
+
+      - name: List downloaded artifacts
+        run: |
+          echo "=== Downloaded Artifacts ==="
+          find . -type f -name "*.apk" -o -name "*.aab" -o -name "*.AppImage" -o -name "*.zip" -o -name "*.exe" | head -20
+          echo ""
+          echo "=== Artifact Directories ==="
+          ls -la
+          echo ""
+          echo "=== Android Artifacts ==="
+          ls -la android-* 2>/dev/null || echo "No android artifacts found"
+          echo ""
+          echo "=== Linux Artifacts ==="
+          ls -la linux-* 2>/dev/null || echo "No linux artifacts found"
+          echo ""
+          echo "=== Windows Artifacts ==="
+          ls -la windows-* 2>/dev/null || echo "No windows artifacts found"
 
       - name: Prepare release artifacts
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
+          MISSING_ARTIFACTS=()
           
           # Android APK and AAB
           if [ -f android-apk-release/app-release.apk ]; then
             cp android-apk-release/app-release.apk adati-${VERSION}-android.apk
+            echo "✅ Android APK prepared"
+          else
+            MISSING_ARTIFACTS+=("Android APK")
+            echo "⚠️ Android APK not found"
           fi
           
           if [ -f android-aab-release/app-release.aab ]; then
             cp android-aab-release/app-release.aab adati-${VERSION}-android.aab
+            echo "✅ Android AAB prepared"
+          else
+            MISSING_ARTIFACTS+=("Android AAB")
+            echo "⚠️ Android AAB not found"
           fi
           
           # Linux AppImage
           if [ -f linux-appimage/adati-x86_64.AppImage ]; then
             cp linux-appimage/adati-x86_64.AppImage adati-${VERSION}-linux-x86_64.AppImage
             chmod +x adati-${VERSION}-linux-x86_64.AppImage
+            echo "✅ Linux AppImage prepared"
+          else
+            MISSING_ARTIFACTS+=("Linux AppImage")
+            echo "⚠️ Linux AppImage not found"
           fi
           
           # Windows ZIP (full package with DLLs)
           if ls windows-zip/adati-*-windows-x64.zip 1> /dev/null 2>&1; then
             cp windows-zip/adati-*-windows-x64.zip adati-${VERSION}-windows-x64.zip
+            echo "✅ Windows ZIP prepared"
+          else
+            MISSING_ARTIFACTS+=("Windows ZIP")
+            echo "⚠️ Windows ZIP not found"
           fi
           
           # Windows EXE (standalone, for reference)
           if ls windows-exe/adati-*-windows-x64.exe 1> /dev/null 2>&1; then
             cp windows-exe/adati-*-windows-x64.exe adati-${VERSION}-windows-x64.exe
+            echo "✅ Windows EXE prepared"
+          else
+            MISSING_ARTIFACTS+=("Windows EXE")
+            echo "⚠️ Windows EXE not found"
           fi
           
-          ls -lh adati-*
+          echo ""
+          echo "=== Prepared Artifacts ==="
+          ls -lh adati-* 2>/dev/null || echo "No artifacts prepared"
+          
+          if [ ${#MISSING_ARTIFACTS[@]} -gt 0 ]; then
+            echo ""
+            echo "⚠️ Missing artifacts: ${MISSING_ARTIFACTS[*]}"
+            echo "This may indicate build job failures. Check the workflow logs."
+          fi
 
       - name: Create Prerelease
         uses: softprops/action-gh-release@v1
