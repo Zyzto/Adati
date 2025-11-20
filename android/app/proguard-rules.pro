@@ -6,6 +6,9 @@
 -keep class io.flutter.**  { *; }
 -keep class io.flutter.plugins.**  { *; }
 
+# MainActivity - Keep the main entry point
+-keep class com.shenepoy.adati.MainActivity { *; }
+
 # Drift/Database
 -keep class * extends drift.** { *; }
 -keep class * extends drift.runtime.** { *; }
