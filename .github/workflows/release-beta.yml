@@ -64,6 +64,31 @@ jobs:
       - name: Clean build directory
         run: flutter clean
 
+      - name: Clean Gradle build
+        working-directory: android
+        run: ./gradlew clean
+
+      - name: Verify MainActivity exists
+        run: |
+          if [ ! -f android/app/src/main/kotlin/com/shenepoy/adati/MainActivity.kt ]; then
+            echo "❌ MainActivity.kt not found!"
+            exit 1
+          fi
+          echo "✅ MainActivity.kt found"
+          cat android/app/src/main/kotlin/com/shenepoy/adati/MainActivity.kt
+
+      - name: Verify AndroidManifest
+        run: |
+          if ! grep -q 'package="com.shenepoy.adati"' android/app/src/main/AndroidManifest.xml; then
+            echo "❌ Package attribute missing in AndroidManifest.xml!"
+            exit 1
+          fi
+          if ! grep -q 'android:name="com.shenepoy.adati.MainActivity"' android/app/src/main/AndroidManifest.xml; then
+            echo "❌ MainActivity name incorrect in AndroidManifest.xml!"
+            exit 1
+          fi
+          echo "✅ AndroidManifest.xml verified"
+
       - name: Setup Android signing
         run: |
           if [ -n "${{ secrets.KEYSTORE_FILE }}" ]; then
@@ -86,6 +111,20 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Verify MainActivity in APK
+        run: |
+          if ! unzip -l build/app/outputs/flutter-apk/app-release.apk | grep -q "classes.dex"; then
+            echo "❌ classes.dex not found in APK!"
+            exit 1
+          fi
+          # Check if MainActivity class is referenced in the DEX
+          if ! unzip -p build/app/outputs/flutter-apk/app-release.apk classes.dex 2>/dev/null | strings | grep -qi "MainActivity"; then
+            echo "⚠️ MainActivity not found in classes.dex, but continuing..."
+          else
+            echo "✅ MainActivity found in APK"
+          fi
+          echo "APK size: $(ls -lh build/app/outputs/flutter-apk/app-release.apk | awk '{print $5}')"
 
       - name: Build Release App Bundle
         run: flutter build appbundle --release --no-tree-shake-icons
