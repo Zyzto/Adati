@@ -1,6 +1,74 @@
-# Artifact Troubleshooting Guide
+# Release Artifacts Guide
 
-If you're only seeing 1 artifact (the APK), here's how to find all artifacts and diagnose the issue.
+This document describes all artifacts produced by the CI/CD pipeline and how to troubleshoot artifact issues.
+
+---
+
+## 📦 Artifacts Produced
+
+### Android
+
+#### 1. **APK File** (Direct Install)
+- **File**: `adati-{VERSION}-android.apk`
+- **Format**: `.apk` (NOT zipped)
+- **Size**: ~50-70 MB
+- **Usage**: Direct installation on Android devices
+- **Installation**:
+  ```bash
+  adb install adati-{VERSION}-android.apk
+  # Or transfer to device and install via file manager
+  ```
+
+#### 2. **AAB File** (Google Play)
+- **File**: `adati-{VERSION}-android.aab`
+- **Format**: `.aab` (Android App Bundle)
+- **Size**: ~40-60 MB (smaller than APK)
+- **Usage**: Upload to Google Play Store
+- **Note**: Cannot be installed directly on devices
+
+---
+
+### Linux
+
+#### 3. **AppImage** (Portable)
+- **File**: `adati-{VERSION}-linux-x86_64.AppImage`
+- **Format**: `.AppImage` (NOT zipped)
+- **Size**: ~80-100 MB
+- **Architecture**: x86_64 (64-bit Intel/AMD)
+- **Requirements**: GLIBC 2.31+ (Ubuntu 20.04+, most modern distros)
+- **Installation**:
+  ```bash
+  chmod +x adati-{VERSION}-linux-x86_64.AppImage
+  ./adati-{VERSION}-linux-x86_64.AppImage
+  ```
+- **Features**:
+  - No installation required
+  - Portable (can run from USB drive)
+  - Self-contained (includes all dependencies)
+
+---
+
+### Windows
+
+#### 4. **ZIP File** (Full Package)
+- **File**: `adati-{VERSION}-windows-x64.zip`
+- **Format**: `.zip` (compressed archive)
+- **Size**: ~60-80 MB
+- **Contents**: Complete application with all DLLs and dependencies
+- **Usage**: Recommended for most users
+- **Installation**:
+  1. Download the ZIP file
+  2. Extract to a folder (e.g., `C:\Program Files\Adati\`)
+  3. Run `adati.exe` from the extracted folder
+- **Note**: Contains all required DLLs and runtime libraries
+
+#### 5. **EXE File** (Standalone)
+- **File**: `adati-{VERSION}-windows-x64.exe`
+- **Format**: `.exe` (standalone executable)
+- **Size**: ~40-50 MB
+- **Usage**: Reference/portable version
+- **Note**: Requires DLLs from the ZIP file to run properly
+- **Recommendation**: Use the ZIP file instead for full functionality
 
 ---
 
@@ -44,16 +112,18 @@ This shows **intermediate build artifacts** (before release creation):
 
 ---
 
-## 🔍 Why You Might Only See 1 Artifact
+## 🔍 Troubleshooting: Missing Artifacts
 
-### Scenario 1: Looking at Build Workflow
+### Why You Might Only See 1 Artifact
+
+#### Scenario 1: Looking at Build Workflow
 **Problem**: The `build.yml` workflow only builds Android debug APK
 
 **Solution**: Use the `release-beta.yml` workflow instead (triggered by tags)
 
 ---
 
-### Scenario 2: Release Not Created Yet
+#### Scenario 2: Release Not Created Yet
 **Problem**: The release creation job hasn't run or failed
 
 **Check**:
@@ -68,7 +138,7 @@ This shows **intermediate build artifacts** (before release creation):
 
 ---
 
-### Scenario 3: Some Build Jobs Failed
+#### Scenario 3: Some Build Jobs Failed
 **Problem**: Linux or Windows builds failed, so artifacts weren't uploaded
 
 **Check**:
@@ -86,7 +156,7 @@ This shows **intermediate build artifacts** (before release creation):
 
 ---
 
-### Scenario 4: Artifacts Not Downloaded
+#### Scenario 4: Artifacts Not Downloaded
 **Problem**: The release job couldn't download artifacts from other jobs
 
 **Check logs for**:
@@ -100,7 +170,7 @@ This shows **intermediate build artifacts** (before release creation):
 
 ---
 
-## 🛠️ How to Fix
+## 🛠️ How to Fix Missing Artifacts
 
 ### Fix 1: Trigger a New Release
 ```bash
@@ -224,28 +294,7 @@ Release created: v0.2.1
 
 ---
 
-## 📝 Recent Improvements
-
-The workflow now includes:
-
-1. **Better error handling:**
-   - `continue-on-error` for artifact downloads
-   - `if: always()` for release creation
-   - Detailed artifact listing
-
-2. **Better logging:**
-   - Shows which artifacts are found
-   - Shows which artifacts are missing
-   - Lists all artifact directories
-
-3. **Resilient release creation:**
-   - Creates release even if some builds fail
-   - Includes available artifacts
-   - Warns about missing artifacts
-
----
-
-## 🎯 Quick Checklist
+## 📝 Quick Checklist
 
 - [ ] Are you looking at the **GitHub Release page** (not Actions artifacts)?
 - [ ] Did you create a **version tag** (e.g., `v0.2.1`)?
@@ -276,18 +325,5 @@ The workflow now includes:
 
 ---
 
-## 📞 Still Having Issues?
-
-If you're still only seeing 1 artifact:
-
-1. **Share the workflow run URL** so we can check logs
-2. **Check the "Prepare release artifacts" step** output
-3. **Verify all build jobs completed** successfully
-4. **Check GitHub Release page** (not Actions artifacts)
-
-The improved workflow will now show exactly what's missing and why!
-
----
-
-**Last Updated**: 2025-11-20
+**Last Updated**: 2025-11-21
 
