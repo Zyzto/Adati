@@ -58,6 +58,9 @@ app.*.map.json
 /android/gradlew.bat
 /android/gradle-wrapper.jar
 /android/app/src/main/java/**/*.java
+# Allow MainActivity.kt - it's required for the app to work
+!/android/app/src/main/kotlin/**/MainActivity.kt
+# Ignore other Kotlin files (generated code, etc.)
 /android/app/src/main/kotlin/**/*.kt
 /android/app/src/main/java/**/*.kt
 
