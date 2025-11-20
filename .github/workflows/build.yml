@@ -55,15 +55,27 @@ jobs:
 
       - name: Clean Gradle build
         working-directory: android
-        run: ./gradlew clean || true
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew clean || true
+          else
+            echo "⚠️ gradlew not found, skipping Gradle clean"
+          fi
 
       - name: Verify MainActivity exists
         run: |
-          if [ ! -f android/app/src/main/kotlin/com/shenepoy/adati/MainActivity.kt ]; then
-            echo "❌ MainActivity.kt not found!"
+          echo "Current directory: $(pwd)"
+          echo "Checking for MainActivity.kt..."
+          if [ -f android/app/src/main/kotlin/com/shenepoy/adati/MainActivity.kt ]; then
+            echo "✅ MainActivity.kt found"
+            ls -la android/app/src/main/kotlin/com/shenepoy/adati/MainActivity.kt
+          else
+            echo "❌ MainActivity.kt not found at: android/app/src/main/kotlin/com/shenepoy/adati/MainActivity.kt"
+            echo "Listing android/app/src/main/kotlin:"
+            find android/app/src/main/kotlin -type f 2>/dev/null || echo "kotlin directory not found"
             exit 1
           fi
-          echo "✅ MainActivity.kt found"
 
       - name: Build Debug APK
         run: flutter build apk --debug --no-tree-shake-icons
