@@ -5,24 +5,68 @@
 **A beautiful habit tracking app with timeline visualization**
 
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![Flutter](https://img.shields.io/badge/Flutter-3.9.2%2B-02569B?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.9.2%2B-0175C2?logo=dart)](https://dart.dev)
+[![Flutter](https://img.shields.io/badge/Flutter-3.38.2-02569B?logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.9.2-0175C2?logo=dart)](https://dart.dev)
 [![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Web-lightgrey)](https://flutter.dev)
 
-[![Latest Release](https://img.shields.io/github/v/release/Zyzto/Adati?label=Latest%20Release&logo=github)](https://github.com/Zyzto/Adati/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/Zyzto/Adati?label=Latest%20Release&logo=github&include_prereleases)](https://github.com/Zyzto/Adati/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Zyzto/Adati/total?label=Downloads&logo=github)](https://github.com/Zyzto/Adati/releases)
+[![GitHub Stars](https://img.shields.io/github/stars/Zyzto/Adati?label=Stars&logo=github)](https://github.com/Zyzto/Adati/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/Zyzto/Adati?label=Forks&logo=github)](https://github.com/Zyzto/Adati/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/Zyzto/Adati?label=Issues&logo=github)](https://github.com/Zyzto/Adati/issues)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Zyzto/Adati/release-beta.yml?label=Build&logo=github)](https://github.com/Zyzto/Adati/actions)
 
 </div>
 
 ## 📥 Download
 
-Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/Adati/releases):
+Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/Adati/releases/latest).
 
-- **Android**: 
-  - Download the APK file and install directly, or use the App Bundle for Google Play Store
-  - **Get automatic updates**: [📱 Add to Obtainium](https://github.com/ImranR98/Obtainium) - Install [Obtainium](https://github.com/ImranR98/Obtainium) and add this repository (`Zyzto/Adati`) to receive automatic update notifications
-- **Linux**: Download the AppImage, make it executable (`chmod +x adati-*.AppImage`), and run it
-- **Windows**: Download the ZIP file, extract it, and run `adati.exe` from the extracted folder
+### Android
+
+**Option 1: Direct Install (APK)**
+- Download `adati-VERSION-android.apk` from [GitHub Releases](https://github.com/Zyzto/Adati/releases/latest)
+- Enable "Install from unknown sources" in your Android settings
+- Tap the downloaded APK file to install
+- **Get automatic updates**: Install [Obtainium](https://github.com/ImranR98/Obtainium) and add this repository (`Zyzto/Adati`) to receive automatic update notifications
+
+**Option 2: Google Play Store** **WIP**
+- Available on [Google Play Store](https://play.google.com/store/apps/details?id=com.shenepoy.adati) (when published)
+- Automatic updates through Play Store
+
+### Linux
+
+**AppImage (Recommended)**
+1. Download `adati-VERSION-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/Zyzto/Adati/releases/latest)
+2. Make it executable:
+   ```bash
+   chmod +x adati-*-linux-x86_64.AppImage
+   ```
+3. Run it:
+   ```bash
+   ./adati-*-linux-x86_64.AppImage
+   ```
+
+**Note**: AppImage is portable and doesn't require installation. It includes all dependencies and works on most modern Linux distributions (requires GLIBC 2.31+, Ubuntu 20.04+).
+
+### Windows
+
+**ZIP Package (Recommended)**
+1. Download `adati-VERSION-windows-x64.zip` from [GitHub Releases](https://github.com/Zyzto/Adati/releases/latest)
+2. Extract the ZIP file to a folder (e.g., `C:\Program Files\Adati\`)
+3. Run `adati.exe` from the extracted folder
+
+**Standalone EXE**
+- Download `adati-VERSION-windows-x64.exe` (requires DLLs from the ZIP package to run properly)
+- **Note**: The ZIP package is recommended as it includes all required dependencies
+
+### macOS & iOS
+
+Build instructions are available in the [Building for Production](#building-for-production) section. Pre-built releases for macOS and iOS may be available in future releases.
+
+### Web
+
+Web builds are available for development. See the [Building for Production](#building-for-production) section for build instructions.
 
 ## 📱 About
 
