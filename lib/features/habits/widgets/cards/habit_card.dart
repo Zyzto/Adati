@@ -1264,11 +1264,58 @@ class HabitCard extends ConsumerWidget {
   }
 }
 
+/// Grid view card for displaying habits in a compact grid layout.
 class HabitGridCard extends ConsumerWidget {
   final db.Habit habit;
 
   const HabitGridCard({super.key, required this.habit});
 
+  /// Calculates streak color based on length and color scheme.
+  Color _getStreakColorForLength(int length, String scheme) {
+    Color baseColor;
+    if (length >= 30) {
+      baseColor = Colors.purple;
+    } else if (length >= 14) {
+      baseColor = Colors.orange;
+    } else if (length >= 7) {
+      baseColor = Colors.amber;
+    } else {
+      baseColor = Colors.green;
+    }
+
+    switch (scheme) {
+      case 'vibrant':
+        return Color.fromARGB(
+          255,
+          ((baseColor.r * 255.0 * 1.2).clamp(0, 255)).round(),
+          ((baseColor.g * 255.0 * 1.2).clamp(0, 255)).round(),
+          ((baseColor.b * 255.0 * 1.2).clamp(0, 255)).round(),
+        );
+      case 'subtle':
+        final gray =
+            ((baseColor.r * 255.0 * 0.299 +
+                    baseColor.g * 255.0 * 0.587 +
+                    baseColor.b * 255.0 * 0.114))
+                .round();
+        return Color.fromARGB(
+          255,
+          ((gray + baseColor.r * 255.0) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.g * 255.0) / 2).clamp(0, 255).round(),
+          ((gray + baseColor.b * 255.0) / 2).clamp(0, 255).round(),
+        );
+      case 'monochrome':
+        final gray =
+            ((baseColor.r * 255.0 * 0.299 +
+                    baseColor.g * 255.0 * 0.587 +
+                    baseColor.b * 255.0 * 0.114))
+                .round();
+        return Color.fromARGB(255, gray, gray, gray);
+      default:
+        return baseColor;
+    }
+  }
+
+  /// Toggles today's completion status for the habit.
   Future<void> _toggleTodayCompletion(
     BuildContext context,
     WidgetRef ref,
@@ -1279,16 +1326,13 @@ class HabitGridCard extends ConsumerWidget {
     final trackingType = TrackingType.fromValue(habit.trackingType);
 
     try {
-      // Get current status
       final entry = await repository.getEntry(habit.id, today);
       final isCompleted = entry?.completed ?? false;
 
-      // Handle different tracking types
       if (trackingType == TrackingType.completed) {
         await repository.toggleCompletion(habit.id, today, !isCompleted);
       } else if (trackingType == TrackingType.measurable) {
         if (context.mounted) {
-          // Reuse HabitCard's measurable dialog
           final card = HabitCard(habit: habit);
           // ignore: invalid_use_of_protected_member
           (card as dynamic)._showMeasurableInputDialog(context, ref, entry);
@@ -1311,354 +1355,235 @@ class HabitGridCard extends ConsumerWidget {
     }
   }
 
+  /// Builds the tracking display widget (icon, progress, etc.).
   Widget _buildTrackingDisplay(
     BuildContext context,
     WidgetRef ref,
-    db.TrackingEntry? entry,
-  ) {
+    db.TrackingEntry? entry, {
+    required bool isOverlay,
+  }) {
     final trackingType = TrackingType.fromValue(habit.trackingType);
+    final isCompleted = entry?.completed ?? false;
+    final isGoodHabit = habit.habitType == HabitType.good.value;
 
     if (trackingType == TrackingType.completed) {
-      final isCompleted = entry?.completed ?? false;
-      final isGoodHabit = habit.habitType == HabitType.good.value;
-
       final color = isCompleted
           ? (isGoodHabit ? Colors.green : Colors.red)
-          : Colors.grey;
-
+          : Colors.grey.withValues(alpha: 0.5);
       return Icon(
         isCompleted ? Icons.check_circle : Icons.circle_outlined,
         color: color,
-        size: 32,
+        size: isOverlay ? 24 : 32,
       );
     } else if (trackingType == TrackingType.measurable) {
       final value = entry?.value ?? 0.0;
       final goalValue = habit.goalValue;
-      final unit = habit.unit ?? '';
 
       if (goalValue != null && goalValue > 0) {
         final percentage = (value / goalValue * 100).clamp(0, 100);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 32,
-              height: 32,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: percentage / 100,
-                    backgroundColor: Colors.grey[300],
-                    strokeWidth: 3,
-                  ),
-                  Text(
-                    '${percentage.toStringAsFixed(0)}%',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 9,
-                    ),
-                  ),
-                ],
+        return SizedBox(
+          width: isOverlay ? 24 : 32,
+          height: isOverlay ? 24 : 32,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
+                value: percentage / 100,
+                backgroundColor: Colors.grey[300],
+                color: percentage >= 100 ? Colors.green : null,
+                strokeWidth: isOverlay ? 2.5 : 3,
               ),
-            ),
-            if (value > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  '${value.toStringAsFixed(1)} $unit',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontSize: 10),
+              if (!isOverlay)
+                Text(
+                  '${percentage.toInt()}%',
+                  style: const TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         );
       } else {
         return Icon(
           value > 0 ? Icons.check_circle : Icons.circle_outlined,
           color: value > 0 ? Colors.green : Colors.grey,
-          size: 32,
+          size: isOverlay ? 24 : 32,
         );
       }
     } else if (trackingType == TrackingType.occurrences) {
-      List<String> completedOccurrences = [];
-      if (entry?.occurrenceData != null && entry!.occurrenceData!.isNotEmpty) {
+      int current = 0;
+      int total = 0;
+      if (entry?.occurrenceData != null) {
         try {
-          completedOccurrences = List<String>.from(
-            jsonDecode(entry.occurrenceData!),
-          );
+          current = List.from(jsonDecode(entry!.occurrenceData!)).length;
         } catch (_) {
-          completedOccurrences = [];
+          current = 0;
+        }
+      }
+      if (habit.occurrenceNames != null) {
+        try {
+          total = List.from(jsonDecode(habit.occurrenceNames!)).length;
+        } catch (_) {
+          total = 0;
         }
       }
 
-      List<String> allOccurrences = [];
-      if (habit.occurrenceNames != null && habit.occurrenceNames!.isNotEmpty) {
-        try {
-          allOccurrences = List<String>.from(
-            jsonDecode(habit.occurrenceNames!),
-          );
-        } catch (_) {
-          allOccurrences = [];
-        }
-      }
-
-      return Column(
-        mainAxisSize: MainAxisSize.min,
+      final isDone = current >= total && total > 0;
+      return Stack(
+        alignment: Alignment.center,
         children: [
           Icon(
-            completedOccurrences.isNotEmpty
-                ? Icons.check_circle
-                : Icons.circle_outlined,
-            color: completedOccurrences.isNotEmpty ? Colors.green : Colors.grey,
-            size: 32,
+            isDone ? Icons.check_circle : Icons.circle_outlined,
+            color: isDone ? Colors.green : Colors.grey,
+            size: isOverlay ? 24 : 32,
           ),
-          const SizedBox(height: 2),
-          Text(
-            '${completedOccurrences.length}/${allOccurrences.length}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
+          if (!isDone && !isOverlay)
+            Text(
+              '$current',
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
             ),
-          ),
         ],
       );
     }
 
-    return const SizedBox.shrink();
+    return Icon(
+      Icons.circle_outlined,
+      color: Colors.grey,
+      size: isOverlay ? 24 : 32,
+    );
+  }
+
+  /// Builds the completion/tracking button.
+  Widget _buildTrackingButton(
+    BuildContext context,
+    WidgetRef ref,
+    db.TrackingEntry? entry,
+    bool isOverlay,
+  ) {
+    return Semantics(
+      label: 'track_habit'.tr(),
+      button: true,
+      child: InkWell(
+        onTap: () => _toggleTodayCompletion(context, ref),
+        borderRadius: BorderRadius.circular(isOverlay ? 20 : 8),
+        child: Container(
+          padding: EdgeInsets.all(isOverlay ? 4 : 6),
+          decoration: isOverlay
+              ? BoxDecoration(
+                  color: Theme.of(context).cardColor.withValues(alpha: 0.9),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                    ),
+                  ],
+                )
+              : null,
+          child: _buildTrackingDisplay(
+            context,
+            ref,
+            entry,
+            isOverlay: isOverlay,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Calculates the card border shape based on completion and streak status.
+  ShapeBorder _calculateCardShape(
+    WidgetRef ref,
+    db.Streak? streak,
+    List<db.TrackingEntry> entries,
+    double cardBorderRadius,
+    _HabitCardSettings settings,
+  ) {
+    final today = app_date_utils.DateUtils.getToday();
+    final todayEntry = entries.firstWhereOrNull(
+      (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
+    );
+    final isTodayCompleted = todayEntry?.completed ?? false;
+
+    if (isTodayCompleted) {
+      return RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cardBorderRadius),
+        side: BorderSide(
+          color: Color(settings.habitCardCompletionColor),
+          width: 2,
+        ),
+      );
+    } else if (settings.showStreakBorders &&
+        (streak?.combinedStreak ?? 0) > 0) {
+      final streakColor = _getStreakColorForLength(
+        streak!.combinedStreak,
+        settings.streakColorScheme,
+      );
+      return RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cardBorderRadius),
+        side: BorderSide(color: streakColor, width: 2),
+      );
+    }
+
+    return RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(cardBorderRadius),
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch providers
     final todayEntryAsync = ref.watch(todayEntryProvider(habit.id));
+    final entriesAsync = ref.watch(trackingEntriesProvider(habit.id));
+    final streakAsync = ref.watch(streakProvider(habit.id));
+
+    // Watch settings
     final isGoodHabit = habit.habitType == HabitType.good.value;
     final settings = _HabitCardSettings.fromRef(ref, isGoodHabit: isGoodHabit);
-
-    final cardSpacing = settings.cardSpacing;
+    final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
     final showIcon = ref.watch(gridShowIconProvider);
     final showCompletion = ref.watch(gridShowCompletionProvider);
     final showTimeline = ref.watch(gridShowTimelineProvider);
-    final showDescriptions = settings.showDescriptions;
-    final compactCards = settings.compactCards;
+    final completionButtonPlacement = ref.watch(
+      gridCompletionButtonPlacementProvider,
+    );
+    final gridTimelineBoxSize = ref.watch(gridTimelineBoxSizeProvider);
+    final gridTimelineFitMode = ref.watch(gridTimelineFitModeProvider);
     final sessionOptions = ref.watch(sessionViewOptionsProvider);
-    final tagsAsync = ref.watch(habitTagsProvider(habit.id));
 
-    Widget buildTrackingButton() {
-      if (!showCompletion) return const SizedBox.shrink();
+    // Only watch tags provider when tags are enabled
+    final canShowTags = sessionOptions.showTags ?? false;
 
-      return todayEntryAsync.when(
-        data: (_) {
-          final entriesAsyncForButton = ref.watch(
-            trackingEntriesProvider(habit.id),
-          );
+    final isOverlay = completionButtonPlacement == 'overlay';
+    final isCenter = completionButtonPlacement == 'center';
 
-          return entriesAsyncForButton.when(
-            data: (entries) {
-              final today = app_date_utils.DateUtils.getToday();
-              final entry = entries
-                  .where(
-                    (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
-                  )
-                  .firstOrNull;
-
-              return Material(
-                color: Colors.transparent,
-                child: Semantics(
-                  label: 'track_habit'.tr(),
-                  button: true,
-                  child: InkWell(
-                    onTap: () => _toggleTodayCompletion(context, ref),
-                    hoverColor: Colors.transparent,
-                    splashColor: Colors.transparent,
-                    highlightColor: Colors.transparent,
-                    child: Container(
-                      width: 72,
-                      constraints: const BoxConstraints(minHeight: 40),
-                      alignment: Alignment.center,
-                      padding: const EdgeInsets.all(6),
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, animation) {
-                          final curved = CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeInOut,
-                          );
-                          return FadeTransition(
-                            opacity: curved,
-                            child: ScaleTransition(
-                              scale: Tween<double>(
-                                begin: 0.9,
-                                end: 1.0,
-                              ).animate(curved),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: KeyedSubtree(
-                          key: ValueKey(
-                            '${habit.trackingType}_${entry?.completed}_${entry?.value}_${entry?.occurrenceData}',
-                          ),
-                          child: _buildTrackingDisplay(context, ref, entry),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-            loading: () => Container(
-              width: 72,
-              alignment: Alignment.center,
-              child: SkeletonLoader(
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.grey,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-            ),
-            error: (_, _) => Container(
-              width: 72,
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.error_outline,
-                color: Theme.of(context).colorScheme.error,
-                size: 20,
-              ),
-            ),
-          );
-        },
-        loading: () => Container(
-          width: 72,
-          alignment: Alignment.center,
-          child: SkeletonLoader(
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.grey,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
+    // Calculate card shape
+    final cardShape = streakAsync.maybeWhen(
+      data: (streak) => entriesAsync.maybeWhen(
+        data: (entries) => _calculateCardShape(
+          ref,
+          streak,
+          entries,
+          cardBorderRadius,
+          settings,
         ),
-        error: (_, _) => Container(
-          width: 72,
-          alignment: Alignment.center,
-          child: Icon(
-            Icons.error_outline,
-            color: Theme.of(context).colorScheme.error,
-            size: 20,
-          ),
+        orElse: () => RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardBorderRadius),
         ),
-      );
-    }
+      ),
+      orElse: () => RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cardBorderRadius),
+      ),
+    );
 
-    final iconSizeValue = 40.0;
-
-    Widget buildHeader() {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showIcon)
-            Container(
-              width: iconSizeValue,
-              height: iconSizeValue,
-              decoration: BoxDecoration(
-                color: Color(habit.color),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: habit.icon != null
-                  ? Icon(
-                      createIconDataFromString(habit.icon!),
-                      color: Colors.white,
-                      size: iconSizeValue * 0.6,
-                    )
-                  : null,
-            ),
-          const SizedBox(height: 6),
-          Text(
-            habit.name,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          if (showDescriptions &&
-              habit.description != null &&
-              habit.description!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              habit.description!,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontSize: 11,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-              maxLines: compactCards ? 1 : 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-          if (sessionOptions.showTags ?? false)
-            tagsAsync.when(
-              data: (tags) {
-                if (tags.isEmpty) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Wrap(
-                    spacing: 4,
-                    runSpacing: 2,
-                    alignment: WrapAlignment.center,
-                    children: tags.take(3).map((tag) {
-                      return Chip(
-                        label: Text(
-                          tag.name,
-                          style: TextStyle(fontSize: compactCards ? 9 : 10),
-                        ),
-                        padding: EdgeInsets.zero,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                      );
-                    }).toList(),
-                  ),
-                );
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, _) => const SizedBox.shrink(),
-            ),
-        ],
-      );
-    }
-
-    Widget buildTimeline() {
-      if (!showTimeline) return const SizedBox.shrink();
-
-      final compact = true;
-      return Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 72),
-          child: HabitTimeline(
-            habitId: habit.id,
-            compact: compact,
-            daysToShow: settings.habitCardTimelineDays,
-          ),
-        ),
-      );
-    }
+    final canShowTimeline = showTimeline;
+    final canShowDescription = settings.showDescriptions;
 
     return Card(
-      margin: EdgeInsets.only(bottom: cardSpacing),
+      margin: EdgeInsets.only(bottom: settings.cardSpacing),
+      shape: cardShape,
+      elevation: 2,
       child: InkWell(
         onTap: () {
           showModalBottomSheet(
@@ -1668,26 +1593,239 @@ class HabitGridCard extends ConsumerWidget {
             builder: (context) => HabitDetailPage(habitId: habit.id),
           );
         },
-        hoverColor: Colors.transparent,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: Center(child: buildHeader())),
-                  if (showCompletion) const SizedBox(width: 8),
-                  if (showCompletion) buildTrackingButton(),
-                ],
+        borderRadius: BorderRadius.circular(cardBorderRadius),
+        child: Stack(
+          children: [
+            // Main content
+            Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top half: Content
+                Expanded(
+                  flex: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header: Icon + Name + Description
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (showIcon) ...[
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: Color(habit.color),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: habit.icon != null
+                                    ? Icon(
+                                        createIconDataFromString(habit.icon!),
+                                        color: Colors.white,
+                                        size: 20,
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    habit.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          height: 1.2,
+                                        ),
+                                  ),
+                                  if (canShowDescription &&
+                                      habit.description?.isNotEmpty == true)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        habit.description!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.color
+                                              ?.withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Streak
+                        if (settings.showStreakOnCard) ...[
+                          const SizedBox(height: 4),
+                          streakAsync.maybeWhen(
+                            data: (streak) {
+                              if (streak != null && streak.combinedStreak > 0) {
+                                return Text(
+                                  '${'streak'.tr()}: ${streak.combinedStreak}',
+                                  style: const TextStyle(
+                                    color: Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 9,
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                            orElse: () => const SizedBox.shrink(),
+                          ),
+                        ],
+
+                        // Tags
+                        if (canShowTags)
+                          Builder(
+                            builder: (context) {
+                              final tagsAsync = ref.watch(
+                                habitTagsProvider(habit.id),
+                              );
+                              return tagsAsync.maybeWhen(
+                                data: (tags) {
+                                  if (tags.isEmpty)
+                                    return const SizedBox.shrink();
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Wrap(
+                                      spacing: 4,
+                                      runSpacing: 4,
+                                      alignment: WrapAlignment.start,
+                                      children: tags
+                                          .take(2)
+                                          .map(
+                                            (tag) => Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                    vertical: 1,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                tag.name,
+                                                style: const TextStyle(
+                                                  fontSize: 8,
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                                  );
+                                },
+                                orElse: () => const SizedBox.shrink(),
+                              );
+                            },
+                          ),
+
+                        // Center button placement
+                        if (isCenter && showCompletion) ...[
+                          const SizedBox(height: 8),
+                          todayEntryAsync.when(
+                            data: (_) => entriesAsync.when(
+                              data: (entries) {
+                                final today =
+                                    app_date_utils.DateUtils.getToday();
+                                final entry = entries.firstWhereOrNull(
+                                  (e) => app_date_utils.DateUtils.isSameDay(
+                                    e.date,
+                                    today,
+                                  ),
+                                );
+                                return _buildTrackingButton(
+                                  context,
+                                  ref,
+                                  entry,
+                                  false,
+                                );
+                              },
+                              loading: () =>
+                                  const SizedBox(width: 32, height: 32),
+                              error: (_, __) =>
+                                  const Icon(Icons.error, size: 20),
+                            ),
+                            loading: () =>
+                                const SizedBox(width: 32, height: 32),
+                            error: (_, __) => const Icon(Icons.error, size: 20),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Bottom half: Timeline (no padding - extends to card edges)
+                if (canShowTimeline)
+                  Expanded(
+                    flex: 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: ClipRect(
+                        clipBehavior: Clip.hardEdge,
+                        child: HabitTimeline(
+                          habitId: habit.id,
+                          compact: true,
+                          daysToShow: settings.habitCardTimelineDays,
+                          disableScroll: true,
+                          gridBoxSize: gridTimelineBoxSize,
+                          gridFitMode: gridTimelineFitMode,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            // Overlay button
+            if (isOverlay && showCompletion)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: todayEntryAsync.when(
+                  data: (_) => entriesAsync.when(
+                    data: (entries) {
+                      final today = app_date_utils.DateUtils.getToday();
+                      final entry = entries.firstWhereOrNull(
+                        (e) =>
+                            app_date_utils.DateUtils.isSameDay(e.date, today),
+                      );
+                      return _buildTrackingButton(context, ref, entry, true);
+                    },
+                    loading: () => const SizedBox(width: 24, height: 24),
+                    error: (_, __) => const Icon(Icons.error, size: 20),
+                  ),
+                  loading: () => const SizedBox(width: 24, height: 24),
+                  error: (_, __) => const Icon(Icons.error, size: 20),
+                ),
               ),
-              buildTimeline(),
-            ],
-          ),
+          ],
         ),
       ),
     );

@@ -1142,6 +1142,77 @@ final gridShowTimelineProvider = Provider<bool>((ref) {
   return ref.watch(gridShowTimelineNotifierProvider).value;
 });
 
+class GridCompletionButtonPlacementNotifier {
+  String _placement;
+
+  GridCompletionButtonPlacementNotifier()
+      : _placement = PreferencesService.getGridCompletionButtonPlacement();
+
+  String get placement => _placement;
+
+  Future<void> setGridCompletionButtonPlacement(String value) async {
+    _placement = value;
+    await PreferencesService.setGridCompletionButtonPlacement(value);
+  }
+}
+
+final gridCompletionButtonPlacementNotifierProvider =
+    Provider<GridCompletionButtonPlacementNotifier>((ref) {
+  return GridCompletionButtonPlacementNotifier();
+});
+
+final gridCompletionButtonPlacementProvider = Provider<String>((ref) {
+  return ref.watch(gridCompletionButtonPlacementNotifierProvider).placement;
+});
+
+// Grid Timeline Box Size
+class GridTimelineBoxSizeNotifier {
+  String _size;
+
+  GridTimelineBoxSizeNotifier()
+      : _size = PreferencesService.getGridTimelineBoxSize();
+
+  String get size => _size;
+
+  Future<void> setGridTimelineBoxSize(String value) async {
+    _size = value;
+    await PreferencesService.setGridTimelineBoxSize(value);
+  }
+}
+
+final gridTimelineBoxSizeNotifierProvider =
+    Provider<GridTimelineBoxSizeNotifier>((ref) {
+  return GridTimelineBoxSizeNotifier();
+});
+
+final gridTimelineBoxSizeProvider = Provider<String>((ref) {
+  return ref.watch(gridTimelineBoxSizeNotifierProvider).size;
+});
+
+// Grid Timeline Fit Mode
+class GridTimelineFitModeNotifier {
+  String _mode;
+
+  GridTimelineFitModeNotifier()
+      : _mode = PreferencesService.getGridTimelineFitMode();
+
+  String get mode => _mode;
+
+  Future<void> setGridTimelineFitMode(String value) async {
+    _mode = value;
+    await PreferencesService.setGridTimelineFitMode(value);
+  }
+}
+
+final gridTimelineFitModeNotifierProvider =
+    Provider<GridTimelineFitModeNotifier>((ref) {
+  return GridTimelineFitModeNotifier();
+});
+
+final gridTimelineFitModeProvider = Provider<String>((ref) {
+  return ref.watch(gridTimelineFitModeNotifierProvider).mode;
+});
+
 // Bad Habit Logic Mode
 class BadHabitLogicModeNotifier {
   String _mode;

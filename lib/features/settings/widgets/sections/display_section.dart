@@ -61,6 +61,8 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     final gridShowIcon = ref.watch(gridShowIconProvider);
     final gridShowCompletion = ref.watch(gridShowCompletionProvider);
     final gridShowTimeline = ref.watch(gridShowTimelineProvider);
+    final gridTimelineBoxSize = ref.watch(gridTimelineBoxSizeProvider);
+    final gridTimelineFitMode = ref.watch(gridTimelineFitModeProvider);
     final mainTimelineFillLines = ref.watch(mainTimelineFillLinesProvider);
     final mainTimelineLines = ref.watch(mainTimelineLinesProvider);
     final habitCardLayoutMode = ref.watch(habitCardLayoutModeProvider);
@@ -112,6 +114,19 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             ref.invalidate(gridShowCompletionNotifierProvider);
           },
         ),
+        if (gridShowCompletion)
+          ListTile(
+            leading: const Icon(Icons.place),
+            title: Text('grid_completion_button_placement'.tr()),
+            subtitle: Text(
+              ref.watch(gridCompletionButtonPlacementProvider) == 'overlay'
+                  ? 'grid_completion_button_placement_overlay'.tr()
+                  : 'grid_completion_button_placement_center'.tr(),
+            ),
+            onTap: () => _showGridCompletionButtonPlacementDialog(
+              ref.watch(gridCompletionButtonPlacementProvider),
+            ),
+          ),
         SwitchListTile(
           secondary: const Icon(Icons.timeline),
           title: Text('grid_show_timeline'.tr()),
@@ -122,6 +137,42 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             ref.invalidate(gridShowTimelineNotifierProvider);
           },
         ),
+        if (gridShowTimeline) ...[
+          SwitchListTile(
+            secondary: const Icon(Icons.grid_4x4),
+            title: Text('grid_timeline_fill_lines'.tr()),
+            subtitle: Text('grid_timeline_fill_lines_description'.tr()),
+            value: gridTimelineFitMode == 'fit',
+            onChanged: (value) async {
+              final notifier = ref.read(gridTimelineFitModeNotifierProvider);
+              await notifier.setGridTimelineFitMode(value ? 'fit' : 'fixed');
+              ref.invalidate(gridTimelineFitModeNotifierProvider);
+              ref.invalidate(gridTimelineFitModeProvider);
+            },
+          ),
+          // Only show days setting when fill mode is disabled
+          if (gridTimelineFitMode == 'fixed') ...[
+            ListTile(
+              leading: const Icon(Icons.view_week),
+              title: Text('habit_card_timeline_days'.tr()),
+              subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
+              onTap: () => widget.showHabitCardTimelineDaysDialog(context, ref),
+            ),
+          ],
+          // Box size is always available
+          ListTile(
+            leading: const Icon(Icons.aspect_ratio),
+            title: Text('grid_timeline_box_size'.tr()),
+            subtitle: Text(
+              gridTimelineBoxSize == 'small'
+                  ? 'day_square_size_small'.tr()
+                  : gridTimelineBoxSize == 'medium'
+                  ? 'day_square_size_medium'.tr()
+                  : 'day_square_size_large'.tr(),
+            ),
+            onTap: () => _showGridTimelineBoxSizeDialog(gridTimelineBoxSize),
+          ),
+        ],
         const Divider(),
 
         // 2. Main Timeline (prominent feature - all settings together)
@@ -333,19 +384,24 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           title: Text('habit_card_timeline_fill_lines'.tr()),
           subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
           value: habitCardTimelineFillLines,
-          onChanged: (value) async {
-            final notifier = ref.read(
-              habitCardTimelineFillLinesNotifierProvider,
-            );
-            await notifier.setHabitCardTimelineFillLines(value);
-            ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
-          },
+          onChanged:
+              (habitsLayoutMode == 'grid' && gridTimelineFitMode == 'fit')
+              ? null
+              : (value) async {
+                  final notifier = ref.read(
+                    habitCardTimelineFillLinesNotifierProvider,
+                  );
+                  await notifier.setHabitCardTimelineFillLines(value);
+                  ref.invalidate(habitCardTimelineFillLinesNotifierProvider);
+                },
         ),
         ListTile(
           leading: const Icon(Icons.format_line_spacing),
           title: Text('habit_card_timeline_lines'.tr()),
           subtitle: Text('$habitCardTimelineLines'),
-          enabled: habitCardTimelineFillLines,
+          enabled:
+              habitCardTimelineFillLines &&
+              !(habitsLayoutMode == 'grid' && gridTimelineFitMode == 'fit'),
           onTap: () => _showHabitCardTimelineLinesDialog(
             habitCardTimelineFillLines,
             habitCardTimelineLines,
@@ -522,6 +578,127 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
       // Invalidate both the notifier and value providers to ensure UI updates
       ref.invalidate(habitCardLayoutModeNotifierProvider);
       ref.invalidate(habitCardLayoutModeProvider);
+    }
+  }
+
+  Future<void> _showGridCompletionButtonPlacementDialog(
+    String currentPlacement,
+  ) async {
+    final placement = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        String temp = currentPlacement;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('grid_completion_button_placement'.tr()),
+              content: RadioGroup<String>(
+                groupValue: temp,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setDialogState(() {
+                    temp = value;
+                  });
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text(
+                        'grid_completion_button_placement_center'.tr(),
+                      ),
+                      value: 'center',
+                    ),
+                    RadioListTile<String>(
+                      title: Text(
+                        'grid_completion_button_placement_overlay'.tr(),
+                      ),
+                      value: 'overlay',
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('cancel'.tr()),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, temp),
+                  child: Text('ok'.tr()),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (placement != null && placement.isNotEmpty) {
+      final notifier = ref.read(gridCompletionButtonPlacementNotifierProvider);
+      await notifier.setGridCompletionButtonPlacement(placement);
+      // Invalidate both the notifier and value providers to ensure UI updates
+      ref.invalidate(gridCompletionButtonPlacementNotifierProvider);
+      ref.invalidate(gridCompletionButtonPlacementProvider);
+    }
+  }
+
+  Future<void> _showGridTimelineBoxSizeDialog(String currentSize) async {
+    final size = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        String temp = currentSize;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('grid_timeline_box_size'.tr()),
+              content: RadioGroup<String>(
+                groupValue: temp,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setDialogState(() {
+                    temp = value;
+                  });
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RadioListTile<String>(
+                      title: Text('day_square_size_small'.tr()),
+                      value: 'small',
+                    ),
+                    RadioListTile<String>(
+                      title: Text('day_square_size_medium'.tr()),
+                      value: 'medium',
+                    ),
+                    RadioListTile<String>(
+                      title: Text('day_square_size_large'.tr()),
+                      value: 'large',
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('cancel'.tr()),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, temp),
+                  child: Text('ok'.tr()),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (size != null && size.isNotEmpty) {
+      final notifier = ref.read(gridTimelineBoxSizeNotifierProvider);
+      await notifier.setGridTimelineBoxSize(size);
+      ref.invalidate(gridTimelineBoxSizeNotifierProvider);
+      ref.invalidate(gridTimelineBoxSizeProvider);
     }
   }
 

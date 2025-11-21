@@ -13,12 +13,18 @@ class HabitTimeline extends ConsumerStatefulWidget {
   final int habitId;
   final bool compact;
   final int? daysToShow;
+  final bool disableScroll;
+  final String? gridBoxSize; // 'small', 'medium', 'large' for grid view
+  final String? gridFitMode; // 'fit' or 'fixed' for grid view
 
   const HabitTimeline({
     super.key,
     required this.habitId,
     this.compact = false,
     this.daysToShow,
+    this.disableScroll = false,
+    this.gridBoxSize,
+    this.gridFitMode,
   });
 
   @override
@@ -77,6 +83,24 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
     return date.year == today.year && date.month == today.month;
   }
 
+  double? _getSquareSize() {
+    // If grid box size is specified, use it
+    if (widget.gridBoxSize != null) {
+      switch (widget.gridBoxSize) {
+        case 'small':
+          return 10.0;
+        case 'medium':
+          return 12.0;
+        case 'large':
+          return 14.0;
+        default:
+          return 12.0;
+      }
+    }
+    // Otherwise use compact mode logic
+    return widget.compact ? 12 : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final entriesAsync = ref.watch(trackingEntriesProvider(widget.habitId));
@@ -104,10 +128,16 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                 ref.watch(showWeekMonthHighlightsProvider);
             final spacing = widget.compact ? 4.0 : timelineSpacing;
 
-            final fillLines =
-                ref.watch(habitCardTimelineFillLinesProvider);
-            final lineCount =
-                ref.watch(habitCardTimelineLinesProvider);
+            // For grid view, use fit mode to determine fillLines
+            final fillLines = widget.gridFitMode == 'fit'
+                ? true
+                : widget.gridFitMode == 'fixed'
+                    ? false
+                    : ref.watch(habitCardTimelineFillLinesProvider);
+            // For grid fill mode, calculate lines dynamically based on available height
+            final lineCount = widget.gridFitMode == 'fit'
+                ? null
+                : ref.watch(habitCardTimelineLinesProvider);
 
             Widget buildTimelineForDays(List<DateTime> days) {
               final needsScroll = days.length > 100;
@@ -166,7 +196,7 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                       child: DaySquare(
                         date: day,
                         completed: displayCompleted,
-                        size: widget.compact ? 12 : null,
+                        size: _getSquareSize(),
                         onTap: null,
                         streakLength: streakLength,
                         highlightWeek: isCurrentWeek,
@@ -177,6 +207,11 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                   );
                 }).toList(),
               );
+
+              // If scrolling is disabled, return widget directly
+              if (widget.disableScroll) {
+                return timelineWidget;
+              }
 
               if (needsScroll) {
                 // Horizontal scroll without auto-jumping: default is start/oldest.
@@ -209,10 +244,26 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
               return LayoutBuilder(
                 builder: (context, constraints) {
                   final maxWidth = constraints.maxWidth;
+                  final maxHeight = constraints.maxHeight;
 
                   // Approximate square size based on the same logic as DaySquare.
                   double squareSize;
-                  if (widget.compact) {
+                  if (widget.gridBoxSize != null) {
+                    // Use grid-specific box size
+                    switch (widget.gridBoxSize) {
+                      case 'small':
+                        squareSize = 10.0;
+                        break;
+                      case 'medium':
+                        squareSize = 12.0;
+                        break;
+                      case 'large':
+                        squareSize = 14.0;
+                        break;
+                      default:
+                        squareSize = 12.0;
+                    }
+                  } else if (widget.compact) {
                     squareSize = 12.0;
                   } else {
                     final sizePreference = ref.watch(daySquareSizeProvider);
@@ -253,8 +304,28 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                     }
                   }
 
+                  // For grid fill mode, calculate lines dynamically based on available height
+                  // For regular fill mode, use the setting
+                  int calculatedLineCount;
+                  if (lineCount == null && widget.gridFitMode == 'fit') {
+                    // Dynamic calculation for grid fill mode
+                    if (maxHeight.isFinite && maxHeight > 0 && squareSize > 0) {
+                      // Calculate how many lines fit in the available height
+                      calculatedLineCount = ((maxHeight + spacing) / (squareSize + spacing)).floor();
+                      if (calculatedLineCount < 1) {
+                        calculatedLineCount = 1;
+                      }
+                      // Cap at reasonable maximum
+                      calculatedLineCount = calculatedLineCount.clamp(1, 10);
+                    } else {
+                      calculatedLineCount = 2; // Fallback
+                    }
+                  } else {
+                    calculatedLineCount = lineCount ?? 2;
+                  }
+
                   final totalDays =
-                      (perLine * lineCount).clamp(1, 365);
+                      (perLine * calculatedLineCount).clamp(1, 365);
                   final days = app_date_utils.DateUtils
                       .getLastNDays(totalDays);
                   return buildTimelineForDays(days);

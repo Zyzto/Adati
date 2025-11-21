@@ -68,6 +68,9 @@ class PreferencesService {
   static const String _keyGridShowIcon = 'grid_show_icon';
   static const String _keyGridShowCompletion = 'grid_show_completion';
   static const String _keyGridShowTimeline = 'grid_show_timeline';
+  static const String _keyGridCompletionButtonPlacement = 'grid_completion_button_placement';
+  static const String _keyGridTimelineBoxSize = 'grid_timeline_box_size';
+  static const String _keyGridTimelineFitMode = 'grid_timeline_fit_mode';
   static const String _keyBadHabitLogicMode = 'bad_habit_logic_mode';
   // Habit filtering/grouping (session-based but stored for convenience)
   static const String _keyHabitGroupBy = 'habit_group_by';
@@ -160,7 +163,7 @@ class PreferencesService {
 
   // Theme color
   static int getThemeColor() =>
-      prefs.getInt(_keyThemeColor) ?? 0xFF673AB7; // deepPurple default
+      prefs.getInt(_keyThemeColor) ?? 4283215696; // Default gray color
   static Future<bool> setThemeColor(int color) =>
       prefs.setInt(_keyThemeColor, color);
 
@@ -487,6 +490,24 @@ class PreferencesService {
 
   static Future<bool> setGridShowTimeline(bool value) =>
       prefs.setBool(_keyGridShowTimeline, value);
+
+  static String getGridCompletionButtonPlacement() =>
+      prefs.getString(_keyGridCompletionButtonPlacement) ?? 'center';
+
+  static Future<bool> setGridCompletionButtonPlacement(String value) =>
+      prefs.setString(_keyGridCompletionButtonPlacement, value);
+
+  static String getGridTimelineBoxSize() =>
+      prefs.getString(_keyGridTimelineBoxSize) ?? 'small';
+
+  static Future<bool> setGridTimelineBoxSize(String value) =>
+      prefs.setString(_keyGridTimelineBoxSize, value);
+
+  static String getGridTimelineFitMode() =>
+      prefs.getString(_keyGridTimelineFitMode) ?? 'fit';
+
+  static Future<bool> setGridTimelineFitMode(String value) =>
+      prefs.setString(_keyGridTimelineFitMode, value);
 
   static String getBadHabitLogicMode() {
     final value = prefs.getString(_keyBadHabitLogicMode);

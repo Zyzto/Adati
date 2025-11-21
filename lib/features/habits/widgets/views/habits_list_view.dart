@@ -45,9 +45,9 @@ class HabitsListView extends ConsumerWidget {
             child: Text(
               'good_habits'.tr(),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
             ),
           ),
           ...goodHabits.map((habit) => HabitCard(habit: habit)),
@@ -58,9 +58,9 @@ class HabitsListView extends ConsumerWidget {
             child: Text(
               'bad_habits'.tr(),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
             ),
           ),
           ...badHabits.map((habit) => HabitCard(habit: habit)),
@@ -70,15 +70,25 @@ class HabitsListView extends ConsumerWidget {
   }
 
   Widget _buildGridView(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Adaptive max cross axis extent based on screen size
+    // Small phones: ~160px per card (2 columns)
+    // Large phones: ~180px per card (2 columns)
+    // Tablets: ~200px per card (3+ columns)
+    final maxCrossAxisExtent = screenWidth > 600
+        ? 200.0
+        : (screenWidth > 400 ? 180.0 : 160.0);
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: maxCrossAxisExtent,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.9,
+        childAspectRatio:
+            0.80, // Taller to accommodate completion button and timeline
       ),
       itemCount: habits.length,
       itemBuilder: (context, index) {
@@ -99,4 +109,3 @@ class HabitsListView extends ConsumerWidget {
     );
   }
 }
-

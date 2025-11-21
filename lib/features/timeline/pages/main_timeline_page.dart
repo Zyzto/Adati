@@ -302,15 +302,37 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
     Log.info('Theme Color: 0x${ref.read(themeColorProvider).toRadixString(16).toUpperCase()}');
     Log.info('Card Elevation: ${ref.read(cardElevationProvider)}');
     Log.info('Card Border Radius: ${ref.read(cardBorderRadiusProvider)}');
+    Log.info('Card Spacing: ${ref.read(cardSpacingProvider)}');
     Log.info('Font Size Scale: ${ref.read(fontSizeScaleProvider)}');
+    Log.info('Icon Size: ${ref.read(iconSizeProvider)}');
     Log.info('Timeline Days: ${ref.read(timelineDaysProvider)}');
     Log.info('Modal Timeline Days: ${ref.read(modalTimelineDaysProvider)}');
     Log.info('Habit Card Timeline Days: ${ref.read(habitCardTimelineDaysProvider)}');
+    Log.info('Timeline Spacing: ${ref.read(timelineSpacingProvider)}');
+    Log.info('Timeline Compact Mode: ${ref.read(timelineCompactModeProvider)}');
+    Log.info('Main Timeline Fill Lines: ${ref.read(mainTimelineFillLinesProvider)}');
+    Log.info('Main Timeline Lines: ${ref.read(mainTimelineLinesProvider)}');
+    Log.info('Habit Card Timeline Fill Lines: ${ref.read(habitCardTimelineFillLinesProvider)}');
+    Log.info('Habit Card Timeline Lines: ${ref.read(habitCardTimelineLinesProvider)}');
     Log.info('Show Statistics Card: ${ref.read(showStatisticsCardProvider)}');
     Log.info('Show Main Timeline: ${ref.read(showMainTimelineProvider)}');
     Log.info('Habits Layout Mode: ${ref.read(habitsLayoutModeProvider)}');
     Log.info('Habit Sort Order: ${ref.read(habitSortOrderProvider)}');
     Log.info('Bad Habit Logic Mode: ${ref.read(badHabitLogicModeProvider)}');
+    Log.info('--- Grid Settings ---');
+    Log.info('Grid Show Icon: ${ref.read(gridShowIconProvider)}');
+    Log.info('Grid Show Completion: ${ref.read(gridShowCompletionProvider)}');
+    Log.info('Grid Show Timeline: ${ref.read(gridShowTimelineProvider)}');
+    Log.info('Grid Completion Button Placement: ${ref.read(gridCompletionButtonPlacementProvider)}');
+    Log.info('Grid Timeline Box Size: ${ref.read(gridTimelineBoxSizeProvider)}');
+    Log.info('Grid Timeline Fit Mode: ${ref.read(gridTimelineFitModeProvider)}');
+    Log.info('--- Display Settings ---');
+    Log.info('Show Descriptions: ${ref.read(showDescriptionsProvider)}');
+    Log.info('Show Streak On Card: ${ref.read(showStreakOnCardProvider)}');
+    Log.info('Show Streak Borders: ${ref.read(showStreakBordersProvider)}');
+    Log.info('Compact Cards: ${ref.read(compactCardsProvider)}');
+    Log.info('Day Square Size: ${ref.read(daySquareSizeProvider)}');
+    Log.info('Use Streak Colors for Squares: ${ref.read(useStreakColorsForSquaresProvider)}');
   }
 
   Future<void> _logAllHabits(db.AppDatabase database) async {
