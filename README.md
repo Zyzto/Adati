@@ -4,17 +4,14 @@
 
 **A beautiful habit tracking app with timeline visualization**
 
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
-[![Flutter](https://img.shields.io/badge/Flutter-3.38.2-02569B?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.9.2-0175C2?logo=dart)](https://dart.dev)
-[![Platforms](https://img.shields.io/badge/platforms-Android%20%7C%20iOS%20%7C%20Linux%20%7C%20Windows%20%7C%20macOS%20%7C%20Web-lightgrey)](https://flutter.dev)
-
 [![Latest Release](https://img.shields.io/github/v/release/Zyzto/Adati?label=Latest%20Release&logo=github&include_prereleases)](https://github.com/Zyzto/Adati/releases/latest)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Zyzto/Adati/release-beta.yml?label=Build&logo=github)](https://github.com/Zyzto/Adati/actions)
 [![Downloads](https://img.shields.io/github/downloads/Zyzto/Adati/total?label=Downloads&logo=github)](https://github.com/Zyzto/Adati/releases)
 [![GitHub Stars](https://img.shields.io/github/stars/Zyzto/Adati?label=Stars&logo=github)](https://github.com/Zyzto/Adati/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/Zyzto/Adati?label=Forks&logo=github)](https://github.com/Zyzto/Adati/network/members)
-[![GitHub Issues](https://img.shields.io/github/issues/Zyzto/Adati?label=Issues&logo=github)](https://github.com/Zyzto/Adati/issues)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Zyzto/Adati/release-beta.yml?label=Build&logo=github)](https://github.com/Zyzto/Adati/actions)
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.38.2-02569B?logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.9.2-0175C2?logo=dart)](https://dart.dev)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 </div>
 
@@ -24,15 +21,26 @@ Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/A
 
 ### Android
 
-**Option 1: Direct Install (APK)**
-- Download `adati-VERSION-android.apk` from [GitHub Releases](https://github.com/Zyzto/Adati/releases/latest)
-- Enable "Install from unknown sources" in your Android settings
-- Tap the downloaded APK file to install
-- **Get automatic updates**: Install [Obtainium](https://github.com/ImranR98/Obtainium) and add this repository (`Zyzto/Adati`) to receive automatic update notifications
+**Option 1: Obtainium (Recommended) - Automatic Updates**
+
+[![Add to Obtainium](https://img.shields.io/badge/Add_to-Obtainium-purple)](obtainium://add/https://github.com/Zyzto/Adati)
+
+- **One-Click Setup**: Tap the button above (requires Obtainium installed) to automatically add this app
+- **Manual Setup**: Install [Obtainium](https://github.com/ImranR98/Obtainium) from [F-Droid](https://f-droid.org/packages/com.imranr98.obtainium/) or [GitHub Releases](https://github.com/ImranR98/Obtainium/releases), then:
+  - Open Obtainium and tap the "+" button
+  - Select "GitHub Releases" as the source
+  - Enter repository: `Zyzto/Adati`
+- Obtainium will automatically track new releases and notify you of updates
+- You can also find this app on [Obtainium Apps](https://apps.obtainium.imranr.dev) for quick setup
 
 **Option 2: Google Play Store** **WIP**
 - Available on [Google Play Store](https://play.google.com/store/apps/details?id=com.shenepoy.adati) (when published)
 - Automatic updates through Play Store
+
+**Option 3: Direct Install (APK)**
+- Download `adati-VERSION-android.apk` from [GitHub Releases](https://github.com/Zyzto/Adati/releases/latest)
+- Enable "Install from unknown sources" in your Android settings
+- Tap the downloaded APK file to install
 
 ### Linux
 
