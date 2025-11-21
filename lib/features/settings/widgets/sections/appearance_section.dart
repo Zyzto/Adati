@@ -22,6 +22,7 @@ class AppearanceSectionContent extends ConsumerWidget {
     int currentColor,
     Future<void> Function(int) onColorChanged,
     Provider<dynamic> notifierProvider,
+    Provider<dynamic>? valueProvider,
   )
   showCompletionColorDialog;
   final Function(BuildContext, WidgetRef) showStreakColorSchemeDialog;
@@ -170,6 +171,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setCalendarCompletionColor(color);
             },
             calendarCompletionColorNotifierProvider,
+            calendarCompletionColorProvider,
           ),
         ),
         ListTile(
@@ -199,6 +201,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setHabitCardCompletionColor(color);
             },
             habitCardCompletionColorNotifierProvider,
+            habitCardCompletionColorProvider,
           ),
         ),
         ListTile(
@@ -228,6 +231,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setCalendarTimelineCompletionColor(color);
             },
             calendarTimelineCompletionColorNotifierProvider,
+            calendarTimelineCompletionColorProvider,
           ),
         ),
         ListTile(
@@ -257,6 +261,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setMainTimelineCompletionColor(color);
             },
             mainTimelineCompletionColorNotifierProvider,
+            mainTimelineCompletionColorProvider,
           ),
         ),
         // Negative Habits sub-subsection
@@ -292,6 +297,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setCalendarBadHabitCompletionColor(color);
             },
             calendarBadHabitCompletionColorNotifierProvider,
+            calendarBadHabitCompletionColorProvider,
           ),
         ),
         ListTile(
@@ -321,6 +327,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setHabitCardBadHabitCompletionColor(color);
             },
             habitCardBadHabitCompletionColorNotifierProvider,
+            habitCardBadHabitCompletionColorProvider,
           ),
         ),
         ListTile(
@@ -350,6 +357,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setCalendarTimelineBadHabitCompletionColor(color);
             },
             calendarTimelineBadHabitCompletionColorNotifierProvider,
+            calendarTimelineBadHabitCompletionColorProvider,
           ),
         ),
         ListTile(
@@ -379,6 +387,7 @@ class AppearanceSectionContent extends ConsumerWidget {
               await notifier.setMainTimelineBadHabitCompletionColor(color);
             },
             mainTimelineBadHabitCompletionColorNotifierProvider,
+            mainTimelineBadHabitCompletionColorProvider,
           ),
         ),
         // Streak Color Scheme

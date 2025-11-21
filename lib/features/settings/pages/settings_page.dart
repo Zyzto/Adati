@@ -1945,6 +1945,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setThemeMode(value);
                   ref.invalidate(themeModeNotifierProvider);
+                  ref.invalidate(themeModeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -1960,6 +1961,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setThemeMode(value);
                   ref.invalidate(themeModeNotifierProvider);
+                  ref.invalidate(themeModeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -1975,6 +1977,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setThemeMode(value);
                   ref.invalidate(themeModeNotifierProvider);
+                  ref.invalidate(themeModeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2039,6 +2042,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 onTap: () async {
                   await notifier.setThemeColor(colorValue);
                   ref.invalidate(themeColorNotifierProvider);
+                  ref.invalidate(themeColorProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2088,6 +2092,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setDaySquareSize(value);
                   ref.invalidate(daySquareSizeNotifierProvider);
+                  ref.invalidate(daySquareSizeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2103,6 +2108,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setDaySquareSize(value);
                   ref.invalidate(daySquareSizeNotifierProvider);
+                  ref.invalidate(daySquareSizeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2118,6 +2124,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setDaySquareSize(value);
                   ref.invalidate(daySquareSizeNotifierProvider);
+                  ref.invalidate(daySquareSizeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2161,6 +2168,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setDateFormat(value);
                   ref.invalidate(dateFormatNotifierProvider);
+                  ref.invalidate(dateFormatProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2213,6 +2221,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               if (days != null && days > 0) {
                 await notifier.setHabitCardTimelineDays(days);
                 ref.invalidate(habitCardTimelineDaysNotifierProvider);
+                ref.invalidate(habitCardTimelineDaysProvider);
                 if (dialogContext.mounted) {
                   navigator.pop();
                 }
@@ -2256,6 +2265,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setFirstDayOfWeek(value);
                   ref.invalidate(firstDayOfWeekNotifierProvider);
+                  ref.invalidate(firstDayOfWeekProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2271,6 +2281,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setFirstDayOfWeek(value);
                   ref.invalidate(firstDayOfWeekNotifierProvider);
+                  ref.invalidate(firstDayOfWeekProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2330,6 +2341,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   if (value != null) {
                     await notifier.setHabitCheckboxStyle(value);
                     ref.invalidate(habitCheckboxStyleNotifierProvider);
+                    ref.invalidate(habitCheckboxStyleProvider);
                     if (dialogContext.mounted) {
                       navigator.pop();
                     }
@@ -2390,6 +2402,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final notifier = ref.read(modalTimelineDaysNotifierProvider);
     await notifier.setModalTimelineDays(defaultModalTimelineDays);
     ref.invalidate(modalTimelineDaysNotifierProvider);
+    ref.invalidate(modalTimelineDaysProvider);
   }
 
   Future<void> _revertHabitCardTimelineDays(
@@ -2399,6 +2412,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final notifier = ref.read(habitCardTimelineDaysNotifierProvider);
     await notifier.setHabitCardTimelineDays(defaultHabitCardTimelineDays);
     ref.invalidate(habitCardTimelineDaysNotifierProvider);
+    ref.invalidate(habitCardTimelineDaysProvider);
   }
 
   void _showTimelineDaysDialog(BuildContext context, WidgetRef ref) {
@@ -2435,6 +2449,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               if (days != null && days > 0) {
                 await notifier.setTimelineDays(days);
                 ref.invalidate(timelineDaysNotifierProvider);
+                ref.invalidate(timelineDaysProvider);
                 if (dialogContext.mounted) {
                   navigator.pop();
                 }
@@ -2491,6 +2506,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               if (days != null && days > 0) {
                 await notifier.setModalTimelineDays(days);
                 ref.invalidate(modalTimelineDaysNotifierProvider);
+                ref.invalidate(modalTimelineDaysProvider);
                 if (dialogContext.mounted) {
                   navigator.pop();
                 }
@@ -2541,6 +2557,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     });
                     notifier.setTimelineSpacing(value);
                     ref.invalidate(timelineSpacingNotifierProvider);
+                    ref.invalidate(timelineSpacingProvider);
                   },
                 ),
               ],
@@ -2578,6 +2595,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setIconSize(value);
                   ref.invalidate(iconSizeNotifierProvider);
+                  ref.invalidate(iconSizeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2593,6 +2611,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setIconSize(value);
                   ref.invalidate(iconSizeNotifierProvider);
+                  ref.invalidate(iconSizeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2608,6 +2627,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setIconSize(value);
                   ref.invalidate(iconSizeNotifierProvider);
+                  ref.invalidate(iconSizeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2647,6 +2667,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setProgressIndicatorStyle(value);
                   ref.invalidate(progressIndicatorStyleNotifierProvider);
+                  ref.invalidate(progressIndicatorStyleProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2662,6 +2683,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setProgressIndicatorStyle(value);
                   ref.invalidate(progressIndicatorStyleNotifierProvider);
+                  ref.invalidate(progressIndicatorStyleProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2687,6 +2709,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     int currentColor,
     Future<void> Function(int) onColorSelected,
     Provider<dynamic> notifierProvider,
+    Provider<dynamic>? valueProvider,
   ) {
     final navigator = Navigator.of(context);
     final mediaQuery = MediaQuery.of(context);
@@ -2731,6 +2754,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 onTap: () async {
                   await onColorSelected(colorValue);
                   ref.invalidate(notifierProvider);
+                  if (valueProvider != null) {
+                    ref.invalidate(valueProvider);
+                  }
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2868,6 +2894,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setFontSizeScale(value);
                   ref.invalidate(fontSizeScaleNotifierProvider);
+                  ref.invalidate(fontSizeScaleProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2883,6 +2910,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setFontSizeScale(value);
                   ref.invalidate(fontSizeScaleNotifierProvider);
+                  ref.invalidate(fontSizeScaleProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2898,6 +2926,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setFontSizeScale(value);
                   ref.invalidate(fontSizeScaleNotifierProvider);
+                  ref.invalidate(fontSizeScaleProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2913,6 +2942,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setFontSizeScale(value);
                   ref.invalidate(fontSizeScaleNotifierProvider);
+                  ref.invalidate(fontSizeScaleProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -2958,6 +2988,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     });
                     notifier.setCardSpacing(value);
                     ref.invalidate(cardSpacingNotifierProvider);
+                    ref.invalidate(cardSpacingProvider);
                   },
                 ),
               ],
@@ -3001,6 +3032,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     });
                     notifier.setBorderRadius(value);
                     ref.invalidate(cardStyleNotifierProvider);
+                    ref.invalidate(cardBorderRadiusProvider);
                   },
                 ),
               ],
@@ -3044,6 +3076,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     });
                     notifier.setElevation(value);
                     ref.invalidate(cardStyleNotifierProvider);
+                    ref.invalidate(cardElevationProvider);
                   },
                 ),
               ],
@@ -3086,6 +3119,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setBadHabitLogicMode(value);
                   ref.invalidate(badHabitLogicModeNotifierProvider);
+                  ref.invalidate(badHabitLogicModeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }
@@ -3101,6 +3135,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 if (value != null) {
                   await notifier.setBadHabitLogicMode(value);
                   ref.invalidate(badHabitLogicModeNotifierProvider);
+                  ref.invalidate(badHabitLogicModeProvider);
                   if (dialogContext.mounted) {
                     navigator.pop();
                   }

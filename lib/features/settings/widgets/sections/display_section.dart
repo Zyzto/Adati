@@ -482,7 +482,9 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     if (mode != null && mode.isNotEmpty) {
       final notifier = ref.read(habitCardLayoutModeNotifierProvider);
       await notifier.setHabitCardLayoutMode(mode);
+      // Invalidate both the notifier and value providers to ensure UI updates
       ref.invalidate(habitCardLayoutModeNotifierProvider);
+      ref.invalidate(habitCardLayoutModeProvider);
     }
   }
 
@@ -537,7 +539,9 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     if (result != null && result != current) {
       final notifier = ref.read(habitCardTimelineLinesNotifierProvider);
       await notifier.setHabitCardTimelineLines(result);
+      // Invalidate both the notifier and value providers to ensure UI updates
       ref.invalidate(habitCardTimelineLinesNotifierProvider);
+      ref.invalidate(habitCardTimelineLinesProvider);
     }
   }
 
@@ -592,7 +596,9 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     if (result != null && result != current) {
       final notifier = ref.read(mainTimelineLinesNotifierProvider);
       await notifier.setMainTimelineLines(result);
+      // Invalidate both the notifier and value providers to ensure UI updates
       ref.invalidate(mainTimelineLinesNotifierProvider);
+      ref.invalidate(mainTimelineLinesProvider);
     }
   }
 }
