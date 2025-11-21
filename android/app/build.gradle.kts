@@ -71,10 +71,11 @@ android {
             
             // Enable debug symbols for crash reporting (doesn't affect release optimization)
             isDebuggable = false
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Enable code minification and resource shrinking for smaller app size
+            isMinifyEnabled = true
+            isShrinkResources = true
             
-            // ProGuard rules (even if minifyEnabled is false, rules help with compatibility)
+            // ProGuard rules for code optimization and obfuscation
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

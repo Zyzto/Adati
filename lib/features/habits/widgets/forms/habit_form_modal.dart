@@ -10,6 +10,7 @@ import 'tag_form_modal.dart';
 import '../components/icon_constants.dart';
 import '../components/color_picker.dart';
 import '../components/icon_picker.dart';
+import '../../../../../core/utils/icon_utils.dart';
 
 class HabitFormModal extends ConsumerStatefulWidget {
   final int? habitId;
@@ -796,10 +797,7 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Icon(
-                        IconData(
-                          int.parse(tag.icon!),
-                          fontFamily: 'MaterialIcons',
-                        ),
+                        createIconDataFromString(tag.icon!),
                         size: 14,
                         color: Color(tag.color),
                       ),

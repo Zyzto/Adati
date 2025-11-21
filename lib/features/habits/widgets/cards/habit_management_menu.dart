@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../../../core/database/app_database.dart' as db;
 import '../../providers/habit_providers.dart';
 import '../forms/habit_form_modal.dart';
+import '../../../../../core/utils/icon_utils.dart';
 
 class HabitManagementMenu extends ConsumerWidget {
   final db.Habit habit;
@@ -78,10 +79,7 @@ class HabitManagementMenu extends ConsumerWidget {
                 ),
                 child: habit.icon != null
                     ? Icon(
-                        IconData(
-                          int.parse(habit.icon!),
-                          fontFamily: 'MaterialIcons',
-                        ),
+                        createIconDataFromString(habit.icon!),
                         color: Color(habit.color),
                       )
                     : Icon(

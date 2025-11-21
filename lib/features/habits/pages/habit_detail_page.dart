@@ -16,6 +16,7 @@ import '../../settings/providers/settings_providers.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
 import '../../../../core/services/preferences_service.dart';
+import '../../../../core/utils/icon_utils.dart';
 
 class HabitDetailPage extends ConsumerStatefulWidget {
   final int habitId;
@@ -205,10 +206,7 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
                                 ),
                                 child: habit.icon != null
                                     ? Icon(
-                                        IconData(
-                                          int.parse(habit.icon!),
-                                          fontFamily: 'MaterialIcons',
-                                        ),
+                                        createIconDataFromString(habit.icon!),
                                         color: Colors.white,
                                         size: 24,
                                       )

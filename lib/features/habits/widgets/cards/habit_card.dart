@@ -14,6 +14,7 @@ import '../../pages/habit_detail_page.dart';
 import '../components/checkbox_style.dart';
 import '../../../settings/providers/settings_providers.dart';
 import '../../../../../core/widgets/skeleton_loader.dart';
+import '../../../../../core/utils/icon_utils.dart';
 
 /// Aggregated settings that control how a habit card looks and behaves.
 class _HabitCardSettings {
@@ -47,7 +48,10 @@ class _HabitCardSettings {
     required this.timelineLines,
   });
 
-  factory _HabitCardSettings.fromRef(WidgetRef ref, {required bool isGoodHabit}) {
+  factory _HabitCardSettings.fromRef(
+    WidgetRef ref, {
+    required bool isGoodHabit,
+  }) {
     final sessionOptions = ref.watch(sessionViewOptionsProvider);
     final globalShowDescriptions = ref.watch(showDescriptionsProvider);
     final showDescriptions =
@@ -172,8 +176,7 @@ class HabitCard extends ConsumerWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  final value =
-                      double.tryParse(controller.text.trim()) ?? 0.0;
+                  final value = double.tryParse(controller.text.trim()) ?? 0.0;
                   await repository.trackMeasurable(habit.id, today, value);
                   if (context.mounted) {
                     Navigator.pop(context);
@@ -746,10 +749,7 @@ class HabitCard extends ConsumerWidget {
               ),
               child: habit.icon != null
                   ? Icon(
-                      IconData(
-                        int.parse(habit.icon!),
-                        fontFamily: 'MaterialIcons',
-                      ),
+                      createIconDataFromString(habit.icon!),
                       color: Colors.white,
                       size: iconSizeValue * 0.6,
                     )
@@ -831,7 +831,7 @@ class HabitCard extends ConsumerWidget {
               );
             },
             loading: () => const SizedBox.shrink(),
-            error: (_,_) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
       ],
     );
@@ -928,98 +928,94 @@ class HabitCard extends ConsumerWidget {
     final useTopRowLayout = settings.layoutMode == 'topRow';
 
     final shape = streakAsync.maybeWhen(
-        data: (streak) {
-          // Show border with completion color when today is completed, or with streak color if streak borders are enabled
-          return entriesAsync.maybeWhen(
-            data: (entries) {
-              final today = app_date_utils.DateUtils.getToday();
-              final todayEntry = entries
-                  .where(
-                    (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
-                  )
-                  .firstOrNull;
+      data: (streak) {
+        // Show border with completion color when today is completed, or with streak color if streak borders are enabled
+        return entriesAsync.maybeWhen(
+          data: (entries) {
+            final today = app_date_utils.DateUtils.getToday();
+            final todayEntry = entries
+                .where((e) => app_date_utils.DateUtils.isSameDay(e.date, today))
+                .firstOrNull;
 
-              final isTodayCompleted = todayEntry?.completed ?? false;
+            final isTodayCompleted = todayEntry?.completed ?? false;
 
-              // For good habits: today must be completed for streak to be active
-              // For bad habits: today must NOT be completed (not doing bad habit) for streak to be active
-              // If there's no entry for today, we can't assume it's part of the streak
-              bool todayIsPartOfStreak = false;
-              if (todayEntry != null) {
-                todayIsPartOfStreak = isGoodHabit
-                    ? todayEntry.completed
-                    : !todayEntry.completed;
-              }
+            // For good habits: today must be completed for streak to be active
+            // For bad habits: today must NOT be completed (not doing bad habit) for streak to be active
+            // If there's no entry for today, we can't assume it's part of the streak
+            bool todayIsPartOfStreak = false;
+            if (todayEntry != null) {
+              todayIsPartOfStreak = isGoodHabit
+                  ? todayEntry.completed
+                  : !todayEntry.completed;
+            }
 
-              // Border logic: show border when checked/completed (same for good and bad habits)
-              // - Good habits: border when completed (they did the good thing)
-              // - Bad habits: border when completed (they did the bad thing - checked)
-              final shouldShowCompletionBorder = isTodayCompleted;
+            // Border logic: show border when checked/completed (same for good and bad habits)
+            // - Good habits: border when completed (they did the good thing)
+            // - Bad habits: border when completed (they did the bad thing - checked)
+            final shouldShowCompletionBorder = isTodayCompleted;
 
-              // Priority: Completion color border (if applicable) > Streak border (if enabled and streak active)
-              if (shouldShowCompletionBorder) {
-                // Show border with completion color
-                return RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: Color(habitCardCompletionColor),
-                    width: 2,
-                  ),
-                );
-              } else if (showStreakBorders &&
-                  streak != null &&
-                  streak.combinedStreak > 0 &&
-                  todayIsPartOfStreak) {
-                // Show streak color border if streak borders are enabled and streak is active
-                final streakColor = _getStreakColor(ref, streak.combinedStreak);
-                return RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: streakColor, width: 2),
-                );
-              }
+            // Priority: Completion color border (if applicable) > Streak border (if enabled and streak active)
+            if (shouldShowCompletionBorder) {
+              // Show border with completion color
               return RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Color(habitCardCompletionColor),
+                  width: 2,
+                ),
               );
-            },
-            orElse: () =>
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          );
-        },
-        orElse: () {
-          // When streak data is not available, check if today is completed
-          return entriesAsync.maybeWhen(
-            data: (entries) {
-              final today = app_date_utils.DateUtils.getToday();
-              final todayEntry = entries
-                  .where(
-                    (e) => app_date_utils.DateUtils.isSameDay(e.date, today),
-                  )
-                  .firstOrNull;
-              final isTodayCompleted = todayEntry?.completed ?? false;
-
-              // Border logic: show border when checked/completed (same for good and bad habits)
-              // - Good habits: border when completed (they did the good thing)
-              // - Bad habits: border when completed (they did the bad thing - checked)
-              final shouldShowCompletionBorder = isTodayCompleted;
-
-              if (shouldShowCompletionBorder) {
-                return RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: Color(habitCardCompletionColor),
-                    width: 2,
-                  ),
-                );
-              }
+            } else if (showStreakBorders &&
+                streak != null &&
+                streak.combinedStreak > 0 &&
+                todayIsPartOfStreak) {
+              // Show streak color border if streak borders are enabled and streak is active
+              final streakColor = _getStreakColor(ref, streak.combinedStreak);
               return RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: streakColor, width: 2),
               );
-            },
-            orElse: () =>
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          );
-        },
-      );
+            }
+            return RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            );
+          },
+          orElse: () =>
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        );
+      },
+      orElse: () {
+        // When streak data is not available, check if today is completed
+        return entriesAsync.maybeWhen(
+          data: (entries) {
+            final today = app_date_utils.DateUtils.getToday();
+            final todayEntry = entries
+                .where((e) => app_date_utils.DateUtils.isSameDay(e.date, today))
+                .firstOrNull;
+            final isTodayCompleted = todayEntry?.completed ?? false;
+
+            // Border logic: show border when checked/completed (same for good and bad habits)
+            // - Good habits: border when completed (they did the good thing)
+            // - Bad habits: border when completed (they did the bad thing - checked)
+            final shouldShowCompletionBorder = isTodayCompleted;
+
+            if (shouldShowCompletionBorder) {
+              return RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Color(habitCardCompletionColor),
+                  width: 2,
+                ),
+              );
+            }
+            return RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            );
+          },
+          orElse: () =>
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        );
+      },
+    );
 
     Widget buildTrackingButton() {
       return todayEntryAsync.when(
@@ -1223,11 +1219,7 @@ class HabitCard extends ConsumerWidget {
                   highlightColor: Colors.transparent,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: _buildCardContent(
-                      context,
-                      ref,
-                      settings,
-                    ),
+                    child: _buildCardContent(context, ref, settings),
                   ),
                 ),
               ),
@@ -1251,13 +1243,7 @@ class HabitCard extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildCardContent(
-                  context,
-                  ref,
-                  settings,
-                ),
-              ),
+              Expanded(child: _buildCardContent(context, ref, settings)),
               const SizedBox(width: 12),
               buildTrackingButton(),
             ],
@@ -1369,9 +1355,9 @@ class HabitGridCard extends ConsumerWidget {
                   Text(
                     '${percentage.toStringAsFixed(0)}%',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 9,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 9,
+                    ),
                   ),
                 ],
               ),
@@ -1381,9 +1367,9 @@ class HabitGridCard extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
                   '${value.toStringAsFixed(1)} $unit',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 10,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 10),
                 ),
               ),
           ],
@@ -1425,17 +1411,16 @@ class HabitGridCard extends ConsumerWidget {
             completedOccurrences.isNotEmpty
                 ? Icons.check_circle
                 : Icons.circle_outlined,
-            color:
-                completedOccurrences.isNotEmpty ? Colors.green : Colors.grey,
+            color: completedOccurrences.isNotEmpty ? Colors.green : Colors.grey,
             size: 32,
           ),
           const SizedBox(height: 2),
           Text(
             '${completedOccurrences.length}/${allOccurrences.length}',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(fontWeight: FontWeight.bold, fontSize: 10),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
           ),
         ],
       );
@@ -1464,8 +1449,9 @@ class HabitGridCard extends ConsumerWidget {
 
       return todayEntryAsync.when(
         data: (_) {
-          final entriesAsyncForButton =
-              ref.watch(trackingEntriesProvider(habit.id));
+          final entriesAsyncForButton = ref.watch(
+            trackingEntriesProvider(habit.id),
+          );
 
           return entriesAsyncForButton.when(
             data: (entries) {
@@ -1590,10 +1576,7 @@ class HabitGridCard extends ConsumerWidget {
               ),
               child: habit.icon != null
                   ? Icon(
-                      IconData(
-                        int.parse(habit.icon!),
-                        fontFamily: 'MaterialIcons',
-                      ),
+                      createIconDataFromString(habit.icon!),
                       color: Colors.white,
                       size: iconSizeValue * 0.6,
                     )
@@ -1605,9 +1588,9 @@ class HabitGridCard extends ConsumerWidget {
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           if (showDescriptions &&
               habit.description != null &&
@@ -1617,12 +1600,11 @@ class HabitGridCard extends ConsumerWidget {
               habit.description!,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.7),
-                  ),
+                fontSize: 11,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
               maxLines: compactCards ? 1 : 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1644,8 +1626,7 @@ class HabitGridCard extends ConsumerWidget {
                           style: TextStyle(fontSize: compactCards ? 9 : 10),
                         ),
                         padding: EdgeInsets.zero,
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         visualDensity: VisualDensity.compact,
                       );
                     }).toList(),
@@ -1669,7 +1650,7 @@ class HabitGridCard extends ConsumerWidget {
           constraints: const BoxConstraints(maxHeight: 72),
           child: HabitTimeline(
             habitId: habit.id,
-            compact: compact ,
+            compact: compact,
             daysToShow: settings.habitCardTimelineDays,
           ),
         ),
@@ -1699,9 +1680,7 @@ class HabitGridCard extends ConsumerWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Center(child: buildHeader()),
-                  ),
+                  Expanded(child: Center(child: buildHeader())),
                   if (showCompletion) const SizedBox(width: 8),
                   if (showCompletion) buildTrackingButton(),
                 ],

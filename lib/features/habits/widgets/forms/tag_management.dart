@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../../../core/database/app_database.dart' as db;
 import '../../providers/habit_providers.dart';
 import 'tag_form_modal.dart';
+import '../../../../../core/utils/icon_utils.dart';
 
 class TagManagementWidget extends ConsumerWidget {
   const TagManagementWidget({super.key});
@@ -128,10 +129,7 @@ class TagManagementWidget extends ConsumerWidget {
                         ),
                         child: tag.icon != null
                             ? Icon(
-                                IconData(
-                                  int.parse(tag.icon!),
-                                  fontFamily: 'MaterialIcons',
-                                ),
+                                createIconDataFromString(tag.icon!),
                                 color: Color(tag.color),
                                 size: 24,
                               )

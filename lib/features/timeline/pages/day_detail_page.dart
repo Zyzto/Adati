@@ -7,6 +7,7 @@ import '../../../../core/database/app_database.dart' as db;
 import '../../../../core/database/models/tracking_types.dart';
 import '../../habits/providers/habit_providers.dart';
 import '../../habits/providers/tracking_providers.dart';
+import '../../../../core/utils/icon_utils.dart';
 
 class DayDetailPage extends ConsumerWidget {
   final DateTime date;
@@ -592,10 +593,7 @@ class _HabitEntryCardState extends ConsumerState<_HabitEntryCard> {
           ),
           child: widget.habit.icon != null
               ? Icon(
-                  IconData(
-                    int.parse(widget.habit.icon!),
-                    fontFamily: 'MaterialIcons',
-                  ),
+                  createIconDataFromString(widget.habit.icon!),
                   color: Colors.white,
                 )
               : null,
