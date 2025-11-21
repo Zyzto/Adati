@@ -12,11 +12,11 @@ class DisplaySectionContent extends ConsumerStatefulWidget {
   final Function(BuildContext, WidgetRef) showModalTimelineDaysDialog;
   final Function(BuildContext, WidgetRef) showHabitCardTimelineDaysDialog;
   final Function(BuildContext, WidgetRef) showTimelineSpacingDialog;
-  final Function(BuildContext, WidgetRef) showHabitCheckboxStyleDialog;
-  final Function(BuildContext, WidgetRef) showProgressIndicatorStyleDialog;
+  final Function(BuildContext, WidgetRef) showDaySquareSizeDialog;
   final Function(BuildContext, WidgetRef) revertTimelineDays;
   final Function(BuildContext, WidgetRef) revertModalTimelineDays;
   final Function(BuildContext, WidgetRef) revertHabitCardTimelineDays;
+  final Function(BuildContext, WidgetRef) revertDaySquareSize;
 
   const DisplaySectionContent({
     super.key,
@@ -24,11 +24,11 @@ class DisplaySectionContent extends ConsumerStatefulWidget {
     required this.showModalTimelineDaysDialog,
     required this.showHabitCardTimelineDaysDialog,
     required this.showTimelineSpacingDialog,
-    required this.showHabitCheckboxStyleDialog,
-    required this.showProgressIndicatorStyleDialog,
+    required this.showDaySquareSizeDialog,
     required this.revertTimelineDays,
     required this.revertModalTimelineDays,
     required this.revertHabitCardTimelineDays,
+    required this.revertDaySquareSize,
   });
 
   @override
@@ -40,6 +40,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
   static const int defaultTimelineDays = 60;
   static const int defaultModalTimelineDays = 30;
   static const int defaultHabitCardTimelineDays = 10;
+  static const String defaultDaySquareSize = 'large';
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +54,6 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     final showStreakNumbers = ref.watch(showStreakNumbersProvider);
     final showDescriptions = ref.watch(showDescriptionsProvider);
     final compactCards = ref.watch(compactCardsProvider);
-    final habitCheckboxStyle = ref.watch(habitCheckboxStyleProvider);
-    final progressIndicatorStyle = ref.watch(progressIndicatorStyleProvider);
     final showPercentage = ref.watch(showPercentageProvider);
     final showStatisticsCard = ref.watch(showStatisticsCardProvider);
     final showMainTimeline = ref.watch(showMainTimelineProvider);
@@ -70,6 +69,10 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     );
     final habitCardTimelineLines = ref.watch(habitCardTimelineLinesProvider);
     final showStreakOnCard = ref.watch(showStreakOnCardProvider);
+    final daySquareSize = ref.watch(daySquareSizeProvider);
+    final useStreakColorsForSquares = ref.watch(
+      useStreakColorsForSquaresProvider,
+    );
 
     return Column(
       children: [
@@ -121,11 +124,12 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         ),
         const Divider(),
 
-        // 2. Main Timeline (the big calendar on main page - all together)
+        // 2. Main Timeline (prominent feature - all settings together)
         SettingsSubsectionHeader(
           title: 'settings_section_display_main_timeline'.tr(),
           icon: Icons.calendar_view_week,
         ),
+        // Show toggle first
         SwitchListTile(
           secondary: const Icon(Icons.calendar_view_month),
           title: Text('show_main_timeline'.tr()),
@@ -137,6 +141,23 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             ref.invalidate(showMainTimelineNotifierProvider);
           },
         ),
+        // Size settings
+        ListTile(
+          leading: const Icon(Icons.square),
+          title: Text('day_square_size'.tr()),
+          subtitle: Text(
+            SettingsFormatters.getDaySquareSizeName(daySquareSize),
+          ),
+          trailing: daySquareSize != defaultDaySquareSize
+              ? IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'reset_to_default'.tr(),
+                  onPressed: () => widget.revertDaySquareSize(context, ref),
+                )
+              : null,
+          onTap: () => widget.showDaySquareSizeDialog(context, ref),
+        ),
+        // Days configuration (when not in fill-lines mode)
         ListTile(
           leading: const Icon(Icons.calendar_view_week),
           title: Text('timeline_days'.tr()),
@@ -152,6 +173,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
               : null,
           onTap: () => widget.showTimelineDaysDialog(context, ref),
         ),
+        // Fill Lines Mode (toggle)
         SwitchListTile(
           secondary: const Icon(Icons.grid_4x4),
           title: Text('main_timeline_fill_lines'.tr()),
@@ -163,6 +185,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             ref.invalidate(mainTimelineFillLinesNotifierProvider);
           },
         ),
+        // Lines count (when fill-lines enabled)
         ListTile(
           leading: const Icon(Icons.format_line_spacing),
           title: Text('main_timeline_lines'.tr()),
@@ -173,12 +196,14 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             mainTimelineLines,
           ),
         ),
+        // Spacing
         ListTile(
           leading: const Icon(Icons.space_bar),
           title: Text('timeline_spacing'.tr()),
           subtitle: Text('${timelineSpacing.toStringAsFixed(1)}px'),
           onTap: () => widget.showTimelineSpacingDialog(context, ref),
         ),
+        // Compact Mode
         SwitchListTile(
           secondary: const Icon(Icons.compress),
           title: Text('timeline_compact_mode'.tr()),
@@ -190,6 +215,22 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             ref.invalidate(timelineCompactModeNotifierProvider);
           },
         ),
+        // Streak Colors
+        SwitchListTile(
+          secondary: const Icon(Icons.palette),
+          title: Text('use_streak_colors_for_squares'.tr()),
+          subtitle: Text('use_streak_colors_for_squares_description'.tr()),
+          value: useStreakColorsForSquares,
+          onChanged: (value) async {
+            final notifier = ref.read(
+              useStreakColorsForSquaresNotifierProvider,
+            );
+            await notifier.setUseStreakColorsForSquares(value);
+            ref.invalidate(useStreakColorsForSquaresNotifierProvider);
+            ref.invalidate(useStreakColorsForSquaresProvider);
+          },
+        ),
+        // Visual enhancements
         SwitchListTile(
           secondary: const Icon(Icons.border_color),
           title: Text('show_streak_borders'.tr()),
@@ -225,11 +266,12 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         ),
         const Divider(),
 
-        // 3. Habit Cards (all card-related settings together)
+        // 3. Habit Cards (individual habit display)
         SettingsSubsectionHeader(
           title: 'settings_section_display_habit_cards'.tr(),
           icon: Icons.view_module,
         ),
+        // Layout
         ListTile(
           leading: const Icon(Icons.view_agenda),
           title: Text('habit_card_layout_mode'.tr()),
@@ -240,6 +282,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           ),
           onTap: () => _showHabitCardLayoutModeDialog(habitCardLayoutMode),
         ),
+        // Content visibility toggles
         SwitchListTile(
           secondary: const Icon(Icons.description),
           title: Text('show_descriptions'.tr()),
@@ -273,14 +316,6 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             ref.invalidate(showPercentageNotifierProvider);
           },
         ),
-        ListTile(
-          leading: const Icon(Icons.check_box),
-          title: Text('habit_checkbox_style'.tr()),
-          subtitle: Text(
-            SettingsFormatters.getCheckboxStyleName(habitCheckboxStyle),
-          ),
-          onTap: () => widget.showHabitCheckboxStyleDialog(context, ref),
-        ),
         SwitchListTile(
           secondary: const Icon(Icons.local_fire_department),
           title: Text('show_streak_on_card'.tr()),
@@ -292,6 +327,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             ref.invalidate(showStreakOnCardNotifierProvider);
           },
         ),
+        // Timeline settings
         SwitchListTile(
           secondary: const Icon(Icons.grid_on),
           title: Text('habit_card_timeline_fill_lines'.tr()),
@@ -357,20 +393,10 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         ),
         const Divider(),
 
-        // 5. Statistics (just statistics-related)
+        // 5. Statistics (supporting information)
         SettingsSubsectionHeader(
           title: 'settings_section_display_statistics'.tr(),
           icon: Icons.bar_chart,
-        ),
-        ListTile(
-          leading: const Icon(Icons.trending_up),
-          title: Text('progress_indicator_style'.tr()),
-          subtitle: Text(
-            SettingsFormatters.getProgressIndicatorStyleName(
-              progressIndicatorStyle,
-            ),
-          ),
-          onTap: () => widget.showProgressIndicatorStyleDialog(context, ref),
         ),
         SwitchListTile(
           secondary: const Icon(Icons.bar_chart),

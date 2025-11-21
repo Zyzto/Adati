@@ -10,11 +10,11 @@ import '../settings_section.dart';
 class AppearanceSectionContent extends ConsumerWidget {
   final Function(BuildContext, WidgetRef) showFontSizeScaleDialog;
   final Function(BuildContext, WidgetRef) showIconSizeDialog;
-  final Function(BuildContext, WidgetRef) showDaySquareSizeDialog;
-  final Function(BuildContext, WidgetRef) revertDaySquareSize;
   final Function(BuildContext, WidgetRef) showCardBorderRadiusDialog;
   final Function(BuildContext, WidgetRef) showCardElevationDialog;
   final Function(BuildContext, WidgetRef) showCardSpacingDialog;
+  final Function(BuildContext, WidgetRef) showHabitCheckboxStyleDialog;
+  final Function(BuildContext, WidgetRef) showProgressIndicatorStyleDialog;
   final void Function(
     BuildContext context,
     WidgetRef ref,
@@ -31,11 +31,11 @@ class AppearanceSectionContent extends ConsumerWidget {
     super.key,
     required this.showFontSizeScaleDialog,
     required this.showIconSizeDialog,
-    required this.showDaySquareSizeDialog,
-    required this.revertDaySquareSize,
     required this.showCardBorderRadiusDialog,
     required this.showCardElevationDialog,
     required this.showCardSpacingDialog,
+    required this.showHabitCheckboxStyleDialog,
+    required this.showProgressIndicatorStyleDialog,
     required this.showCompletionColorDialog,
     required this.showStreakColorSchemeDialog,
   });
@@ -44,10 +44,11 @@ class AppearanceSectionContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final fontSizeScale = ref.watch(fontSizeScaleProvider);
     final iconSize = ref.watch(iconSizeProvider);
-    final daySquareSize = ref.watch(daySquareSizeProvider);
     final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
     final cardElevation = ref.watch(cardElevationProvider);
     final cardSpacing = ref.watch(cardSpacingProvider);
+    final habitCheckboxStyle = ref.watch(habitCheckboxStyleProvider);
+    final progressIndicatorStyle = ref.watch(progressIndicatorStyleProvider);
     final calendarCompletionColor = ref.watch(calendarCompletionColorProvider);
     final habitCardCompletionColor = ref.watch(
       habitCardCompletionColorProvider,
@@ -71,15 +72,14 @@ class AppearanceSectionContent extends ConsumerWidget {
       mainTimelineBadHabitCompletionColorProvider,
     );
     final streakColorScheme = ref.watch(streakColorSchemeProvider);
-    final useStreakColorsForSquares = ref.watch(
-      useStreakColorsForSquaresProvider,
-    );
-
-    const defaultDaySquareSize = 'large';
 
     return Column(
       children: [
-        // Top-level appearance settings
+        // 1. Typography & Icons (global visual settings)
+        SettingsSubsectionHeader(
+          title: 'settings_section_appearance_typography'.tr(),
+          icon: Icons.text_fields,
+        ),
         ListTile(
           leading: const Icon(Icons.text_fields),
           title: Text('font_size_scale'.tr()),
@@ -94,23 +94,9 @@ class AppearanceSectionContent extends ConsumerWidget {
           subtitle: Text(SettingsFormatters.getIconSizeName(iconSize)),
           onTap: () => showIconSizeDialog(context, ref),
         ),
-        ListTile(
-          leading: const Icon(Icons.square),
-          title: Text('day_square_size'.tr()),
-          subtitle: Text(
-            SettingsFormatters.getDaySquareSizeName(daySquareSize),
-          ),
-          trailing: daySquareSize != defaultDaySquareSize
-              ? IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'reset_to_default'.tr(),
-                  onPressed: () => revertDaySquareSize(context, ref),
-                )
-              : null,
-          onTap: () => showDaySquareSizeDialog(context, ref),
-        ),
-        // Card Style subsection
         const Divider(),
+
+        // 2. Card Style (most visible component styling)
         SettingsSubsectionHeader(
           title: 'settings_section_appearance_card_style'.tr(),
           icon: Icons.credit_card,
@@ -133,8 +119,33 @@ class AppearanceSectionContent extends ConsumerWidget {
           subtitle: Text('${cardSpacing.toStringAsFixed(1)}px'),
           onTap: () => showCardSpacingDialog(context, ref),
         ),
-        // Completion Colors subsection
         const Divider(),
+
+        // 3. Component Styles (specific UI component styling)
+        SettingsSubsectionHeader(
+          title: 'settings_section_appearance_component_styles'.tr(),
+          icon: Icons.style,
+        ),
+        ListTile(
+          leading: const Icon(Icons.check_box),
+          title: Text('habit_checkbox_style'.tr()),
+          subtitle: Text(
+            SettingsFormatters.getCheckboxStyleName(habitCheckboxStyle),
+          ),
+          onTap: () => showHabitCheckboxStyleDialog(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.trending_up),
+          title: Text('progress_indicator_style'.tr()),
+          subtitle: Text(
+            SettingsFormatters.getProgressIndicatorStyleName(
+              progressIndicatorStyle,
+            ),
+          ),
+          onTap: () => showProgressIndicatorStyleDialog(context, ref),
+        ),
+        const Divider(),
+        // 4. Completion Colors (organized by context, positive first)
         SettingsSubsectionHeader(
           title: 'settings_section_appearance_completion_colors'.tr(),
           icon: Icons.color_lens,
@@ -390,8 +401,13 @@ class AppearanceSectionContent extends ConsumerWidget {
             mainTimelineBadHabitCompletionColorProvider,
           ),
         ),
-        // Streak Color Scheme
         const Divider(),
+
+        // 5. Streak Colors (specialized color scheme)
+        SettingsSubsectionHeader(
+          title: 'settings_section_appearance_streak_colors'.tr(),
+          icon: Icons.local_fire_department,
+        ),
         ListTile(
           leading: const Icon(Icons.color_lens),
           title: Text('streak_color_scheme'.tr()),
@@ -399,20 +415,6 @@ class AppearanceSectionContent extends ConsumerWidget {
             SettingsFormatters.getStreakColorSchemeName(streakColorScheme),
           ),
           onTap: () => showStreakColorSchemeDialog(context, ref),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.palette),
-          title: Text('use_streak_colors_for_squares'.tr()),
-          subtitle: Text('use_streak_colors_for_squares_description'.tr()),
-          value: useStreakColorsForSquares,
-          onChanged: (value) async {
-            final notifier = ref.read(
-              useStreakColorsForSquaresNotifierProvider,
-            );
-            await notifier.setUseStreakColorsForSquares(value);
-            ref.invalidate(useStreakColorsForSquaresNotifierProvider);
-            ref.invalidate(useStreakColorsForSquaresProvider);
-          },
         ),
       ],
     );
