@@ -109,8 +109,10 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
                     _showDatabasePath(context, database);
                     break;
                   case 'refresh':
+                    // Invalidate all relevant stream providers
                     ref.invalidate(habitsProvider);
                     ref.invalidate(tagsProvider);
+                    ref.invalidate(filteredSortedHabitsProvider);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Providers refreshed')),
@@ -287,22 +289,48 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
   Future<void> _logAllPreferences() async {
     final prefs = PreferencesService.prefs;
     final allKeys = prefs.getKeys();
-    Log.info('=== All Preferences ===');
+    Log.info('=== All Preferences (Raw SharedPreferences) ===');
     for (final key in allKeys) {
       final value = prefs.get(key);
       Log.info('$key: $value');
     }
     Log.info('Total preferences: ${allKeys.length}');
+    
+    // Also log current provider values for key settings
+    Log.info('=== Current Provider Values ===');
+    Log.info('Theme Mode: ${ref.read(themeModeProvider)}');
+    Log.info('Theme Color: 0x${ref.read(themeColorProvider).toRadixString(16).toUpperCase()}');
+    Log.info('Card Elevation: ${ref.read(cardElevationProvider)}');
+    Log.info('Card Border Radius: ${ref.read(cardBorderRadiusProvider)}');
+    Log.info('Font Size Scale: ${ref.read(fontSizeScaleProvider)}');
+    Log.info('Timeline Days: ${ref.read(timelineDaysProvider)}');
+    Log.info('Modal Timeline Days: ${ref.read(modalTimelineDaysProvider)}');
+    Log.info('Habit Card Timeline Days: ${ref.read(habitCardTimelineDaysProvider)}');
+    Log.info('Show Statistics Card: ${ref.read(showStatisticsCardProvider)}');
+    Log.info('Show Main Timeline: ${ref.read(showMainTimelineProvider)}');
+    Log.info('Habits Layout Mode: ${ref.read(habitsLayoutModeProvider)}');
+    Log.info('Habit Sort Order: ${ref.read(habitSortOrderProvider)}');
+    Log.info('Bad Habit Logic Mode: ${ref.read(badHabitLogicModeProvider)}');
   }
 
   Future<void> _logAllHabits(db.AppDatabase database) async {
     final habitDao = HabitDao(database);
     final habits = await habitDao.getAllHabits();
     Log.info('=== All Habits ===');
+    if (habits.isEmpty) {
+      Log.info('No habits found');
+      return;
+    }
     for (final habit in habits) {
       Log.info(
-        'Habit ${habit.id}: ${habit.name} (type: ${habit.habitType}, color: ${habit.color}, icon: ${habit.icon})',
+        'Habit ${habit.id}: ${habit.name}',
       );
+      Log.info('  Type: ${habit.habitType}');
+      Log.info('  Color: 0x${habit.color.toRadixString(16).toUpperCase()}');
+      Log.info('  Icon: ${habit.icon}');
+      Log.info('  Description: ${habit.description ?? "N/A"}');
+      Log.info('  Created: ${habit.createdAt}');
+      Log.info('  Updated: ${habit.updatedAt}');
     }
     Log.info('Total habits: ${habits.length}');
   }
@@ -311,8 +339,14 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
     final tagDao = TagDao(database);
     final tags = await tagDao.getAllTags();
     Log.info('=== All Tags ===');
+    if (tags.isEmpty) {
+      Log.info('No tags found');
+      return;
+    }
     for (final tag in tags) {
-      Log.info('Tag ${tag.id}: ${tag.name} (color: ${tag.color})');
+      Log.info('Tag ${tag.id}: ${tag.name}');
+      Log.info('  Color: 0x${tag.color.toRadixString(16).toUpperCase()}');
+      Log.info('  Icon: ${tag.icon ?? "N/A"}');
     }
     Log.info('Total tags: ${tags.length}');
   }
@@ -320,10 +354,27 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
   Future<void> _logAllEntries(db.AppDatabase database) async {
     final entries = await database.select(database.trackingEntries).get();
     Log.info('=== All Tracking Entries ===');
+    if (entries.isEmpty) {
+      Log.info('No tracking entries found');
+      return;
+    }
+    // Group by habit for better readability
+    final entriesByHabit = <int, List<db.TrackingEntry>>{};
     for (final entry in entries) {
-      Log.info(
-        'Entry: habitId=${entry.habitId}, date=${entry.date}, completed=${entry.completed}, notes=${entry.notes}',
-      );
+      entriesByHabit.putIfAbsent(entry.habitId, () => []).add(entry);
+    }
+    Log.info('Entries grouped by habit:');
+    for (final habitId in entriesByHabit.keys) {
+      final habitEntries = entriesByHabit[habitId]!;
+      Log.info('  Habit $habitId: ${habitEntries.length} entries');
+      for (final entry in habitEntries.take(5)) {
+        Log.info(
+          '    ${entry.date}: ${entry.completed ? "✓" : "✗"} ${entry.notes?.isNotEmpty == true ? "(${entry.notes})" : ""}',
+        );
+      }
+      if (habitEntries.length > 5) {
+        Log.info('    ... and ${habitEntries.length - 5} more');
+      }
     }
     Log.info('Total entries: ${entries.length}');
   }
@@ -331,10 +382,19 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
   Future<void> _logAllStreaks(db.AppDatabase database) async {
     final streaks = await database.select(database.streaks).get();
     Log.info('=== All Streaks ===');
+    if (streaks.isEmpty) {
+      Log.info('No streaks found');
+      return;
+    }
     for (final streak in streaks) {
-      Log.info(
-        'Streak: habitId=${streak.habitId}, combined=${streak.combinedStreak}, good=${streak.goodStreak}, bad=${streak.badStreak}, current=${streak.currentStreak}, longest=${streak.longestStreak}',
-      );
+      Log.info('Streak for Habit ${streak.habitId}:');
+      Log.info('  Combined Current: ${streak.combinedStreak}');
+      Log.info('  Combined Longest: ${streak.combinedLongestStreak}');
+      Log.info('  Good Current: ${streak.goodStreak}');
+      Log.info('  Good Longest: ${streak.goodLongestStreak}');
+      Log.info('  Bad Current: ${streak.badStreak}');
+      Log.info('  Bad Longest: ${streak.badLongestStreak}');
+      Log.info('  Last Updated: ${streak.lastUpdated}');
     }
     Log.info('Total streaks: ${streaks.length}');
   }

@@ -426,7 +426,9 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     if (mode != null && mode.isNotEmpty) {
       final notifier = ref.read(habitsLayoutModeNotifierProvider);
       await notifier.setHabitsLayoutMode(mode);
+      // Invalidate both the notifier and value providers to ensure UI updates
       ref.invalidate(habitsLayoutModeNotifierProvider);
+      ref.invalidate(habitsLayoutModeProvider);
     }
   }
 

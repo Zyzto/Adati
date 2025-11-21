@@ -22,7 +22,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
   bool _showQuickActions = false;
   final TextEditingController _searchController = TextEditingController();
   // View options (session-based)
-  String _cardLayout = 'list'; // 'list' or 'grid'
+  String? _cardLayout; // null means use provider value
   bool _showTags = true;
   bool _showDescriptions = true;
   bool _compactCards = false;
@@ -37,10 +37,10 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
   @override
   void initState() {
     super.initState();
-    // Initialize layout mode from persisted setting
-    _cardLayout = ref.read(habitsLayoutModeProvider);
-    // Show search if there's an active query
+    // Initialize card layout from provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cardLayout = ref.read(habitsLayoutModeProvider);
+      // Show search if there's an active query
       final filterQuery = ref.read(habitFilterQueryProvider);
       if (filterQuery != null && filterQuery.isNotEmpty) {
         _searchController.text = filterQuery;
@@ -84,6 +84,20 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
   Widget build(BuildContext context) {
     final habitsAsync = ref.watch(filteredSortedHabitsProvider);
     final filterQuery = ref.watch(habitFilterQueryProvider);
+    // Watch the layout mode provider so it updates when changed in settings
+    final providerCardLayout = ref.watch(habitsLayoutModeProvider);
+    
+    // Listen for provider changes and sync local state (e.g., when changed from settings page)
+    ref.listen<String>(habitsLayoutModeProvider, (previous, next) {
+      if (previous != next && _cardLayout != next) {
+        setState(() {
+          _cardLayout = next;
+        });
+      }
+    });
+    
+    // Use local state if set (for immediate updates), otherwise use provider value
+    final cardLayout = _cardLayout ?? providerCardLayout;
 
     // Auto-show search if there's an active query
     if (filterQuery != null && filterQuery.isNotEmpty && !_showSearch) {
@@ -115,13 +129,17 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                 showQuickActions: _showQuickActions,
                 onQuickActionsToggle: () =>
                     setState(() => _showQuickActions = !_showQuickActions),
-                cardLayout: _cardLayout,
+                cardLayout: cardLayout,
                 showTags: _showTags,
                 showDescriptions: _showDescriptions,
                 compactCards: _compactCards,
                 showTagFilter: _showTagFilter,
                 onCardLayoutChanged: (value) {
-                  setState(() => _cardLayout = value);
+                  // Update UI immediately
+                  setState(() {
+                    _cardLayout = value;
+                  });
+                  // Persist in background
                   final notifier = ref.read(habitsLayoutModeNotifierProvider);
                   notifier.setHabitsLayoutMode(value).then(
                     (_) => ref.invalidate(habitsLayoutModeNotifierProvider),
@@ -169,13 +187,17 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
               showQuickActions: _showQuickActions,
               onQuickActionsToggle: () =>
                   setState(() => _showQuickActions = !_showQuickActions),
-              cardLayout: _cardLayout,
+              cardLayout: cardLayout,
               showTags: _showTags,
               showDescriptions: _showDescriptions,
               compactCards: _compactCards,
               showTagFilter: _showTagFilter,
               onCardLayoutChanged: (value) {
-                setState(() => _cardLayout = value);
+                // Update UI immediately
+                setState(() {
+                  _cardLayout = value;
+                });
+                // Persist in background
                 final notifier = ref.read(habitsLayoutModeNotifierProvider);
                 notifier.setHabitsLayoutMode(value).then(
                   (_) => ref.invalidate(habitsLayoutModeNotifierProvider),
@@ -204,7 +226,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   ? const QuickActionsWidget(key: ValueKey('quick_actions'))
                   : const SizedBox.shrink(key: ValueKey('empty_qa')),
             ),
-            HabitsListView(habits: habits, cardLayout: _cardLayout),
+            HabitsListView(habits: habits, cardLayout: cardLayout),
           ],
         );
       },
