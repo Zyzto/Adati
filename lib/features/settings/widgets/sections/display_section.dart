@@ -73,7 +73,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
 
     return Column(
       children: [
-        // Habits subsection
+        // 1. Habits List/Grid Layout (grouped together)
         SettingsSubsectionHeader(
           title: 'settings_section_display_habits'.tr(),
           icon: Icons.view_agenda,
@@ -88,6 +88,7 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           ),
           onTap: () => _showHabitsLayoutModeDialog(habitsLayoutMode),
         ),
+        // Grid options (only relevant when grid is selected)
         SwitchListTile(
           secondary: const Icon(Icons.image),
           title: Text('grid_show_icon'.tr()),
@@ -119,10 +120,22 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           },
         ),
         const Divider(),
-        // Timelines subsection
+
+        // 2. Main Timeline (the big calendar on main page - all together)
         SettingsSubsectionHeader(
-          title: 'settings_section_display_timelines'.tr(),
-          icon: Icons.timeline,
+          title: 'settings_section_display_main_timeline'.tr(),
+          icon: Icons.calendar_view_week,
+        ),
+        SwitchListTile(
+          secondary: const Icon(Icons.calendar_view_month),
+          title: Text('show_main_timeline'.tr()),
+          subtitle: Text('show_main_timeline_description'.tr()),
+          value: showMainTimeline,
+          onChanged: (value) async {
+            final notifier = ref.read(showMainTimelineNotifierProvider);
+            await notifier.setShowMainTimeline(value);
+            ref.invalidate(showMainTimelineNotifierProvider);
+          },
         ),
         ListTile(
           leading: const Icon(Icons.calendar_view_week),
@@ -139,38 +152,26 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
               : null,
           onTap: () => widget.showTimelineDaysDialog(context, ref),
         ),
-        ListTile(
-          leading: const Icon(Icons.view_timeline),
-          title: Text('modal_timeline_days'.tr()),
-          subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
-          enabled: !habitCardTimelineFillLines,
-          trailing:
-              !habitCardTimelineFillLines &&
-                  modalTimelineDays != defaultModalTimelineDays
-              ? IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'reset_to_default'.tr(),
-                  onPressed: () => widget.revertModalTimelineDays(context, ref),
-                )
-              : null,
-          onTap: () => widget.showModalTimelineDaysDialog(context, ref),
+        SwitchListTile(
+          secondary: const Icon(Icons.grid_4x4),
+          title: Text('main_timeline_fill_lines'.tr()),
+          subtitle: Text('main_timeline_fill_lines_description'.tr()),
+          value: mainTimelineFillLines,
+          onChanged: (value) async {
+            final notifier = ref.read(mainTimelineFillLinesNotifierProvider);
+            await notifier.setMainTimelineFillLines(value);
+            ref.invalidate(mainTimelineFillLinesNotifierProvider);
+          },
         ),
         ListTile(
-          leading: const Icon(Icons.view_week),
-          title: Text('habit_card_timeline_days'.tr()),
-          subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
-          enabled: !habitCardTimelineFillLines,
-          trailing:
-              !habitCardTimelineFillLines &&
-                  habitCardTimelineDays != defaultHabitCardTimelineDays
-              ? IconButton(
-                  icon: const Icon(Icons.refresh),
-                  tooltip: 'reset_to_default'.tr(),
-                  onPressed: () =>
-                      widget.revertHabitCardTimelineDays(context, ref),
-                )
-              : null,
-          onTap: () => widget.showHabitCardTimelineDaysDialog(context, ref),
+          leading: const Icon(Icons.format_line_spacing),
+          title: Text('main_timeline_lines'.tr()),
+          subtitle: Text('$mainTimelineLines'),
+          enabled: mainTimelineFillLines,
+          onTap: () => _showMainTimelineLinesDialog(
+            mainTimelineFillLines,
+            mainTimelineLines,
+          ),
         ),
         ListTile(
           leading: const Icon(Icons.space_bar),
@@ -223,10 +224,21 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           },
         ),
         const Divider(),
-        // Habit cards subsection
+
+        // 3. Habit Cards (all card-related settings together)
         SettingsSubsectionHeader(
           title: 'settings_section_display_habit_cards'.tr(),
           icon: Icons.view_module,
+        ),
+        ListTile(
+          leading: const Icon(Icons.view_agenda),
+          title: Text('habit_card_layout_mode'.tr()),
+          subtitle: Text(
+            habitCardLayoutMode == 'topRow'
+                ? 'habit_card_layout_mode_top_row'.tr()
+                : 'habit_card_layout_mode_classic'.tr(),
+          ),
+          onTap: () => _showHabitCardLayoutModeDialog(habitCardLayoutMode),
         ),
         SwitchListTile(
           secondary: const Icon(Icons.description),
@@ -281,17 +293,6 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
           },
         ),
         SwitchListTile(
-          secondary: const Icon(Icons.calendar_view_month),
-          title: Text('show_main_timeline'.tr()),
-          subtitle: Text('show_main_timeline_description'.tr()),
-          value: showMainTimeline,
-          onChanged: (value) async {
-            final notifier = ref.read(showMainTimelineNotifierProvider);
-            await notifier.setShowMainTimeline(value);
-            ref.invalidate(showMainTimelineNotifierProvider);
-          },
-        ),
-        SwitchListTile(
           secondary: const Icon(Icons.grid_on),
           title: Text('habit_card_timeline_fill_lines'.tr()),
           subtitle: Text('habit_card_timeline_fill_lines_description'.tr()),
@@ -314,8 +315,49 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             habitCardTimelineLines,
           ),
         ),
+        ListTile(
+          leading: const Icon(Icons.view_week),
+          title: Text('habit_card_timeline_days'.tr()),
+          subtitle: Text('$habitCardTimelineDays ${'days'.tr()}'),
+          enabled: !habitCardTimelineFillLines,
+          trailing:
+              !habitCardTimelineFillLines &&
+                  habitCardTimelineDays != defaultHabitCardTimelineDays
+              ? IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'reset_to_default'.tr(),
+                  onPressed: () =>
+                      widget.revertHabitCardTimelineDays(context, ref),
+                )
+              : null,
+          onTap: () => widget.showHabitCardTimelineDaysDialog(context, ref),
+        ),
         const Divider(),
-        // Statistics subsection
+
+        // 4. Modal/Detail Timelines (timelines in dialogs and detail pages)
+        SettingsSubsectionHeader(
+          title: 'settings_section_display_timelines'.tr(),
+          icon: Icons.view_timeline,
+        ),
+        ListTile(
+          leading: const Icon(Icons.view_timeline),
+          title: Text('modal_timeline_days'.tr()),
+          subtitle: Text('$modalTimelineDays ${'days'.tr()}'),
+          enabled: !habitCardTimelineFillLines,
+          trailing:
+              !habitCardTimelineFillLines &&
+                  modalTimelineDays != defaultModalTimelineDays
+              ? IconButton(
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'reset_to_default'.tr(),
+                  onPressed: () => widget.revertModalTimelineDays(context, ref),
+                )
+              : null,
+          onTap: () => widget.showModalTimelineDaysDialog(context, ref),
+        ),
+        const Divider(),
+
+        // 5. Statistics (just statistics-related)
         SettingsSubsectionHeader(
           title: 'settings_section_display_statistics'.tr(),
           icon: Icons.bar_chart,
@@ -340,37 +382,6 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
             await notifier.setShowStatisticsCard(value);
             ref.invalidate(showStatisticsCardNotifierProvider);
           },
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.grid_4x4),
-          title: Text('main_timeline_fill_lines'.tr()),
-          subtitle: Text('main_timeline_fill_lines_description'.tr()),
-          value: mainTimelineFillLines,
-          onChanged: (value) async {
-            final notifier = ref.read(mainTimelineFillLinesNotifierProvider);
-            await notifier.setMainTimelineFillLines(value);
-            ref.invalidate(mainTimelineFillLinesNotifierProvider);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.format_line_spacing),
-          title: Text('main_timeline_lines'.tr()),
-          subtitle: Text('$mainTimelineLines'),
-          enabled: mainTimelineFillLines,
-          onTap: () => _showMainTimelineLinesDialog(
-            mainTimelineFillLines,
-            mainTimelineLines,
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.view_agenda),
-          title: Text('habit_card_layout_mode'.tr()),
-          subtitle: Text(
-            habitCardLayoutMode == 'topRow'
-                ? 'habit_card_layout_mode_top_row'.tr()
-                : 'habit_card_layout_mode_classic'.tr(),
-          ),
-          onTap: () => _showHabitCardLayoutModeDialog(habitCardLayoutMode),
         ),
       ],
     );

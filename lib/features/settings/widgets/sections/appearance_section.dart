@@ -411,6 +411,7 @@ class AppearanceSectionContent extends ConsumerWidget {
             );
             await notifier.setUseStreakColorsForSquares(value);
             ref.invalidate(useStreakColorsForSquaresNotifierProvider);
+            ref.invalidate(useStreakColorsForSquaresProvider);
           },
         ),
       ],

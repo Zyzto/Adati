@@ -2387,6 +2387,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final notifier = ref.read(daySquareSizeNotifierProvider);
     await notifier.setDaySquareSize(defaultDaySquareSize);
     ref.invalidate(daySquareSizeNotifierProvider);
+    ref.invalidate(daySquareSizeProvider);
   }
 
   Future<void> _revertTimelineDays(BuildContext context, WidgetRef ref) async {
@@ -2962,15 +2963,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showCardSpacingDialog(BuildContext context, WidgetRef ref) {
-    final currentSpacing = ref.watch(cardSpacingProvider);
-    final notifier = ref.read(cardSpacingNotifierProvider);
     final navigator = Navigator.of(context);
+    final currentSpacing = ref.read(cardSpacingProvider);
+    final notifier = ref.read(cardSpacingNotifierProvider);
+    double spacing = currentSpacing;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
-          double spacing = currentSpacing;
           return AlertDialog(
             title: Text('card_spacing'.tr()),
             content: Column(
@@ -2986,9 +2987,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     setDialogState(() {
                       spacing = value;
                     });
-                    notifier.setCardSpacing(value);
-                    ref.invalidate(cardSpacingNotifierProvider);
-                    ref.invalidate(cardSpacingProvider);
                   },
                 ),
               ],
@@ -2996,6 +2994,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             actions: [
               TextButton(
                 onPressed: () => navigator.pop(),
+                child: Text('cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await notifier.setCardSpacing(spacing);
+                  ref.invalidate(cardSpacingNotifierProvider);
+                  ref.invalidate(cardSpacingProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                },
                 child: Text('done'.tr()),
               ),
             ],
@@ -3006,15 +3015,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showCardBorderRadiusDialog(BuildContext context, WidgetRef ref) {
-    final currentRadius = ref.watch(cardBorderRadiusProvider);
-    final notifier = ref.read(cardStyleNotifierProvider);
     final navigator = Navigator.of(context);
+    final currentRadius = ref.read(cardBorderRadiusProvider);
+    final notifier = ref.read(cardStyleNotifierProvider);
+    double radius = currentRadius;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
-          double radius = currentRadius;
           return AlertDialog(
             title: Text('border_radius'.tr()),
             content: Column(
@@ -3030,9 +3039,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     setDialogState(() {
                       radius = value;
                     });
-                    notifier.setBorderRadius(value);
-                    ref.invalidate(cardStyleNotifierProvider);
-                    ref.invalidate(cardBorderRadiusProvider);
                   },
                 ),
               ],
@@ -3040,6 +3046,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             actions: [
               TextButton(
                 onPressed: () => navigator.pop(),
+                child: Text('cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await notifier.setBorderRadius(radius);
+                  ref.invalidate(cardStyleNotifierProvider);
+                  ref.invalidate(cardBorderRadiusProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                },
                 child: Text('done'.tr()),
               ),
             ],
@@ -3050,15 +3067,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showCardElevationDialog(BuildContext context, WidgetRef ref) {
-    final currentElevation = ref.watch(cardElevationProvider);
-    final notifier = ref.read(cardStyleNotifierProvider);
     final navigator = Navigator.of(context);
+    final currentElevation = ref.read(cardElevationProvider);
+    final notifier = ref.read(cardStyleNotifierProvider);
+    double elevation = currentElevation;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
-          double elevation = currentElevation;
           return AlertDialog(
             title: Text('elevation'.tr()),
             content: Column(
@@ -3074,9 +3091,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     setDialogState(() {
                       elevation = value;
                     });
-                    notifier.setElevation(value);
-                    ref.invalidate(cardStyleNotifierProvider);
-                    ref.invalidate(cardElevationProvider);
                   },
                 ),
               ],
@@ -3084,6 +3098,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             actions: [
               TextButton(
                 onPressed: () => navigator.pop(),
+                child: Text('cancel'.tr()),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await notifier.setElevation(elevation);
+                  ref.invalidate(cardStyleNotifierProvider);
+                  ref.invalidate(cardElevationProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
+                  }
+                },
                 child: Text('done'.tr()),
               ),
             ],
