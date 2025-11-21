@@ -30,7 +30,6 @@ Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/A
   - Select "GitHub Releases" as the source
   - Enter repository: `Zyzto/Adati`
 - Obtainium will automatically track new releases and notify you of updates
-- You can also find this app on [Obtainium Apps](https://apps.obtainium.imranr.dev) for quick setup
 
 **Option 2: Google Play Store** **WIP**
 - Available on [Google Play Store](https://play.google.com/store/apps/details?id=com.shenepoy.adati) (when published)
