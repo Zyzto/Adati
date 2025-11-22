@@ -27,6 +27,7 @@ import '../widgets/sections/about_section.dart';
 import '../widgets/responsive_dialog.dart';
 import '../widgets/split_screen_settings_layout.dart';
 import '../widgets/dialogs/about_dialogs.dart';
+import '../widgets/settings_section.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -35,34 +36,12 @@ class SettingsPage extends ConsumerStatefulWidget {
   ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-/// Represents a search result item
-class SearchResult {
-  final String sectionId;
-  final String sectionTitle;
-  final IconData sectionIcon;
-  final Widget item;
-  final String? itemTitle;
-  final String? itemSubtitle;
-  final int itemIndex; // Index within the section
-  final String? searchMatchText; // The text that matched
-
-  const SearchResult({
-    required this.sectionId,
-    required this.sectionTitle,
-    required this.sectionIcon,
-    required this.item,
-    this.itemTitle,
-    this.itemSubtitle,
-    required this.itemIndex,
-    this.searchMatchText,
-  });
-}
-
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Search state
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchExpanded = false;
+  String _searchQuery = '';
 
   // Expansion state for each section
   bool _generalExpanded = true;
@@ -79,11 +58,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   String? _selectedSectionId;
   Widget? _detailContent;
   String? _detailTitle;
-
-  // Search results (memoized)
-  List<SearchResult>? _cachedSearchResults;
-  String? _cachedSearchQuery;
-  String? _highlightedItemId; // For highlighting specific items
 
   @override
   void initState() {
@@ -112,24 +86,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text;
-    final trimmedQuery = query.trim();
-
-    // Invalidate cache if query changed
-    if (trimmedQuery != _cachedSearchQuery) {
-      setState(() {
-        _cachedSearchResults = null;
-        _cachedSearchQuery = null;
-        _highlightedItemId = null;
-        // Clear detail pane when search is cleared in landscape mode
-        if (trimmedQuery.isEmpty &&
-            ResponsiveDialog.shouldUseSplitScreen(context)) {
-          _selectedSectionId = null;
-          _detailContent = null;
-          _detailTitle = null;
-        }
-      });
-    }
+    final query = _searchController.text.trim();
+    if (query == _searchQuery) return;
+    setState(() {
+      _searchQuery = query;
+    });
   }
 
   void _expandSearch() {
@@ -156,9 +117,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _searchController.clear();
     setState(() {
       _isSearchExpanded = false;
-      _cachedSearchResults = null;
-      _cachedSearchQuery = null;
-      _highlightedItemId = null;
+      _searchQuery = '';
     });
   }
 
@@ -223,22 +182,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() {
       _generalExpanded = PreferencesService.getSettingsGeneralExpanded();
       _appearanceExpanded = PreferencesService.getSettingsAppearanceExpanded();
+
       // Migrate from old display/displayPreferences keys to new displayLayout key
-      final oldDisplayExpanded =
-          PreferencesService.getSettingsDisplayExpanded();
+      final oldDisplayExpanded = PreferencesService.getSettingsDisplayExpanded();
       final oldDisplayPreferencesExpanded =
           PreferencesService.getSettingsDisplayPreferencesExpanded();
-      // If either old section was expanded, expand the new merged section
-      // Otherwise, use the new key if it exists
+
       if (oldDisplayExpanded || oldDisplayPreferencesExpanded) {
         _displayLayoutExpanded = true;
-        // Migrate the state to the new key
         PreferencesService.setSettingsDisplayLayoutExpanded(true);
       } else {
         _displayLayoutExpanded =
             PreferencesService.getSettingsDisplayLayoutExpanded();
       }
-      // Use the legacy display-expanded key to store Date & Time section state
+
       _dateTimeExpanded = oldDisplayExpanded;
       _notificationsExpanded =
           PreferencesService.getSettingsNotificationsExpanded();
@@ -249,21 +206,145 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     });
   }
 
-  String _keyToSearchText(String key) {
-    return key.replaceAll('_', ' ');
+  /// Checks if a list of widgets contains any visible/searchable items.
+  bool _hasVisibleItems(List<Widget> widgets) {
+    if (widgets.isEmpty) return false;
+
+    for (final widget in widgets) {
+      if (widget is ListTile || widget is SwitchListTile) {
+        return true;
+      }
+      if (widget is Column && _hasVisibleItems(widget.children)) {
+        return true;
+      }
+      if (widget is SizedBox) {
+        // Skip SizedBox.shrink()
+        if (widget.width == 0 && widget.height == 0) continue;
+        return true;
+      }
+      // Consumer widgets are built dynamically - assume they might have content
+      if (widget is Consumer) return true;
+    }
+    return false;
   }
 
-  /// Extract individual items from a Column widget (for search)
-  List<Widget> _extractItemsFromColumn(Column column) {
-    final items = <Widget>[];
-    for (final child in column.children) {
-      if (child is ListTile || child is SwitchListTile) {
-        items.add(child);
+  /// Filters section children based on search query.
+  /// Matches against displayed text from widgets (current UI language only).
+  List<Widget> _filterSectionChildren(
+    String sectionTitle,
+    List<Widget> children,
+  ) {
+    if (_searchQuery.isEmpty) return children;
+
+    final query = _searchQuery.toLowerCase();
+
+    bool matchesText(String? text) {
+      return text?.toLowerCase().contains(query) ?? false;
+    }
+
+    // If section title matches, keep all children
+    if (matchesText(sectionTitle)) return children;
+
+    String? extractTextFromWidget(Widget? widget) {
+      return (widget is Text) ? widget.data : null;
+    }
+
+    bool widgetMatches(Widget child) {
+      Widget? titleWidget;
+      Widget? subtitleWidget;
+
+      if (child is ListTile) {
+        titleWidget = child.title;
+        subtitleWidget = child.subtitle;
+      } else if (child is SwitchListTile) {
+        titleWidget = child.title;
+        subtitleWidget = child.subtitle;
+      } else {
+        return false;
+      }
+
+      final titleText = extractTextFromWidget(titleWidget);
+      final subtitleText = extractTextFromWidget(subtitleWidget);
+      return matchesText(titleText) || matchesText(subtitleText);
+    }
+
+    /// Creates a Column with filtered children, preserving original properties.
+    Widget _createFilteredColumn(Column original, List<Widget> filteredChildren) {
+      return Column(
+        crossAxisAlignment: original.crossAxisAlignment,
+        mainAxisAlignment: original.mainAxisAlignment,
+        mainAxisSize: original.mainAxisSize,
+        textBaseline: original.textBaseline,
+        textDirection: original.textDirection,
+        verticalDirection: original.verticalDirection,
+        children: filteredChildren,
+      );
+    }
+
+    /// Filters column children, hiding subsections with no matching items.
+    List<Widget> _filterColumnChildren(List<Widget> columnChildren) {
+      final filteredColumnChildren = <Widget>[];
+      List<Widget> pendingSubsectionWidgets = [];
+      bool hasMatchingItemsInSubsection = false;
+
+      for (final columnChild in columnChildren) {
+        final isSubsectionHeader = columnChild is SettingsSubsectionHeader;
+        final isDivider = columnChild is Divider;
+
+        if (columnChild is ListTile || columnChild is SwitchListTile) {
+          if (widgetMatches(columnChild)) {
+            filteredColumnChildren.addAll(pendingSubsectionWidgets);
+            pendingSubsectionWidgets.clear();
+            hasMatchingItemsInSubsection = true;
+            filteredColumnChildren.add(columnChild);
+          }
+        } else if (isSubsectionHeader || isDivider) {
+          pendingSubsectionWidgets.clear();
+          pendingSubsectionWidgets.add(columnChild);
+          hasMatchingItemsInSubsection = false;
+        } else if (hasMatchingItemsInSubsection || pendingSubsectionWidgets.isEmpty) {
+          filteredColumnChildren.add(columnChild);
+        }
+      }
+
+      pendingSubsectionWidgets.clear();
+      return filteredColumnChildren;
+    }
+
+    final result = <Widget>[];
+    for (final child in children) {
+      // Handle Column widgets (section content widgets like GeneralSectionContent return Column)
+      // For ConsumerWidget, we need to use Consumer to build and filter
+      if (child is ConsumerWidget) {
+        // Wrap in Consumer to build the widget and access the Column
+        result.add(
+          Consumer(
+            builder: (context, ref, _) {
+              // Build the ConsumerWidget to get the Column
+              final builtWidget = child.build(context, ref);
+
+              if (builtWidget is Column) {
+                final filteredColumnChildren = _filterColumnChildren(builtWidget.children);
+                return filteredColumnChildren.isNotEmpty
+                    ? _createFilteredColumn(builtWidget, filteredColumnChildren)
+                    : const SizedBox.shrink();
+              }
+
+              // If not a Column, return as-is (shouldn't happen for section content widgets)
+              return builtWidget;
+            },
+          ),
+        );
       } else if (child is Column) {
-        items.addAll(_extractItemsFromColumn(child));
+        final filteredColumnChildren = _filterColumnChildren(child.children);
+        if (filteredColumnChildren.isNotEmpty) {
+          result.add(_createFilteredColumn(child, filteredColumnChildren));
+        }
+      } else if (widgetMatches(child)) {
+        result.add(child);
       }
     }
-    return items;
+    return result;
   }
 
   /// Show a loading dialog (non-dismissible)
@@ -300,467 +381,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  /// Get title text from a widget (supports ListTile and SwitchListTile)
-  String? _getTitleFromWidget(Widget widget) {
-    if (widget is ListTile || widget is SwitchListTile) {
-      final title = widget is ListTile
-          ? widget.title
-          : (widget as SwitchListTile).title;
-      return title is Text ? title.data : null;
-    }
-    return null;
-  }
-
-  /// Get subtitle text from a widget (supports ListTile and SwitchListTile)
-  String? _getSubtitleFromWidget(Widget widget) {
-    if (widget is ListTile || widget is SwitchListTile) {
-      final subtitle = widget is ListTile
-          ? widget.subtitle
-          : (widget as SwitchListTile).subtitle;
-      return subtitle is Text ? subtitle.data : null;
-    }
-    return null;
-  }
-
-  /// Build highlighted text widget with matching portions highlighted
-  /// Build grouped search results view (for right pane in landscape)
-  Widget _buildGroupedSearchResults(List<SearchResult> results, String query) {
-    if (results.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.search_off,
-                size: 64,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'no_results_found'.tr(),
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Group results by section
-    final grouped = <String, List<SearchResult>>{};
-    for (final result in results) {
-      if (!grouped.containsKey(result.sectionId)) {
-        grouped[result.sectionId] = [];
-      }
-      grouped[result.sectionId]!.add(result);
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(8),
-      children: grouped.entries.map((entry) {
-        final sectionResults = entry.value;
-        final firstResult = sectionResults.first;
-
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Section header (clickable)
-              InkWell(
-                onTap: () =>
-                    _navigateToSectionFromSearch(firstResult.sectionId),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.3),
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        firstResult.sectionIcon,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          firstResult.sectionTitle,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                        ),
-                      ),
-                      Chip(
-                        label: Text('${sectionResults.length}'),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        labelStyle: const TextStyle(fontSize: 12),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 0,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // Section items (smaller size) - preserve original functionality
-              ...sectionResults.map((result) {
-                final resultItemId = '${result.sectionId}_${result.itemIndex}';
-                final resultIsHighlighted = _highlightedItemId == resultItemId;
-
-                // Wrap the original item to make it smaller while preserving functionality
-                Widget itemWidget = result.item;
-
-                // If it's a ListTile, wrap onTap to clear search after action
-                if (itemWidget is ListTile && itemWidget.onTap != null) {
-                  final originalOnTap = itemWidget.onTap!;
-                  itemWidget = ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    leading: itemWidget.leading,
-                    title: itemWidget.title != null
-                        ? DefaultTextStyle(
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium!.copyWith(fontSize: 14),
-                            child: itemWidget.title!,
-                          )
-                        : null,
-                    subtitle: itemWidget.subtitle != null
-                        ? DefaultTextStyle(
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall!.copyWith(fontSize: 12),
-                            child: itemWidget.subtitle!,
-                          )
-                        : null,
-                    trailing: itemWidget.trailing,
-                    onTap: () {
-                      originalOnTap();
-                      // Clear search after action
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          _clearSearch();
-                        }
-                      });
-                    },
-                  );
-                } else if (itemWidget is SwitchListTile) {
-                  // SwitchListTile - preserve original functionality, just make smaller
-                  itemWidget = SwitchListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    secondary: itemWidget.secondary,
-                    title: itemWidget.title != null
-                        ? DefaultTextStyle(
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium!.copyWith(fontSize: 14),
-                            child: itemWidget.title!,
-                          )
-                        : null,
-                    subtitle: itemWidget.subtitle != null
-                        ? DefaultTextStyle(
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall!.copyWith(fontSize: 12),
-                            child: itemWidget.subtitle!,
-                          )
-                        : null,
-                    value: itemWidget.value,
-                    onChanged: itemWidget.onChanged,
-                  );
-                } else {
-                  // Other widgets - just make smaller
-                  itemWidget = Transform.scale(scale: 0.9, child: itemWidget);
-                }
-
-                return Container(
-                  decoration: BoxDecoration(
-                    color: resultIsHighlighted
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer.withValues(alpha: 0.2)
-                        : null,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(
-                          context,
-                        ).dividerColor.withValues(alpha: 0.3),
-                        width: 0.5,
-                      ),
-                    ),
-                  ),
-                  child: itemWidget,
-                );
-              }),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  /// Navigate to section from search results
-  void _navigateToSectionFromSearch(String sectionId) {
-    // Clear search
-    _clearSearch();
-    setState(() {
-      _highlightedItemId = null;
-    });
-
-    // Navigate to section (same as clicking section in left pane)
-    final isLandscape = ResponsiveDialog.shouldUseSplitScreen(context);
-
-    // Get section data from the sections map (will be available in build context)
-    // For now, use a helper method that will be called from build
-    _navigateToSection(sectionId, isLandscape);
-  }
-
-  /// Helper to navigate to a section
-  void _navigateToSection(String sectionId, bool isLandscape) {
-    if (isLandscape) {
-      // Show section in detail pane
-      // We'll need to get the children from the build method
-      // For now, trigger section click behavior
-      switch (sectionId) {
-        case 'general':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                GeneralSectionContent(
-                  showLanguageDialog: _showLanguageDialog,
-                  showThemeDialog: _showThemeDialog,
-                  showThemeColorDialog: _showThemeColorDialog,
-                ),
-              ],
-            ),
-            title: 'general'.tr(),
-          );
-          break;
-        case 'appearance':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                AppearanceSectionContent(
-                  showFontSizeScaleDialog: _showFontSizeScaleDialog,
-                  showIconSizeDialog: _showIconSizeDialog,
-                  showCardBorderRadiusDialog: _showCardBorderRadiusDialog,
-                  showCardElevationDialog: _showCardElevationDialog,
-                  showCardSpacingDialog: _showCardSpacingDialog,
-                  showHabitCheckboxStyleDialog: _showHabitCheckboxStyleDialog,
-                  showProgressIndicatorStyleDialog:
-                      _showProgressIndicatorStyleDialog,
-                  showCompletionColorDialog: _showCompletionColorDialog,
-                  showStreakColorSchemeDialog: _showStreakColorSchemeDialog,
-                ),
-              ],
-            ),
-            title: 'appearance'.tr(),
-          );
-          break;
-        case 'dateTime':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                DateTimeSectionContent(
-                  showDateFormatDialog: _showDateFormatDialog,
-                  showFirstDayOfWeekDialog: _showFirstDayOfWeekDialog,
-                ),
-              ],
-            ),
-            title: 'date_time'.tr(),
-          );
-          break;
-        case 'display':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                DisplaySectionContent(
-                  showTimelineDaysDialog: _showTimelineDaysDialog,
-                  showModalTimelineDaysDialog: _showModalTimelineDaysDialog,
-                  showHabitCardTimelineDaysDialog:
-                      _showHabitCardTimelineDaysDialog,
-                  showTimelineSpacingDialog: _showTimelineSpacingDialog,
-                  showDaySquareSizeDialog: _showDaySquareSizeDialog,
-                  revertTimelineDays: _revertTimelineDays,
-                  revertModalTimelineDays: _revertModalTimelineDays,
-                  revertHabitCardTimelineDays: _revertHabitCardTimelineDays,
-                  revertDaySquareSize: _revertDaySquareSize,
-                ),
-              ],
-            ),
-            title: 'display'.tr(),
-          );
-          break;
-        case 'notifications':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                NotificationsSectionContent(
-                  showBadHabitLogicModeDialog: _showBadHabitLogicModeDialog,
-                ),
-              ],
-            ),
-            title: 'notifications'.tr(),
-          );
-          break;
-        case 'tags':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: const [TagsSectionContent()],
-            ),
-            title: 'tags'.tr(),
-          );
-          break;
-        case 'data':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                DataSectionContent(
-                  showExportDialog: _showExportDialog,
-                  showImportDialog: _showImportDialog,
-                  showDatabaseStatsDialog: _showDatabaseStatsDialog,
-                  optimizeDatabase: _optimizeDatabase,
-                ),
-              ],
-            ),
-            title: 'data_management'.tr(),
-          );
-          break;
-        case 'advanced':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                AdvancedSectionContent(
-                  showResetHabitsDialog: _showResetHabitsDialog,
-                  showResetSettingsDialog: _showResetSettingsDialog,
-                  showClearAllDataDialog: _showClearAllDataDialog,
-                  showLogsDialog: _showLogsDialog,
-                  returnToOnboarding: _returnToOnboarding,
-                ),
-              ],
-            ),
-            title: 'advanced'.tr(),
-          );
-          break;
-        case 'about':
-          _showSectionInDetailPane(
-            sectionId: sectionId,
-            content: FutureBuilder<PackageInfo?>(
-              future: _getPackageInfo(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    AboutSectionContent(
-                      showLibrariesDialog: _showLibrariesDialog,
-                      showLicenseDialog: _showLicenseDialog,
-                      showUsageRightsDialog: _showUsageRightsDialog,
-                      showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
-                      launchUrl: (context, url) =>
-                          AboutDialogs.launchUrlWithFallback(context, url),
-                    ),
-                  ],
-                );
-              },
-            ),
-            title: 'about'.tr(),
-          );
-          break;
-      }
-    } else {
-      // Expand section in portrait
-      switch (sectionId) {
-        case 'general':
-          setState(() => _generalExpanded = true);
-          _saveExpansionState('general', true);
-          break;
-        case 'appearance':
-          setState(() => _appearanceExpanded = true);
-          _saveExpansionState('appearance', true);
-          break;
-        case 'dateTime':
-          setState(() => _dateTimeExpanded = true);
-          _saveExpansionState('dateTime', true);
-          break;
-        case 'display':
-          setState(() => _displayLayoutExpanded = true);
-          _saveExpansionState('displayLayout', true);
-          break;
-        case 'notifications':
-          setState(() => _notificationsExpanded = true);
-          _saveExpansionState('notifications', true);
-          break;
-        case 'tags':
-          setState(() => _tagsExpanded = true);
-          _saveExpansionState('tags', true);
-          break;
-        case 'data':
-          setState(() => _dataExportExpanded = true);
-          _saveExpansionState('dataExport', true);
-          break;
-        case 'advanced':
-          setState(() => _advancedExpanded = true);
-          _saveExpansionState('advanced', true);
-          break;
-        case 'about':
-          setState(() => _aboutExpanded = true);
-          _saveExpansionState('about', true);
-          break;
-      }
-    }
-  }
-
   /// Show section content in split-screen detail pane (landscape mode)
   void _showSectionInDetailPane({
     required String sectionId,
@@ -782,187 +402,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _selectedSectionId = null;
       _detailContent = null;
       _detailTitle = null;
-      _highlightedItemId = null;
     });
   }
 
-  /// Check if text matches the search query
-  bool _matchesText(String? text, String queryLower) {
-    if (text == null) return false;
-    return text.toLowerCase().contains(queryLower);
-  }
-
-  /// Check if a widget matches the search query and return match info
-  ({bool matches, String? matchText}) _checkWidgetMatch(
-    Widget widget,
-    String? itemTag,
-    String queryLower,
-  ) {
-    final titleText = _getTitleFromWidget(widget);
-    final subtitleText = _getSubtitleFromWidget(widget);
-
-    // Priority 1: Check the specific tag for this item (most reliable)
-    if (itemTag != null && _matchesText(itemTag, queryLower)) {
-      return (matches: true, matchText: itemTag);
-    }
-    // Priority 2: Check title text (user-visible, most important)
-    if (titleText != null && _matchesText(titleText, queryLower)) {
-      return (matches: true, matchText: titleText);
-    }
-    // Priority 3: Check subtitle text (less important, but useful)
-    if (subtitleText != null && _matchesText(subtitleText, queryLower)) {
-      return (matches: true, matchText: subtitleText);
-    }
-
-    return (matches: false, matchText: null);
-  }
-
-  /// Process a single widget and add to results if it matches
-  void _processWidgetForSearch({
-    required Widget widget,
+  /// Creates an expansion change handler for a section.
+  void Function(bool) _createExpansionHandler({
     required String sectionId,
-    required String sectionTitle,
-    required IconData sectionIcon,
-    required String? itemTag,
-    required String queryLower,
-    required List<SearchResult> results,
-    required int itemIndex,
+    required bool hasSearch,
+    required void Function(bool) updateState,
   }) {
-    final match = _checkWidgetMatch(widget, itemTag, queryLower);
-    if (match.matches && match.matchText != null) {
-      results.add(
-        SearchResult(
-          sectionId: sectionId,
-          sectionTitle: sectionTitle,
-          sectionIcon: sectionIcon,
-          item: widget,
-          itemTitle: _getTitleFromWidget(widget),
-          itemSubtitle: _getSubtitleFromWidget(widget),
-          itemIndex: itemIndex,
-          searchMatchText: match.matchText,
-        ),
+    return (expanded) {
+      if (hasSearch) return;
+      setState(() => updateState(expanded));
+      _saveExpansionState(sectionId, expanded);
+    };
+  }
+
+  /// Creates the page transition builder.
+  Widget Function(Widget, Animation<double>, Animation<double>) _createTransitionBuilder() {
+    return (child, primaryAnimation, secondaryAnimation) {
+      return SharedAxisTransition(
+        animation: primaryAnimation,
+        secondaryAnimation: secondaryAnimation,
+        transitionType: SharedAxisTransitionType.horizontal,
+        fillColor: Colors.transparent,
+        child: child,
       );
-    }
-  }
-
-  /// Get search results with memoization
-  List<SearchResult> _getSearchResults(
-    String trimmedQuery,
-    Map<String, Map<String, dynamic>> sectionsMap,
-  ) {
-    // Return cached results if query hasn't changed
-    if (trimmedQuery == _cachedSearchQuery && _cachedSearchResults != null) {
-      return _cachedSearchResults!;
-    }
-
-    // Calculate new results
-    final results = trimmedQuery.isEmpty
-        ? <SearchResult>[]
-        : _performSearch(query: trimmedQuery, sections: sectionsMap);
-
-    // Cache the results
-    _cachedSearchResults = results;
-    _cachedSearchQuery = trimmedQuery;
-
-    return results;
-  }
-
-  /// Perform unified search across all sections
-  List<SearchResult> _performSearch({
-    required String query,
-    required Map<String, Map<String, dynamic>> sections,
-  }) {
-    if (query.isEmpty) return [];
-
-    final queryLower = query.toLowerCase();
-    final results = <SearchResult>[];
-
-    // Process each section
-    sections.forEach((sectionId, sectionData) {
-      final sectionTitle = sectionData['title'] as String;
-      final sectionIcon = sectionData['icon'] as IconData;
-      final children = sectionData['children'] as List<Widget>;
-      final tags = sectionData['tags'] as List<String>?;
-
-      int itemIndex = 0;
-
-      for (int i = 0; i < children.length; i++) {
-        final child = children[i];
-
-        // If child is a Column (like section content), extract individual items
-        if (child is Column) {
-          final items = _extractItemsFromColumn(child);
-          // Tags array should correspond to items in order (one tag per item)
-          for (int itemIdx = 0; itemIdx < items.length; itemIdx++) {
-            final item = items[itemIdx];
-            final itemTag = (tags != null && itemIdx < tags.length)
-                ? tags[itemIdx]
-                : null;
-
-            _processWidgetForSearch(
-              widget: item,
-              sectionId: sectionId,
-              sectionTitle: sectionTitle,
-              sectionIcon: sectionIcon,
-              itemTag: itemTag,
-              queryLower: queryLower,
-              results: results,
-              itemIndex: itemIndex,
-            );
-            itemIndex++;
-          }
-        } else {
-          // Regular widget (not a Column)
-          final itemTag = (tags != null && i < tags.length) ? tags[i] : null;
-
-          _processWidgetForSearch(
-            widget: child,
-            sectionId: sectionId,
-            sectionTitle: sectionTitle,
-            sectionIcon: sectionIcon,
-            itemTag: itemTag,
-            queryLower: queryLower,
-            results: results,
-            itemIndex: itemIndex,
-          );
-          itemIndex++;
-        }
-      }
-    });
-
-    return results;
+    };
   }
 
   Future<void> _saveExpansionState(String section, bool expanded) async {
-    switch (section) {
-      case 'general':
-        await PreferencesService.setSettingsGeneralExpanded(expanded);
-        break;
-      case 'appearance':
-        await PreferencesService.setSettingsAppearanceExpanded(expanded);
-        break;
-      case 'dateTime':
-        await PreferencesService.setSettingsDisplayExpanded(expanded);
-        break;
-      case 'displayLayout':
-        await PreferencesService.setSettingsDisplayLayoutExpanded(expanded);
-        break;
-      case 'notifications':
-        await PreferencesService.setSettingsNotificationsExpanded(expanded);
-        break;
-      case 'tags':
-        await PreferencesService.setSettingsTagsExpanded(expanded);
-        break;
-      case 'dataExport':
-        await PreferencesService.setSettingsDataExportExpanded(expanded);
-        break;
-      case 'advanced':
-        await PreferencesService.setSettingsAdvancedExpanded(expanded);
-        break;
-      case 'about':
-        await PreferencesService.setSettingsAboutExpanded(expanded);
-        break;
-    }
+    final saveFunctions = <String, Future<void> Function(bool)>{
+      'general': PreferencesService.setSettingsGeneralExpanded,
+      'appearance': PreferencesService.setSettingsAppearanceExpanded,
+      'dateTime': PreferencesService.setSettingsDisplayExpanded,
+      'displayLayout': PreferencesService.setSettingsDisplayLayoutExpanded,
+      'notifications': PreferencesService.setSettingsNotificationsExpanded,
+      'tags': PreferencesService.setSettingsTagsExpanded,
+      'dataExport': PreferencesService.setSettingsDataExportExpanded,
+      'advanced': PreferencesService.setSettingsAdvancedExpanded,
+      'about': PreferencesService.setSettingsAboutExpanded,
+    };
+    await saveFunctions[section]?.call(expanded);
   }
 
   /// Get package info with error handling for Linux compatibility
@@ -3962,8 +3443,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final isLandscape = mediaQuery.size.width > mediaQuery.size.height;
-    final trimmedQuery = _searchController.text.trim();
-    final hasSearch = trimmedQuery.isNotEmpty;
+    final hasSearch = _searchQuery.isNotEmpty;
 
     // Build children for each section so we can filter them.
     final generalTitle = 'general'.tr();
@@ -3974,11 +3454,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         showThemeColorDialog: _showThemeColorDialog,
       ),
     ];
-    final generalTags = <String>[
-      _keyToSearchText('language'),
-      _keyToSearchText('theme'),
-      _keyToSearchText('select_theme_color'),
-    ];
+    final generalFiltered = _filterSectionChildren(
+      generalTitle,
+      generalChildren,
+    );
 
     final appearanceTitle = 'appearance'.tr();
     final appearanceChildren = <Widget>[
@@ -3994,24 +3473,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         showStreakColorSchemeDialog: _showStreakColorSchemeDialog,
       ),
     ];
-    final appearanceTags = <String>[
-      _keyToSearchText('font_size_scale'),
-      _keyToSearchText('icon_size'),
-      _keyToSearchText('border_radius'),
-      _keyToSearchText('elevation'),
-      _keyToSearchText('card_spacing'),
-      _keyToSearchText('habit_checkbox_style'),
-      _keyToSearchText('progress_indicator_style'),
-      _keyToSearchText('calendar_completion_color'),
-      _keyToSearchText('habit_card_completion_color'),
-      _keyToSearchText('calendar_timeline_completion_color'),
-      _keyToSearchText('main_timeline_completion_color'),
-      _keyToSearchText('calendar_bad_habit_completion_color'),
-      _keyToSearchText('habit_card_bad_habit_completion_color'),
-      _keyToSearchText('calendar_timeline_bad_habit_completion_color'),
-      _keyToSearchText('main_timeline_bad_habit_completion_color'),
-      _keyToSearchText('streak_color_scheme'),
-    ];
+    final appearanceFiltered = _filterSectionChildren(
+      appearanceTitle,
+      appearanceChildren,
+    );
 
     // Date & Time section
     final dateTimeTitle = 'date_time'.tr();
@@ -4021,10 +3486,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         showFirstDayOfWeekDialog: _showFirstDayOfWeekDialog,
       ),
     ];
-    final dateTimeTags = <String>[
-      _keyToSearchText('date_format'),
-      _keyToSearchText('first_day_of_week'),
-    ];
+    final dateTimeFiltered = _filterSectionChildren(
+      dateTimeTitle,
+      dateTimeChildren,
+    );
 
     // Display section (habits, habit cards, timelines, statistics)
     final displayTitle = 'display'.tr();
@@ -4041,33 +3506,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         revertDaySquareSize: _revertDaySquareSize,
       ),
     ];
-    final displayTags = <String>[
-      _keyToSearchText('habits_layout_mode'),
-      _keyToSearchText('grid_show_icon'),
-      _keyToSearchText('grid_show_completion'),
-      _keyToSearchText('grid_show_timeline'),
-      _keyToSearchText('show_main_timeline'),
-      _keyToSearchText('day_square_size'),
-      _keyToSearchText('timeline_days'),
-      _keyToSearchText('main_timeline_fill_lines'),
-      _keyToSearchText('main_timeline_lines'),
-      _keyToSearchText('timeline_spacing'),
-      _keyToSearchText('timeline_compact_mode'),
-      _keyToSearchText('use_streak_colors_for_squares'),
-      _keyToSearchText('show_streak_borders'),
-      _keyToSearchText('show_week_month_highlights'),
-      _keyToSearchText('show_streak_numbers'),
-      _keyToSearchText('habit_card_layout_mode'),
-      _keyToSearchText('show_descriptions'),
-      _keyToSearchText('compact_cards'),
-      _keyToSearchText('show_percentage'),
-      _keyToSearchText('show_streak_on_card'),
-      _keyToSearchText('habit_card_timeline_fill_lines'),
-      _keyToSearchText('habit_card_timeline_lines'),
-      _keyToSearchText('habit_card_timeline_days'),
-      _keyToSearchText('modal_timeline_days'),
-      _keyToSearchText('show_statistics_card'),
-    ];
+    final displayFiltered = _filterSectionChildren(
+      displayTitle,
+      displayChildren,
+    );
 
     // Notifications & behavior
     final notificationsTitle = 'notifications'.tr();
@@ -4076,15 +3518,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         showBadHabitLogicModeDialog: _showBadHabitLogicModeDialog,
       ),
     ];
-    final notificationsTags = <String>[
-      _keyToSearchText('enable_notifications'),
-      _keyToSearchText('bad_habit_logic_mode'),
-    ];
+    final notificationsFiltered = _filterSectionChildren(
+      notificationsTitle,
+      notificationsChildren,
+    );
 
-    // Tags management
+    // Tags management - excluded from search
     final tagsTitle = 'tags'.tr();
     final tagsChildren = <Widget>[const TagsSectionContent()];
-    final tagsTags = <String>[_keyToSearchText('tags')];
+    // Tags section is never filtered - it doesn't match search queries
+    final tagsFiltered = tagsChildren;
 
     final dataTitle = 'data_management'.tr();
     final dataChildren = <Widget>[
@@ -4095,12 +3538,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         optimizeDatabase: _optimizeDatabase,
       ),
     ];
-    final dataTags = <String>[
-      _keyToSearchText('export_data'),
-      _keyToSearchText('import_data'),
-      _keyToSearchText('database_statistics'),
-      _keyToSearchText('optimize_database'),
-    ];
+    final dataFiltered = _filterSectionChildren(dataTitle, dataChildren);
 
     final advancedTitle = 'advanced'.tr();
     final advancedChildren = <Widget>[
@@ -4112,248 +3550,163 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         returnToOnboarding: _returnToOnboarding,
       ),
     ];
-    final advancedTags = <String>[
-      _keyToSearchText('reset_all_habits'),
-      _keyToSearchText('reset_all_settings'),
-      _keyToSearchText('clear_all_data'),
-      _keyToSearchText('logs'),
-      _keyToSearchText('return_to_onboarding'),
-    ];
+    final advancedFiltered = _filterSectionChildren(
+      advancedTitle,
+      advancedChildren,
+    );
 
     final aboutTitle = 'about'.tr();
+    final aboutChildren = <Widget>[
+      FutureBuilder<PackageInfo?>(
+        future: _getPackageInfo(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return ListTile(
+              leading: const CircularProgressIndicator(),
+              title: Text('loading'.tr()),
+            );
+          }
 
-    // Collect all sections for unified search
-    final sectionsMap = <String, Map<String, dynamic>>{
-      'general': {
-        'title': generalTitle,
-        'icon': Icons.settings,
-        'children': generalChildren,
-        'tags': generalTags,
-      },
-      'appearance': {
-        'title': appearanceTitle,
-        'icon': Icons.palette,
-        'children': appearanceChildren,
-        'tags': appearanceTags,
-      },
-      'dateTime': {
-        'title': dateTimeTitle,
-        'icon': Icons.calendar_today,
-        'children': dateTimeChildren,
-        'tags': dateTimeTags,
-      },
-      'display': {
-        'title': displayTitle,
-        'icon': Icons.view_quilt,
-        'children': displayChildren,
-        'tags': displayTags,
-      },
-      'notifications': {
-        'title': notificationsTitle,
-        'icon': Icons.notifications,
-        'children': notificationsChildren,
-        'tags': notificationsTags,
-      },
-      'tags': {
-        'title': tagsTitle,
-        'icon': Icons.label,
-        'children': tagsChildren,
-        'tags': tagsTags,
-      },
-      'data': {
-        'title': dataTitle,
-        'icon': Icons.storage,
-        'children': dataChildren,
-        'tags': dataTags,
-      },
-      'advanced': {
-        'title': advancedTitle,
-        'icon': Icons.settings_applications,
-        'children': advancedChildren,
-        'tags': advancedTags,
-      },
-      'about': {
-        'title': aboutTitle,
-        'icon': Icons.info,
-        'children': [
-          FutureBuilder<PackageInfo?>(
-            future: _getPackageInfo(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const ListTile(
-                  leading: CircularProgressIndicator(),
-                  title: Text('loading'),
-                );
-              }
-              return Column(
-                children: [
-                  AboutSectionContent(
-                    showLibrariesDialog: _showLibrariesDialog,
-                    showLicenseDialog: _showLicenseDialog,
-                    showUsageRightsDialog: _showUsageRightsDialog,
-                    showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
-                    launchUrl: (context, url) =>
-                        AboutDialogs.launchUrlWithFallback(context, url),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-        'tags': [_keyToSearchText('about')],
-      },
-    };
+          return Column(
+            children: [
+              AboutSectionContent(
+                showLibrariesDialog: _showLibrariesDialog,
+                showLicenseDialog: _showLicenseDialog,
+                showUsageRightsDialog: _showUsageRightsDialog,
+                showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
+                launchUrl: (context, url) =>
+                    AboutDialogs.launchUrlWithFallback(context, url),
+              ),
+            ],
+          );
+        },
+      ),
+    ];
+    final aboutFiltered = _filterSectionChildren(aboutTitle, aboutChildren);
 
-    // Perform search with memoization (only recalculate when query changes)
-    final searchResults = _getSearchResults(trimmedQuery, sectionsMap);
-
-    // Build settings list - always show normal sections (never affected by search)
+    // Build settings list - filter sections based on search
     final settingsList = ListView(
       children: [
-        _buildCollapsibleSection(
-          title: generalTitle,
-          icon: Icons.settings,
-          isExpanded: _generalExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _generalExpanded = expanded;
-            });
-            _saveExpansionState('general', expanded);
-          },
-          children: generalChildren,
-          sectionId: 'general',
-        ),
-        _buildCollapsibleSection(
-          title: appearanceTitle,
-          icon: Icons.palette,
-          isExpanded: _appearanceExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _appearanceExpanded = expanded;
-            });
-            _saveExpansionState('appearance', expanded);
-          },
-          children: appearanceChildren,
-          sectionId: 'appearance',
-        ),
-        // Date & Time before Display
-        _buildCollapsibleSection(
-          title: dateTimeTitle,
-          icon: Icons.calendar_today,
-          isExpanded: _dateTimeExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _dateTimeExpanded = expanded;
-            });
-            _saveExpansionState('dateTime', expanded);
-          },
-          children: dateTimeChildren,
-          sectionId: 'dateTime',
-        ),
-        _buildCollapsibleSection(
-          title: displayTitle,
-          icon: Icons.view_quilt,
-          isExpanded: _displayLayoutExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _displayLayoutExpanded = expanded;
-            });
-            _saveExpansionState('displayLayout', expanded);
-          },
-          children: displayChildren,
-          sectionId: 'display',
-        ),
-        _buildCollapsibleSection(
-          title: notificationsTitle,
-          icon: Icons.notifications,
-          isExpanded: _notificationsExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _notificationsExpanded = expanded;
-            });
-            _saveExpansionState('notifications', expanded);
-          },
-          children: notificationsChildren,
-          sectionId: 'notifications',
-        ),
-        _buildCollapsibleSection(
-          title: tagsTitle,
-          icon: Icons.label,
-          isExpanded: _tagsExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _tagsExpanded = expanded;
-            });
-            _saveExpansionState('tags', expanded);
-          },
-          children: tagsChildren,
-          sectionId: 'tags',
-        ),
-        _buildCollapsibleSection(
-          title: dataTitle,
-          icon: Icons.storage,
-          isExpanded: _dataExportExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _dataExportExpanded = expanded;
-            });
-            _saveExpansionState('dataExport', expanded);
-          },
-          children: dataChildren,
-          sectionId: 'data',
-        ),
-        _buildCollapsibleSection(
-          title: advancedTitle,
-          icon: Icons.settings_applications,
-          isExpanded: _advancedExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _advancedExpanded = expanded;
-            });
-            _saveExpansionState('advanced', expanded);
-          },
-          children: advancedChildren,
-          sectionId: 'advanced',
-        ),
-        // About section
-        _buildCollapsibleSection(
-          title: aboutTitle,
-          icon: Icons.info,
-          isExpanded: _aboutExpanded,
-          onExpansionChanged: (expanded) {
-            setState(() {
-              _aboutExpanded = expanded;
-            });
-            _saveExpansionState('about', expanded);
-          },
-          children: [
-            FutureBuilder<PackageInfo?>(
-              future: _getPackageInfo(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return ListTile(
-                    leading: const CircularProgressIndicator(),
-                    title: Text('loading'.tr()),
-                  );
-                }
-
-                return Column(
-                  children: [
-                    AboutSectionContent(
-                      showLibrariesDialog: _showLibrariesDialog,
-                      showLicenseDialog: _showLicenseDialog,
-                      showUsageRightsDialog: _showUsageRightsDialog,
-                      showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
-                      launchUrl: (context, url) =>
-                          AboutDialogs.launchUrlWithFallback(context, url),
-                    ),
-                  ],
-                );
-              },
+        if (!hasSearch || _hasVisibleItems(generalFiltered))
+          _buildCollapsibleSection(
+            title: generalTitle,
+            icon: Icons.settings,
+            isExpanded: hasSearch ? true : _generalExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'general',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _generalExpanded = expanded,
             ),
-          ],
-          sectionId: 'about',
-        ),
+            children: generalFiltered,
+            sectionId: 'general',
+          ),
+        if (!hasSearch || _hasVisibleItems(appearanceFiltered))
+          _buildCollapsibleSection(
+            title: appearanceTitle,
+            icon: Icons.palette,
+            isExpanded: hasSearch ? true : _appearanceExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'appearance',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _appearanceExpanded = expanded,
+            ),
+            children: appearanceFiltered,
+            sectionId: 'appearance',
+          ),
+        // Date & Time before Display
+        if (!hasSearch || _hasVisibleItems(dateTimeFiltered))
+          _buildCollapsibleSection(
+            title: dateTimeTitle,
+            icon: Icons.calendar_today,
+            isExpanded: hasSearch ? true : _dateTimeExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'dateTime',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _dateTimeExpanded = expanded,
+            ),
+            children: dateTimeFiltered,
+            sectionId: 'dateTime',
+          ),
+        if (!hasSearch || _hasVisibleItems(displayFiltered))
+          _buildCollapsibleSection(
+            title: displayTitle,
+            icon: Icons.view_quilt,
+            isExpanded: hasSearch ? true : _displayLayoutExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'displayLayout',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _displayLayoutExpanded = expanded,
+            ),
+            children: displayFiltered,
+            sectionId: 'display',
+          ),
+        if (!hasSearch || _hasVisibleItems(notificationsFiltered))
+          _buildCollapsibleSection(
+            title: notificationsTitle,
+            icon: Icons.notifications,
+            isExpanded: hasSearch ? true : _notificationsExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'notifications',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _notificationsExpanded = expanded,
+            ),
+            children: notificationsFiltered,
+            sectionId: 'notifications',
+          ),
+        // Tags section is only shown when there's no search (excluded from search)
+        if (!hasSearch)
+          _buildCollapsibleSection(
+            title: tagsTitle,
+            icon: Icons.label,
+            isExpanded: _tagsExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'tags',
+              hasSearch: false,
+              updateState: (expanded) => _tagsExpanded = expanded,
+            ),
+            children: tagsFiltered,
+            sectionId: 'tags',
+          ),
+        if (!hasSearch || _hasVisibleItems(dataFiltered))
+          _buildCollapsibleSection(
+            title: dataTitle,
+            icon: Icons.storage,
+            isExpanded: hasSearch ? true : _dataExportExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'dataExport',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _dataExportExpanded = expanded,
+            ),
+            children: dataFiltered,
+            sectionId: 'data',
+          ),
+        if (!hasSearch || _hasVisibleItems(advancedFiltered))
+          _buildCollapsibleSection(
+            title: advancedTitle,
+            icon: Icons.settings_applications,
+            isExpanded: hasSearch ? true : _advancedExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'advanced',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _advancedExpanded = expanded,
+            ),
+            children: advancedFiltered,
+            sectionId: 'advanced',
+          ),
+        // About section
+        if (!hasSearch || _hasVisibleItems(aboutFiltered))
+          _buildCollapsibleSection(
+            title: aboutTitle,
+            icon: Icons.info,
+            isExpanded: hasSearch ? true : _aboutExpanded,
+            onExpansionChanged: _createExpansionHandler(
+              sectionId: 'about',
+              hasSearch: hasSearch,
+              updateState: (expanded) => _aboutExpanded = expanded,
+            ),
+            children: aboutFiltered,
+            sectionId: 'about',
+          ),
       ],
     );
 
@@ -4364,54 +3717,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       });
     }
 
-    // In landscape with search, show grouped results in right pane
-    final landscapeDetailContent =
-        isLandscape && hasSearch && searchResults.isNotEmpty
-        ? _buildGroupedSearchResults(searchResults, trimmedQuery)
-        : _detailContent;
-
-    final landscapeDetailTitle =
-        isLandscape && hasSearch && searchResults.isNotEmpty
-        ? 'search_results'.tr()
-        : _detailTitle;
-
-    // Show empty state in right pane if search is active but no results
-    final finalLandscapeDetailContent =
-        isLandscape && hasSearch && searchResults.isEmpty
-        ? Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off,
-                    size: 64,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'no_results_found'.tr(),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        : landscapeDetailContent;
-
     final bodyContent = isLandscape
         ? SplitScreenSettingsLayout(
             key: const ValueKey('landscape'),
             settingsList: settingsList,
-            detailContent: finalLandscapeDetailContent,
-            detailTitle: landscapeDetailTitle,
+            detailContent: _detailContent,
+            detailTitle: _detailTitle,
             onCloseDetail: _clearDetailPane,
           )
         : SizedBox(
@@ -4434,20 +3745,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
         body: PageTransitionSwitcher(
           duration: const Duration(milliseconds: 300),
-          transitionBuilder:
-              (
-                Widget child,
-                Animation<double> primaryAnimation,
-                Animation<double> secondaryAnimation,
-              ) {
-                return SharedAxisTransition(
-                  animation: primaryAnimation,
-                  secondaryAnimation: secondaryAnimation,
-                  transitionType: SharedAxisTransitionType.horizontal,
-                  fillColor: Colors.transparent,
-                  child: child,
-                );
-              },
+          transitionBuilder: _createTransitionBuilder(),
           child: bodyContent,
         ),
       );
@@ -4460,22 +3758,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
       body: PageTransitionSwitcher(
         duration: const Duration(milliseconds: 300),
-        transitionBuilder:
-            (
-              Widget child,
-              Animation<double> primaryAnimation,
-              Animation<double> secondaryAnimation,
-            ) {
-              return SharedAxisTransition(
-                animation: primaryAnimation,
-                secondaryAnimation: secondaryAnimation,
-                transitionType: SharedAxisTransitionType.horizontal,
-                fillColor: Colors.transparent,
-                child: child,
-              );
-            },
+        transitionBuilder: _createTransitionBuilder(),
         child: bodyContent,
       ),
     );
   }
 }
+
