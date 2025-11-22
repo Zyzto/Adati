@@ -25,13 +25,11 @@ Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/A
 
 [![Add to Obtainium](https://img.shields.io/badge/Add_to-Obtainium-purple)](obtainium://add/https://github.com/Zyzto/Adati)
 
-- **One-Click Setup**: Tap the button above (requires Obtainium installed) to automatically add this app
 - **Manual Setup**: Install [Obtainium](https://github.com/ImranR98/Obtainium) from [F-Droid](https://f-droid.org/packages/com.imranr98.obtainium/) or [GitHub Releases](https://github.com/ImranR98/Obtainium/releases), then:
   - Open Obtainium and tap the "+" button
   - Select "GitHub Releases" as the source
   - Enter repository: `Zyzto/Adati`
 - Obtainium will automatically track new releases and notify you of updates
-- You can also find this app on [Obtainium Apps](https://apps.obtainium.imranr.dev) for quick setup
 
 **Option 2: Google Play Store** **WIP**
 - Available on [Google Play Store](https://play.google.com/store/apps/details?id=com.shenepoy.adati) (when published)
