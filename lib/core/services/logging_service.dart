@@ -49,22 +49,24 @@ class _AggregatedLogGroup {
 }
 
 class LoggingService {
-  static final EasyLogger _logger = EasyLogger(
-    name: 'Adati',
-  );
+  static final EasyLogger _logger = EasyLogger(name: 'Adati');
 
   static File? _logFile;
   static File? _crashLogFile;
   static bool _initialized = false;
   static const int _maxLogFileSize = 5 * 1024 * 1024; // 5MB
   static const int _maxLogFiles = 5;
+  static const int _maxTotalLogSize =
+      50 * 1024 * 1024; // 50MB total across all log files
   static DateTime? _lastCrashTime;
   static String? _lastCrashSummary;
 
   // Log aggregation
   static final List<_LogEntry> _recentLogs = [];
   static Timer? _aggregationTimer;
-  static const Duration _aggregationTimeout = Duration(milliseconds: 100); // Reduced to 100ms for faster aggregation
+  static const Duration _aggregationTimeout = Duration(
+    milliseconds: 100,
+  ); // Reduced to 100ms for faster aggregation
   static bool _aggregationEnabled = true;
 
   // Log level configuration
@@ -91,6 +93,9 @@ class LoggingService {
 
       _logFile = File(path.join(logsDir.path, 'adati.log'));
       _crashLogFile = File(path.join(logsDir.path, 'adati_crashes.log'));
+
+      // Check and rotate logs if they're too large on startup
+      await _checkAndRotateLogsOnStartup();
 
       // Load last crash info if available
       await _loadLastCrashInfo();
@@ -158,8 +163,8 @@ class LoggingService {
           for (int i = lines.length - 1; i >= 0; i--) {
             if (lines[i].contains('CRASH') || lines[i].contains('SEVERE')) {
               _lastCrashTime = DateTime.now(); // Approximate
-              _lastCrashSummary = lines[i].length > 100 
-                  ? '${lines[i].substring(0, 100)}...' 
+              _lastCrashSummary = lines[i].length > 100
+                  ? '${lines[i].substring(0, 100)}...'
                   : lines[i];
               break;
             }
@@ -209,21 +214,25 @@ class LoggingService {
     }
 
     // Find similar logs (same component, level, and similar message pattern)
-    final similarLogs = _recentLogs.where((log) =>
-      log.component == entry.component &&
-      log.level == entry.level &&
-      _isSimilarMessage(log.message, entry.message)
-    ).toList();
+    final similarLogs = _recentLogs
+        .where(
+          (log) =>
+              log.component == entry.component &&
+              log.level == entry.level &&
+              _isSimilarMessage(log.message, entry.message),
+        )
+        .toList();
 
     // If we have at least one similar log, add this one
     // Don't aggregate immediately - let more accumulate, or wait for flush timer
     if (similarLogs.isNotEmpty) {
       _recentLogs.add(entry);
       _scheduleAggregationFlush();
-      
+
       // Only try to aggregate if we have 10+ similar logs (to allow larger batches)
       // Otherwise, let the flush timer handle it when it fires
-      if (similarLogs.length >= 9) { // 9 existing + 1 new = 10 total
+      if (similarLogs.length >= 9) {
+        // 9 existing + 1 new = 10 total
         _tryAggregate(entry);
       }
       return true;
@@ -242,21 +251,26 @@ class LoggingService {
     try {
       final timestamp = entry.timestamp.toIso8601String();
       final buffer = StringBuffer();
-      final componentStr = entry.component != null ? '[${entry.component}] ' : '';
-      buffer.writeln('[$timestamp] [${entry.level}] $componentStr${entry.message}');
-      
+      final componentStr = entry.component != null
+          ? '[${entry.component}] '
+          : '';
+      buffer.writeln(
+        '[$timestamp] [${entry.level}] $componentStr${entry.message}',
+      );
+
       if (entry.error != null) {
         buffer.writeln('Error: ${entry.error}');
       }
-      
+
       if (entry.stackTrace != null) {
         buffer.writeln('StackTrace: ${entry.stackTrace}');
       }
 
-      // Check file size and rotate if needed
+      // Check file size and rotate if needed (check more aggressively)
       if (await _logFile!.exists()) {
         final size = await _logFile!.length();
-        if (size > _maxLogFileSize) {
+        // Rotate if file exceeds 80% of max size (rotate before hitting limit)
+        if (size > (_maxLogFileSize * 0.8)) {
           await _rotateLogs();
         }
       }
@@ -276,11 +290,14 @@ class LoggingService {
   static void _tryAggregate(_LogEntry entry) {
     // Find similar logs (same component, level, similar message pattern)
     // Note: entry is already in _recentLogs at this point
-    final similarLogs = _recentLogs.where((log) =>
-      log.component == entry.component &&
-      log.level == entry.level &&
-      _isSimilarMessage(log.message, entry.message)
-    ).toList();
+    final similarLogs = _recentLogs
+        .where(
+          (log) =>
+              log.component == entry.component &&
+              log.level == entry.level &&
+              _isSimilarMessage(log.message, entry.message),
+        )
+        .toList();
 
     // Need at least 2 similar logs (including current entry) to aggregate
     if (similarLogs.length < 2) return;
@@ -291,11 +308,15 @@ class LoggingService {
     if (baseMessage == null) {
       // If we can't extract base message, try a simpler approach
       // Just check if all messages have the same method name
-      final methodNames = allMessages.map((m) => m.split('(').first.trim()).toSet();
+      final methodNames = allMessages
+          .map((m) => m.split('(').first.trim())
+          .toSet();
       if (methodNames.length == 1) {
         // All have same method name, use it as base
         final simpleBase = '${methodNames.first}()';
-        final variableParts = similarLogs.map((log) => _extractVariableParts(log.message, simpleBase)).toList();
+        final variableParts = similarLogs
+            .map((log) => _extractVariableParts(log.message, simpleBase))
+            .toList();
         final group = _AggregatedLogGroup(
           level: entry.level,
           component: entry.component,
@@ -312,8 +333,10 @@ class LoggingService {
     }
 
     // Extract variable parts
-    final variableParts = similarLogs.map((log) => _extractVariableParts(log.message, baseMessage)).toList();
-    
+    final variableParts = similarLogs
+        .map((log) => _extractVariableParts(log.message, baseMessage))
+        .toList();
+
     // Create aggregated group (count includes all similar logs)
     final group = _AggregatedLogGroup(
       level: entry.level,
@@ -327,7 +350,7 @@ class LoggingService {
 
     // Remove similar logs from recent logs (they'll be written as aggregated)
     _recentLogs.removeWhere((log) => similarLogs.contains(log));
-    
+
     // Write aggregated log (this will also log to console)
     _writeAggregatedLog(group);
   }
@@ -337,12 +360,12 @@ class LoggingService {
     // Extract method name (text before first parenthesis)
     final method1 = msg1.split('(').first.trim();
     final method2 = msg2.split('(').first.trim();
-    
+
     if (method1 != method2) return false;
-    
+
     // Check if both have parameters (must have opening parenthesis)
     if (!msg1.contains('(') || !msg2.contains('(')) return false;
-    
+
     // Both must have the same method name and both have parameters
     return true;
   }
@@ -350,17 +373,17 @@ class LoggingService {
   /// Extract base message pattern from multiple similar messages
   static String? _extractBaseMessage(List<String> messages) {
     if (messages.isEmpty) return null;
-    
+
     final first = messages.first;
     final methodName = first.split('(').first.trim();
-    
+
     // Extract parameter patterns from all messages
     final patterns = messages.map((msg) {
       // Match content inside first set of parentheses
       final match = RegExp(r'\(([^)]+)\)').firstMatch(msg);
       return match?.group(1) ?? '';
     }).toList();
-    
+
     // Check if all patterns are non-empty and unique (different parameters)
     // This means we can aggregate them
     if (patterns.every((p) => p.isNotEmpty)) {
@@ -369,13 +392,13 @@ class LoggingService {
       for (final pattern in patterns) {
         patternCounts[pattern] = (patternCounts[pattern] ?? 0) + 1;
       }
-      
+
       // If all patterns appear exactly once, they're all different - can aggregate
       if (patternCounts.values.every((count) => count == 1)) {
         return '$methodName()';
       }
     }
-    
+
     return null;
   }
 
@@ -390,16 +413,21 @@ class LoggingService {
     try {
       final timestamp = group.firstTimestamp.toIso8601String();
       final buffer = StringBuffer();
-      final componentStr = group.component != null ? '[${group.component}] ' : '';
-      
+      final componentStr = group.component != null
+          ? '[${group.component}] '
+          : '';
+
       // Format aggregated message
       final summary = _formatAggregatedSummary(group);
-      buffer.writeln('[$timestamp] [${group.level}] [AGGREGATED] $componentStr${group.baseMessage} called ${group.count} times $summary');
-      
-      // Check file size and rotate if needed
+      buffer.writeln(
+        '[$timestamp] [${group.level}] [AGGREGATED] $componentStr${group.baseMessage} called ${group.count} times $summary',
+      );
+
+      // Check file size and rotate if needed (check more aggressively)
       if (await _logFile!.exists()) {
         final size = await _logFile!.length();
-        if (size > _maxLogFileSize) {
+        // Rotate if file exceeds 80% of max size (rotate before hitting limit)
+        if (size > (_maxLogFileSize * 0.8)) {
           await _rotateLogs();
         }
       }
@@ -409,10 +437,13 @@ class LoggingService {
         mode: FileMode.append,
         flush: true,
       );
-      
+
       // Also log to console with appropriate level
-      final componentStr2 = group.component != null ? '[${group.component}] ' : '';
-      final aggregatedMessage = '[AGGREGATED] $componentStr2${group.baseMessage} called ${group.count} times $summary';
+      final componentStr2 = group.component != null
+          ? '[${group.component}] '
+          : '';
+      final aggregatedMessage =
+          '[AGGREGATED] $componentStr2${group.baseMessage} called ${group.count} times $summary';
       switch (group.level) {
         case 'DEBUG':
           _logger.debug(aggregatedMessage);
@@ -438,10 +469,10 @@ class LoggingService {
   /// Format summary of aggregated variable parts
   static String _formatAggregatedSummary(_AggregatedLogGroup group) {
     if (group.variableParts.isEmpty) return '';
-    
+
     // Try to extract common parameter names and values
     final paramMap = <String, List<String>>{};
-    
+
     for (final part in group.variableParts) {
       // Parse parameters like "date=2025-11-01" or "habitId=20"
       final params = part.split(',');
@@ -455,7 +486,7 @@ class LoggingService {
         }
       }
     }
-    
+
     if (paramMap.isEmpty) {
       // Fallback: just show count of unique values
       final uniqueParts = group.variableParts.toSet();
@@ -465,37 +496,44 @@ class LoggingService {
         return '(params: ${uniqueParts.take(5).join(", ")} ... and ${uniqueParts.length - 5} more)';
       }
     }
-    
+
     // Format each parameter
     final summaries = <String>[];
     for (final entry in paramMap.entries) {
       final key = entry.key;
       final values = entry.value.toSet().toList();
-      
+
       if (values.length == 1) {
         summaries.add('$key=${values.first}');
       } else if (values.length <= 5) {
         summaries.add('$key: ${values.join(", ")}');
       } else {
         // Try to detect ranges (for dates, IDs)
-        final sorted = values.map((v) {
-          // Try to parse as number
-          final num = int.tryParse(v);
-          if (num != null) return num;
-          // Try to parse as date
-          final date = DateTime.tryParse(v);
-          if (date != null) return date.millisecondsSinceEpoch;
-          return null;
-        }).whereType<num>().toList()..sort();
-        
+        final sorted =
+            values
+                .map((v) {
+                  // Try to parse as number
+                  final num = int.tryParse(v);
+                  if (num != null) return num;
+                  // Try to parse as date
+                  final date = DateTime.tryParse(v);
+                  if (date != null) return date.millisecondsSinceEpoch;
+                  return null;
+                })
+                .whereType<num>()
+                .toList()
+              ..sort();
+
         if (sorted.length == values.length && sorted.length > 1) {
           summaries.add('$key: ${values.first} to ${values.last}');
         } else {
-          summaries.add('$key: ${values.take(3).join(", ")} ... and ${values.length - 3} more');
+          summaries.add(
+            '$key: ${values.take(3).join(", ")} ... and ${values.length - 3} more',
+          );
         }
       }
     }
-    
+
     return summaries.isEmpty ? '' : '(${summaries.join(", ")})';
   }
 
@@ -518,27 +556,39 @@ class LoggingService {
     // Group remaining logs by similarity before flushing
     final processed = <_LogEntry>{};
     final remaining = <_LogEntry>[];
-    
+
     for (final entry in _recentLogs) {
       if (processed.contains(entry)) continue;
-      
+
       // Find all similar logs to this one
-      final similarLogs = _recentLogs.where((log) =>
-        !processed.contains(log) &&
-        log.component == entry.component &&
-        log.level == entry.level &&
-        _isSimilarMessage(log.message, entry.message)
-      ).toList();
-      
+      final similarLogs = _recentLogs
+          .where(
+            (log) =>
+                !processed.contains(log) &&
+                log.component == entry.component &&
+                log.level == entry.level &&
+                _isSimilarMessage(log.message, entry.message),
+          )
+          .toList();
+
       if (similarLogs.length >= 2) {
         // Try to aggregate this group
         final allMessages = similarLogs.map((l) => l.message).toList();
         final baseMessage = _extractBaseMessage(allMessages);
-        
-        if (baseMessage != null || similarLogs.map((m) => m.message.split('(').first.trim()).toSet().length == 1) {
+
+        if (baseMessage != null ||
+            similarLogs
+                    .map((m) => m.message.split('(').first.trim())
+                    .toSet()
+                    .length ==
+                1) {
           // Can aggregate
-          final simpleBase = baseMessage ?? '${similarLogs.first.message.split('(').first.trim()}()';
-          final variableParts = similarLogs.map((log) => _extractVariableParts(log.message, simpleBase)).toList();
+          final simpleBase =
+              baseMessage ??
+              '${similarLogs.first.message.split('(').first.trim()}()';
+          final variableParts = similarLogs
+              .map((log) => _extractVariableParts(log.message, simpleBase))
+              .toList();
           final group = _AggregatedLogGroup(
             level: entry.level,
             component: entry.component,
@@ -561,10 +611,12 @@ class LoggingService {
         processed.add(entry);
       }
     }
-    
+
     // Write any remaining individual logs that couldn't be aggregated
     for (final entry in remaining) {
-      final componentStr = entry.component != null ? '[${entry.component}] ' : '';
+      final componentStr = entry.component != null
+          ? '[${entry.component}] '
+          : '';
       final message = '$componentStr${entry.message}';
       switch (entry.level) {
         case 'DEBUG':
@@ -581,28 +633,195 @@ class LoggingService {
       }
       _writeLogEntry(entry);
     }
-    
+
     _recentLogs.clear();
     _aggregationTimer?.cancel();
     _aggregationTimer = null;
   }
 
   /// Rotate log files
+  /// Check and rotate logs on startup if they're too large
+  static Future<void> _checkAndRotateLogsOnStartup() async {
+    try {
+      if (_logFile == null) return;
+
+      if (await _logFile!.exists()) {
+        int size = await _logFile!.length();
+        // Rotate if file is larger than max size (even if just slightly over)
+        if (size > _maxLogFileSize) {
+          // For very large files, rotate multiple times to reduce size
+          int rotationCount = 0;
+          const maxStartupRotations = 20; // Allow more rotations on startup
+
+          while (size > _maxLogFileSize && await _logFile!.exists()) {
+            // Safety: don't rotate more than maxStartupRotations times
+            if (++rotationCount > maxStartupRotations) {
+              // If we've rotated many times, force cleanup and break
+              await _cleanupOldLogs();
+              break;
+            }
+
+            await _rotateLogs();
+            if (await _logFile!.exists()) {
+              size = await _logFile!.length();
+            } else {
+              break;
+            }
+          }
+
+          // Clean up any large rotated files
+          await _cleanupLargeRotatedFiles();
+        }
+      }
+
+      // Also check total log directory size and clean up if needed
+      await _cleanupOldLogs();
+    } catch (e) {
+      _logger.error(
+        '[LoggingService] Failed to check/rotate logs on startup: $e',
+      );
+    }
+  }
+
+  /// Clean up old log files if total size exceeds limit
+  static Future<void> _cleanupOldLogs() async {
+    try {
+      if (_logFile == null) return;
+
+      final logDir = _logFile!.parent;
+      if (!await logDir.exists()) return;
+
+      // Get all log files
+      final logFiles = <File>[];
+      if (await _logFile!.exists()) {
+        logFiles.add(_logFile!);
+      }
+
+      for (int i = 1; i <= _maxLogFiles; i++) {
+        final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+        if (await rotatedFile.exists()) {
+          logFiles.add(rotatedFile);
+        }
+      }
+
+      // Calculate total size
+      int totalSize = 0;
+      for (final file in logFiles) {
+        totalSize += await file.length();
+      }
+
+      // If total size exceeds limit, delete oldest files
+      if (totalSize > _maxTotalLogSize) {
+        // Sort by modification time (oldest first)
+        final filesWithTime = <MapEntry<File, DateTime>>[];
+        for (final file in logFiles) {
+          final stat = await file.stat();
+          filesWithTime.add(MapEntry(file, stat.modified));
+        }
+        filesWithTime.sort((a, b) => a.value.compareTo(b.value));
+
+        // Delete oldest files until we're under the limit
+        for (final entry in filesWithTime) {
+          if (totalSize <= _maxTotalLogSize) break;
+          final fileSize = await entry.key.length();
+          // Use safe delete for cross-platform compatibility
+          final deleted = await _safeDelete(entry.key);
+          if (deleted) {
+            totalSize -= fileSize;
+          }
+        }
+      }
+    } catch (e) {
+      _logger.error('[LoggingService] Failed to cleanup old logs: $e');
+    }
+  }
+
+  /// Safely rename a file with cross-platform compatibility
+  /// Handles platform differences: Linux/macOS don't overwrite, Windows may have locking issues
+  static Future<bool> _safeRename(File source, File target) async {
+    try {
+      // On all platforms, delete target first to ensure rename works
+      // Linux/macOS: rename() doesn't overwrite existing files
+      // Windows: May have file locking issues, so delete first is safer
+      if (await target.exists()) {
+        try {
+          await target.delete();
+          // Small delay to ensure file system has processed deletion
+          await Future.delayed(const Duration(milliseconds: 10));
+        } catch (e) {
+          // If deletion fails, try rename anyway (might work on some platforms)
+          warning(
+            'Failed to delete target before rename, attempting rename anyway: $e',
+            component: 'LoggingService',
+            error: e,
+          );
+        }
+      }
+
+      // Attempt rename with retry for Windows file locking issues
+      int retries = 3;
+      while (retries > 0) {
+        try {
+          await source.rename(target.path);
+          return true;
+        } catch (e) {
+          retries--;
+          if (retries > 0) {
+            // Wait before retry (Windows file locking)
+            await Future.delayed(Duration(milliseconds: 50 * (4 - retries)));
+          } else {
+            rethrow;
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      warning(
+        'Failed to rename file from ${source.path} to ${target.path}: $e',
+        component: 'LoggingService',
+        error: e,
+      );
+      return false;
+    }
+  }
+
+  /// Safely delete a file with cross-platform compatibility
+  static Future<bool> _safeDelete(File file) async {
+    try {
+      if (await file.exists()) {
+        await file.delete();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      // Log but don't throw - deletion failures are often non-critical
+      warning(
+        'Failed to delete file ${file.path}: $e',
+        component: 'LoggingService',
+        error: e,
+      );
+      return false;
+    }
+  }
+
   static Future<void> _rotateLogs() async {
     try {
       if (_logFile == null) return;
 
       final logDir = _logFile!.parent;
-      
-      // Rotate existing logs
+
+      // Rotate existing logs (from oldest to newest)
       for (int i = _maxLogFiles - 1; i >= 1; i--) {
         final oldFile = File(path.join(logDir.path, 'adati.log.$i'));
         final newFile = File(path.join(logDir.path, 'adati.log.${i + 1}'));
+
         if (await oldFile.exists()) {
           if (i + 1 >= _maxLogFiles) {
-            await oldFile.delete(); // Delete oldest
+            // Delete oldest file (beyond max rotation count)
+            await _safeDelete(oldFile);
           } else {
-            await oldFile.rename(newFile.path);
+            // Rename to next number
+            await _safeRename(oldFile, newFile);
           }
         }
       }
@@ -610,17 +829,34 @@ class LoggingService {
       // Move current log to .1
       if (await _logFile!.exists()) {
         final rotatedFile = File(path.join(logDir.path, 'adati.log.1'));
-        await _logFile!.rename(rotatedFile.path);
+
+        // Use safe rename which handles all platform differences
+        final success = await _safeRename(_logFile!, rotatedFile);
+
+        if (!success) {
+          throw Exception('Failed to rotate current log file');
+        }
       }
 
-      // Create new log file
+      // Create new log file reference (file will be created on first write)
       _logFile = File(path.join(logDir.path, 'adati.log'));
-    } catch (e) {
+    } catch (e, stackTrace) {
       _logger.error('[LoggingService] Failed to rotate logs: $e');
+      error(
+        'Failed to rotate logs',
+        component: 'LoggingService',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
-  static void debug(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+  static void debug(
+    String message, {
+    String? component,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     // Skip debug logs in release mode
     if (kReleaseMode) return;
 
@@ -666,7 +902,12 @@ class LoggingService {
     }
   }
 
-  static void info(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+  static void info(
+    String message, {
+    String? component,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     // Check log level
     if (!_shouldLog(_levelInfo)) return;
 
@@ -700,7 +941,12 @@ class LoggingService {
     _writeToFile('INFO', message, component, error, stackTrace);
   }
 
-  static void warning(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+  static void warning(
+    String message, {
+    String? component,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     // Check log level
     if (!_shouldLog(_levelWarning)) return;
 
@@ -734,7 +980,12 @@ class LoggingService {
     _writeToFile('WARNING', message, component, error, stackTrace);
   }
 
-  static void error(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+  static void error(
+    String message, {
+    String? component,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     // Check log level
     if (!_shouldLog(_levelError)) return;
 
@@ -747,7 +998,12 @@ class LoggingService {
     _writeToFile('ERROR', message, component, error, stackTrace);
   }
 
-  static void severe(String message, {String? component, Object? error, StackTrace? stackTrace}) {
+  static void severe(
+    String message, {
+    String? component,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     // Check log level (severe errors are always logged, but we check anyway for consistency)
     if (!_shouldLog(_levelSevere)) return;
 
@@ -757,14 +1013,16 @@ class LoggingService {
     if (error != null) {
       _logger.error('Error: $error');
     }
-    
+
     // Write to crash log file
     _writeToCrashFile(message, error, stackTrace);
     _writeToFile('SEVERE', message, component, error, stackTrace);
-    
+
     // Update last crash info
     _lastCrashTime = DateTime.now();
-    _lastCrashSummary = message.length > 100 ? '${message.substring(0, 100)}...' : message;
+    _lastCrashSummary = message.length > 100
+        ? '${message.substring(0, 100)}...'
+        : message;
   }
 
   /// Write to crash log file
@@ -785,11 +1043,11 @@ class LoggingService {
       buffer.writeln('=' * 80);
       buffer.writeln('CRASH [$timestamp]');
       buffer.writeln('Message: $message');
-      
+
       if (error != null) {
         buffer.writeln('Error: $error');
       }
-      
+
       if (stackTrace != null) {
         buffer.writeln('StackTrace:');
         buffer.writeln(stackTrace);
@@ -851,6 +1109,137 @@ class LoggingService {
   /// Get last crash summary
   static String? getLastCrashSummary() => _lastCrashSummary;
 
+  /// Read last N bytes from a file efficiently
+  static Future<String> _readLastBytes(File file, int bytesToRead) async {
+    try {
+      final fileSize = await file.length();
+      if (fileSize == 0) return '';
+
+      final startPos = fileSize > bytesToRead ? fileSize - bytesToRead : 0;
+      final randomAccessFile = await file.open();
+      try {
+        await randomAccessFile.setPosition(startPos);
+        final bytes = await randomAccessFile.read(fileSize - startPos);
+        return utf8.decode(bytes, allowMalformed: true);
+      } finally {
+        await randomAccessFile.close();
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /// Get log content (last N lines for performance)
+  /// Returns combined main log and crash log
+  static Future<String> getLogContent({int maxLines = 1000}) async {
+    try {
+      if (!_initialized) {
+        await init();
+      }
+
+      final buffer = StringBuffer();
+      bool hasContent = false;
+
+      // Read main log
+      if (_logFile != null) {
+        try {
+          final exists = await _logFile!.exists();
+          if (exists) {
+            final fileSize = await _logFile!.length();
+            if (fileSize > 0) {
+              String content;
+
+              if (fileSize < 10 * 1024 * 1024) {
+                // Small file: read entire file
+                content = await _logFile!.readAsString();
+              } else {
+                // Large file: read only last 5MB (enough for ~1000 lines)
+                const maxBytesToRead = 5 * 1024 * 1024; // 5MB
+                content = await _readLastBytes(_logFile!, maxBytesToRead);
+              }
+
+              if (content.trim().isNotEmpty) {
+                final lines = content
+                    .split('\n')
+                    .where((line) => line.trim().isNotEmpty)
+                    .toList();
+                if (lines.isNotEmpty) {
+                  final startLine = lines.length > maxLines
+                      ? lines.length - maxLines
+                      : 0;
+                  final logLines = lines.sublist(startLine);
+
+                  if (startLine > 0 || fileSize >= 10 * 1024 * 1024) {
+                    buffer.writeln(
+                      '... (showing last $maxLines lines, file size: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB) ...',
+                    );
+                  }
+                  buffer.writeln('=== MAIN LOG ===');
+                  buffer.writeln(logLines.join('\n'));
+                  buffer.writeln('');
+                  hasContent = true;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          buffer.writeln('=== MAIN LOG ===');
+          buffer.writeln('Error reading log file: $e');
+          buffer.writeln('');
+        }
+      } else {
+        buffer.writeln('=== MAIN LOG ===');
+        buffer.writeln('(No log file found)');
+        buffer.writeln('');
+      }
+
+      if (!hasContent && _logFile != null) {
+        buffer.writeln('=== MAIN LOG ===');
+        buffer.writeln('(No log entries found)');
+        buffer.writeln('');
+      }
+
+      // Read crash log
+      if (_crashLogFile != null) {
+        try {
+          final exists = await _crashLogFile!.exists();
+          if (exists) {
+            final fileSize = await _crashLogFile!.length();
+            if (fileSize > 0) {
+              String content;
+              if (fileSize < 1024 * 1024) {
+                // Small file: read entire file
+                content = await _crashLogFile!.readAsString();
+              } else {
+                // Large file: read only last 1MB
+                content = await _readLastBytes(_crashLogFile!, 1024 * 1024);
+              }
+
+              if (content.trim().isNotEmpty) {
+                buffer.writeln('=== CRASH LOG ===');
+                if (fileSize >= 1024 * 1024) {
+                  buffer.writeln(
+                    '... (showing last portion, file size: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)} MB) ...',
+                  );
+                }
+                buffer.writeln(content);
+                buffer.writeln('');
+                hasContent = true;
+              }
+            }
+          }
+        } catch (e) {
+          // Silently skip crash log errors
+        }
+      }
+
+      final result = buffer.toString();
+      return result.trim().isEmpty ? 'No logs available.' : result;
+    } catch (e) {
+      return 'Error reading logs: $e';
+    }
+  }
+
   /// Export logs to a file for download
   static Future<String?> exportLogs() async {
     if (!_initialized) {
@@ -865,7 +1254,9 @@ class LoggingService {
       }
 
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-      final exportFile = File(path.join(exportDir.path, 'adati_logs_$timestamp.txt'));
+      final exportFile = File(
+        path.join(exportDir.path, 'adati_logs_$timestamp.txt'),
+      );
 
       final buffer = StringBuffer();
       buffer.writeln('Adati Logs Export');
@@ -903,8 +1294,157 @@ class LoggingService {
       await exportFile.writeAsString(buffer.toString());
       return exportFile.path;
     } catch (e, stackTrace) {
-      error('Failed to export logs', component: 'LoggingService', error: e, stackTrace: stackTrace);
+      error(
+        'Failed to export logs',
+        component: 'LoggingService',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return null;
+    }
+  }
+
+  /// Rotate and cleanup logs manually (can be called from settings)
+  static Future<bool> rotateAndCleanupLogs() async {
+    if (!_initialized) {
+      await init();
+    }
+
+    try {
+      info('Starting log rotation and cleanup', component: 'LoggingService');
+
+      // First, delete all large rotated files immediately
+      await _deleteLargeRotatedFiles();
+
+      // Force rotation if current file is too large
+      if (_logFile != null && await _logFile!.exists()) {
+        int size = await _logFile!.length();
+        info(
+          'Current log file size: ${(size / (1024 * 1024)).toStringAsFixed(2)} MB',
+          component: 'LoggingService',
+        );
+
+        int rotationCount = 0;
+        const maxRotations = 50; // Allow many rotations for very large files
+
+        // Rotate until current file is small
+        while (size > _maxLogFileSize && await _logFile!.exists()) {
+          if (++rotationCount > maxRotations) {
+            // If we've rotated many times, delete the large rotated file and break
+            info(
+              'Reached max rotations ($maxRotations), cleaning up',
+              component: 'LoggingService',
+            );
+            await _deleteLargeRotatedFiles();
+            break;
+          }
+
+          info(
+            'Rotating log file (rotation $rotationCount)',
+            component: 'LoggingService',
+          );
+          await _rotateLogs();
+
+          // After rotation, delete any large rotated files that were just created
+          await _deleteLargeRotatedFiles();
+
+          // Check new file size (should be small after rotation)
+          if (await _logFile!.exists()) {
+            size = await _logFile!.length();
+            info(
+              'After rotation, new file size: ${(size / (1024 * 1024)).toStringAsFixed(2)} MB',
+              component: 'LoggingService',
+            );
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Cleanup old logs to ensure total size is under limit
+      await _cleanupOldLogs();
+
+      // Final cleanup of any remaining large files
+      await _deleteLargeRotatedFiles();
+
+      info('Log rotation and cleanup completed', component: 'LoggingService');
+      return true;
+    } catch (e, stackTrace) {
+      error(
+        'Failed to rotate and cleanup logs',
+        component: 'LoggingService',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  /// Delete rotated log files that are too large (more aggressive than _cleanupLargeRotatedFiles)
+  static Future<void> _deleteLargeRotatedFiles() async {
+    try {
+      if (_logFile == null) return;
+
+      final logDir = _logFile!.parent;
+      if (!await logDir.exists()) return;
+
+      // Delete ALL rotated files that are larger than max size
+      for (int i = 1; i <= _maxLogFiles; i++) {
+        final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+        if (await rotatedFile.exists()) {
+          try {
+            final size = await rotatedFile.length();
+            // Delete any rotated file larger than max size
+            if (size > _maxLogFileSize) {
+              info(
+                'Deleting large rotated file: adati.log.$i (${(size / (1024 * 1024)).toStringAsFixed(2)} MB)',
+                component: 'LoggingService',
+              );
+              // Use safe delete for cross-platform compatibility
+              await _safeDelete(rotatedFile);
+            }
+          } catch (e) {
+            // Log deletion errors for debugging on Linux
+            warning(
+              'Failed to delete large rotated file adati.log.$i: $e',
+              component: 'LoggingService',
+              error: e,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      warning(
+        'Error in _deleteLargeRotatedFiles: $e',
+        component: 'LoggingService',
+        error: e,
+      );
+    }
+  }
+
+  /// Clean up rotated log files that are too large
+  static Future<void> _cleanupLargeRotatedFiles() async {
+    try {
+      if (_logFile == null) return;
+
+      final logDir = _logFile!.parent;
+      if (!await logDir.exists()) return;
+
+      // Check all rotated files and delete ones that are too large
+      for (int i = 1; i <= _maxLogFiles; i++) {
+        final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+        if (await rotatedFile.exists()) {
+          final size = await rotatedFile.length();
+          // Delete rotated files larger than max size (they shouldn't exist, but clean up if they do)
+          // Use a more lenient threshold for cleanup (2x max) to avoid deleting files that are just slightly over
+          if (size > _maxLogFileSize * 2) {
+            // Use safe delete for cross-platform compatibility
+            await _safeDelete(rotatedFile);
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore errors
     }
   }
 
@@ -942,7 +1482,12 @@ class LoggingService {
       info('Logs cleared', component: 'LoggingService');
       return true;
     } catch (e, stackTrace) {
-      error('Failed to clear logs', component: 'LoggingService', error: e, stackTrace: stackTrace);
+      error(
+        'Failed to clear logs',
+        component: 'LoggingService',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }
@@ -972,8 +1517,8 @@ class LoggingService {
       if (_logFile != null && await _logFile!.exists()) {
         final logContent = await _logFile!.readAsString();
         final lines = logContent.split('\n');
-        final recentLines = lines.length > 5000 
-            ? lines.sublist(lines.length - 5000) 
+        final recentLines = lines.length > 5000
+            ? lines.sublist(lines.length - 5000)
             : lines;
         buffer.writeln('### Main Log (last ${recentLines.length} lines)');
         buffer.writeln('```');
@@ -1010,14 +1555,25 @@ class LoggingService {
 
       if (response.statusCode == 201) {
         final issueData = jsonDecode(response.body);
-        info('Logs sent to GitHub issue #${issueData['number']}', component: 'LoggingService');
+        info(
+          'Logs sent to GitHub issue #${issueData['number']}',
+          component: 'LoggingService',
+        );
         return true;
       } else {
-        error('Failed to create GitHub issue: ${response.statusCode} - ${response.body}', component: 'LoggingService');
+        error(
+          'Failed to create GitHub issue: ${response.statusCode} - ${response.body}',
+          component: 'LoggingService',
+        );
         return false;
       }
     } catch (e, stackTrace) {
-      error('Failed to send logs to GitHub', component: 'LoggingService', error: e, stackTrace: stackTrace);
+      error(
+        'Failed to send logs to GitHub',
+        component: 'LoggingService',
+        error: e,
+        stackTrace: stackTrace,
+      );
       return false;
     }
   }
@@ -1038,8 +1594,8 @@ class LoggingService {
     if (_logFile != null && await _logFile!.exists()) {
       final logContent = await _logFile!.readAsString();
       final lines = logContent.split('\n');
-      final recentLines = lines.length > 5000 
-          ? lines.sublist(lines.length - 5000) 
+      final recentLines = lines.length > 5000
+          ? lines.sublist(lines.length - 5000)
           : lines;
       buffer.writeln('### Main Log (last ${recentLines.length} lines)');
       buffer.writeln('```');

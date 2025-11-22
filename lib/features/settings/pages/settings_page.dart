@@ -1547,10 +1547,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 child: ElevatedButton.icon(
                   onPressed: () async {
                     Navigator.pop(context);
+                    await _viewLogs(context);
+                  },
+                  icon: const Icon(Icons.visibility),
+                  label: Text('view_logs'.tr()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.maxFinite,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
                     await _downloadLogs(context);
                   },
                   icon: const Icon(Icons.download),
                   label: Text('download_logs'.tr()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.maxFinite,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _rotateAndCleanupLogs(context);
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: Text('rotate_and_cleanup_logs'.tr()),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1591,6 +1615,115 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  Future<void> _viewLogs(BuildContext context) async {
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    String logContent = 'no_logs_available'.tr();
+
+    try {
+      // Add timeout to prevent hanging
+      logContent = await LoggingService.getLogContent().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () =>
+            'Error: Timeout reading logs. The log file may be too large.',
+      );
+    } catch (e) {
+      logContent = 'Error reading logs: $e';
+    } finally {
+      // Always close loading dialog
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+      }
+    }
+
+    // Show logs dialog
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.8,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'logs'.tr(),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey[900]
+                          : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        logContent.isEmpty
+                            ? 'no_logs_available'.tr()
+                            : logContent,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[300]
+                              : Colors.grey[900],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: logContent));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('logs_copied_to_clipboard'.tr()),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.copy),
+                      label: Text('copy'.tr()),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('close'.tr()),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _downloadLogs(BuildContext context) async {
     showDialog(
       context: context,
@@ -1615,6 +1748,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${'error'.tr()}: ${'failed_to_export_logs'.tr()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'error'.tr()}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _rotateAndCleanupLogs(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final success = await LoggingService.rotateAndCleanupLogs();
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('logs_rotated_and_cleaned_successfully'.tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${'error'.tr()}: ${'failed_to_rotate_logs'.tr()}'),
               backgroundColor: Colors.red,
             ),
           );

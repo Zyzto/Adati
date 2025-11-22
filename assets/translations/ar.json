@@ -576,5 +576,12 @@
   "failed_to_clear_logs": "فشل مسح السجلات",
   "failed_to_send_logs": "فشل إرسال السجلات إلى GitHub",
   "please_enter_issue_title": "يرجى إدخال عنوان المشكلة",
-  "close": "إغلاق"
+  "view_logs": "عرض السجلات",
+  "no_logs_available": "لا توجد سجلات متاحة",
+  "logs_copied_to_clipboard": "تم نسخ السجلات إلى الحافظة",
+  "rotate_and_cleanup_logs": "تدوير ومسح السجلات",
+  "logs_rotated_and_cleaned_successfully": "تم تدوير ومسح السجلات بنجاح",
+  "failed_to_rotate_logs": "فشل تدوير السجلات",
+  "close": "إغلاق",
+  "clear": "مسح"
 }

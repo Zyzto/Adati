@@ -582,6 +582,12 @@
   "failed_to_clear_logs": "Failed to clear logs",
   "failed_to_send_logs": "Failed to send logs to GitHub",
   "please_enter_issue_title": "Please enter an issue title",
+  "view_logs": "View Logs",
+  "no_logs_available": "No logs available",
+  "logs_copied_to_clipboard": "Logs copied to clipboard",
+  "rotate_and_cleanup_logs": "Rotate & Cleanup Logs",
+  "logs_rotated_and_cleaned_successfully": "Logs rotated and cleaned successfully",
+  "failed_to_rotate_logs": "Failed to rotate logs",
   "close": "Close",
   "clear": "Clear"
 }
