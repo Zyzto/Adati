@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:path/path.dart' as path;
 import '../database/app_database.dart' as db;
 import 'log_helper.dart';
 import 'preferences_service.dart';
@@ -76,8 +77,13 @@ class ExportService {
       
       if (result != null) {
         try {
+          // Ensure parent directory exists
+          final file = File(result);
+          final parentDir = Directory(path.dirname(result));
+          if (!await parentDir.exists()) {
+            await parentDir.create(recursive: true);
+          }
           // Write to the selected path
-          final file = await File(result).create(recursive: true);
           await file.writeAsString(buffer.toString());
           Log.info('Exported data to: $result');
           return result;
@@ -163,7 +169,13 @@ class ExportService {
       
       if (result != null) {
         try {
-          final file = await File(result).create(recursive: true);
+          // Ensure parent directory exists
+          final file = File(result);
+          final parentDir = Directory(path.dirname(result));
+          if (!await parentDir.exists()) {
+            await parentDir.create(recursive: true);
+          }
+          // Write to the selected path
           await file.writeAsString(jsonString);
           Log.info('Exported data to: $result');
           return result;
@@ -227,7 +239,13 @@ class ExportService {
       
       if (result != null) {
         try {
-          final file = await File(result).create(recursive: true);
+          // Ensure parent directory exists
+          final file = File(result);
+          final parentDir = Directory(path.dirname(result));
+          if (!await parentDir.exists()) {
+            await parentDir.create(recursive: true);
+          }
+          // Write to the selected path
           await file.writeAsString(jsonString);
           Log.info('Exported habits to: $result');
           return result;
@@ -288,7 +306,13 @@ class ExportService {
       
       if (result != null) {
         try {
-          final file = await File(result).create(recursive: true);
+          // Ensure parent directory exists
+          final file = File(result);
+          final parentDir = Directory(path.dirname(result));
+          if (!await parentDir.exists()) {
+            await parentDir.create(recursive: true);
+          }
+          // Write to the selected path
           await file.writeAsString(jsonString);
           Log.info('Exported settings to: $result');
           return result;
