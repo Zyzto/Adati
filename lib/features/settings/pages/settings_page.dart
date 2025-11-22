@@ -1,4 +1,3 @@
-import 'dart:io' show Platform, Process;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +5,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:animations/animations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/import_service.dart';
@@ -26,6 +24,9 @@ import '../widgets/sections/tags_section.dart';
 import '../widgets/sections/data_section.dart';
 import '../widgets/sections/advanced_section.dart';
 import '../widgets/sections/about_section.dart';
+import '../widgets/responsive_dialog.dart';
+import '../widgets/split_screen_settings_layout.dart';
+import '../widgets/dialogs/about_dialogs.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -34,10 +35,34 @@ class SettingsPage extends ConsumerStatefulWidget {
   ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
+/// Represents a search result item
+class SearchResult {
+  final String sectionId;
+  final String sectionTitle;
+  final IconData sectionIcon;
+  final Widget item;
+  final String? itemTitle;
+  final String? itemSubtitle;
+  final int itemIndex; // Index within the section
+  final String? searchMatchText; // The text that matched
+
+  const SearchResult({
+    required this.sectionId,
+    required this.sectionTitle,
+    required this.sectionIcon,
+    required this.item,
+    this.itemTitle,
+    this.itemSubtitle,
+    required this.itemIndex,
+    this.searchMatchText,
+  });
+}
+
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Search state
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchExpanded = false;
 
   // Expansion state for each section
   bool _generalExpanded = true;
@@ -50,27 +75,148 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _advancedExpanded = false;
   bool _aboutExpanded = false;
 
+  // Split-screen detail pane state
+  String? _selectedSectionId;
+  Widget? _detailContent;
+  String? _detailTitle;
+
+  // Search results (memoized)
+  List<SearchResult>? _cachedSearchResults;
+  String? _cachedSearchQuery;
+  String? _highlightedItemId; // For highlighting specific items
+
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      _onSearchChanged(_searchController.text);
-    });
+    _searchController.addListener(_onSearchChanged);
+    _searchFocusNode.addListener(_onSearchFocusChanged);
     _loadExpansionStates();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String value) {
-    final query = value.trim();
-    if (query == _searchQuery) return;
+  void _onSearchFocusChanged() {
+    // If focus is lost and field is empty, collapse search
+    if (!_searchFocusNode.hasFocus &&
+        _searchController.text.trim().isEmpty &&
+        _isSearchExpanded) {
+      setState(() {
+        _isSearchExpanded = false;
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text;
+    final trimmedQuery = query.trim();
+
+    // Invalidate cache if query changed
+    if (trimmedQuery != _cachedSearchQuery) {
+      setState(() {
+        _cachedSearchResults = null;
+        _cachedSearchQuery = null;
+        _highlightedItemId = null;
+        // Clear detail pane when search is cleared in landscape mode
+        if (trimmedQuery.isEmpty &&
+            ResponsiveDialog.shouldUseSplitScreen(context)) {
+          _selectedSectionId = null;
+          _detailContent = null;
+          _detailTitle = null;
+        }
+      });
+    }
+  }
+
+  void _expandSearch() {
     setState(() {
-      _searchQuery = query;
+      _isSearchExpanded = true;
     });
+    // Focus the search field after expansion animation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _collapseSearch() {
+    if (_searchController.text.trim().isEmpty) {
+      setState(() {
+        _isSearchExpanded = false;
+      });
+      _searchFocusNode.unfocus();
+    }
+  }
+
+  /// Clear search state completely
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _isSearchExpanded = false;
+      _cachedSearchResults = null;
+      _cachedSearchQuery = null;
+      _highlightedItemId = null;
+    });
+  }
+
+  /// Build expandable search button/widget
+  Widget _buildExpandableSearch() {
+    if (!_isSearchExpanded) {
+      return IconButton(
+        icon: const Icon(Icons.search),
+        onPressed: _expandSearch,
+        tooltip: 'search_settings'.tr(),
+      );
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 300,
+      child: FocusScope(
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          autofocus: true,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: _clearSearch,
+                  )
+                : null,
+            hintText: 'search_settings'.tr(),
+            border: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(24)),
+            ),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+          ),
+          textInputAction: TextInputAction.search,
+          onTapOutside: (event) {
+            // Only collapse if field is empty
+            if (_searchController.text.trim().isEmpty) {
+              _collapseSearch();
+            } else {
+              // Keep focus if field has content
+              _searchFocusNode.requestFocus();
+            }
+          },
+          onChanged: (value) {
+            // Ensure focus is maintained while typing
+            if (!_searchFocusNode.hasFocus) {
+              _searchFocusNode.requestFocus();
+            }
+          },
+        ),
+      ),
+    );
   }
 
   void _loadExpansionStates() {
@@ -107,84 +253,684 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return key.replaceAll('_', ' ');
   }
 
-  List<Widget> _filterSectionChildren(
-    String sectionTitle,
-    List<Widget> children, {
-    List<String>? tags,
+  /// Extract individual items from a Column widget (for search)
+  List<Widget> _extractItemsFromColumn(Column column) {
+    final items = <Widget>[];
+    for (final child in column.children) {
+      if (child is ListTile || child is SwitchListTile) {
+        items.add(child);
+      } else if (child is Column) {
+        items.addAll(_extractItemsFromColumn(child));
+      }
+    }
+    return items;
+  }
+
+  /// Show a loading dialog (non-dismissible)
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  /// Close loading dialog if context is mounted
+  void _closeLoadingDialog(BuildContext context) {
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
+  }
+
+  /// Show success snackbar
+  void _showSuccessSnackBar(BuildContext context, String message) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.green),
+      );
+    }
+  }
+
+  /// Show error snackbar
+  void _showErrorSnackBar(BuildContext context, String message) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  /// Get title text from a widget (supports ListTile and SwitchListTile)
+  String? _getTitleFromWidget(Widget widget) {
+    if (widget is ListTile || widget is SwitchListTile) {
+      final title = widget is ListTile
+          ? widget.title
+          : (widget as SwitchListTile).title;
+      return title is Text ? title.data : null;
+    }
+    return null;
+  }
+
+  /// Get subtitle text from a widget (supports ListTile and SwitchListTile)
+  String? _getSubtitleFromWidget(Widget widget) {
+    if (widget is ListTile || widget is SwitchListTile) {
+      final subtitle = widget is ListTile
+          ? widget.subtitle
+          : (widget as SwitchListTile).subtitle;
+      return subtitle is Text ? subtitle.data : null;
+    }
+    return null;
+  }
+
+  /// Build highlighted text widget with matching portions highlighted
+  /// Build grouped search results view (for right pane in landscape)
+  Widget _buildGroupedSearchResults(List<SearchResult> results, String query) {
+    if (results.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 64,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'no_results_found'.tr(),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Group results by section
+    final grouped = <String, List<SearchResult>>{};
+    for (final result in results) {
+      if (!grouped.containsKey(result.sectionId)) {
+        grouped[result.sectionId] = [];
+      }
+      grouped[result.sectionId]!.add(result);
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(8),
+      children: grouped.entries.map((entry) {
+        final sectionResults = entry.value;
+        final firstResult = sectionResults.first;
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Section header (clickable)
+              InkWell(
+                onTap: () =>
+                    _navigateToSectionFromSearch(firstResult.sectionId),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        firstResult.sectionIcon,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          firstResult.sectionTitle,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                        ),
+                      ),
+                      Chip(
+                        label: Text('${sectionResults.length}'),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        labelStyle: const TextStyle(fontSize: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 0,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Section items (smaller size) - preserve original functionality
+              ...sectionResults.map((result) {
+                final resultItemId = '${result.sectionId}_${result.itemIndex}';
+                final resultIsHighlighted = _highlightedItemId == resultItemId;
+
+                // Wrap the original item to make it smaller while preserving functionality
+                Widget itemWidget = result.item;
+
+                // If it's a ListTile, wrap onTap to clear search after action
+                if (itemWidget is ListTile && itemWidget.onTap != null) {
+                  final originalOnTap = itemWidget.onTap!;
+                  itemWidget = ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    leading: itemWidget.leading,
+                    title: itemWidget.title != null
+                        ? DefaultTextStyle(
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium!.copyWith(fontSize: 14),
+                            child: itemWidget.title!,
+                          )
+                        : null,
+                    subtitle: itemWidget.subtitle != null
+                        ? DefaultTextStyle(
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall!.copyWith(fontSize: 12),
+                            child: itemWidget.subtitle!,
+                          )
+                        : null,
+                    trailing: itemWidget.trailing,
+                    onTap: () {
+                      originalOnTap();
+                      // Clear search after action
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          _clearSearch();
+                        }
+                      });
+                    },
+                  );
+                } else if (itemWidget is SwitchListTile) {
+                  // SwitchListTile - preserve original functionality, just make smaller
+                  itemWidget = SwitchListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    secondary: itemWidget.secondary,
+                    title: itemWidget.title != null
+                        ? DefaultTextStyle(
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium!.copyWith(fontSize: 14),
+                            child: itemWidget.title!,
+                          )
+                        : null,
+                    subtitle: itemWidget.subtitle != null
+                        ? DefaultTextStyle(
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall!.copyWith(fontSize: 12),
+                            child: itemWidget.subtitle!,
+                          )
+                        : null,
+                    value: itemWidget.value,
+                    onChanged: itemWidget.onChanged,
+                  );
+                } else {
+                  // Other widgets - just make smaller
+                  itemWidget = Transform.scale(scale: 0.9, child: itemWidget);
+                }
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: resultIsHighlighted
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer.withValues(alpha: 0.2)
+                        : null,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.3),
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                  child: itemWidget,
+                );
+              }),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Navigate to section from search results
+  void _navigateToSectionFromSearch(String sectionId) {
+    // Clear search
+    _clearSearch();
+    setState(() {
+      _highlightedItemId = null;
+    });
+
+    // Navigate to section (same as clicking section in left pane)
+    final isLandscape = ResponsiveDialog.shouldUseSplitScreen(context);
+
+    // Get section data from the sections map (will be available in build context)
+    // For now, use a helper method that will be called from build
+    _navigateToSection(sectionId, isLandscape);
+  }
+
+  /// Helper to navigate to a section
+  void _navigateToSection(String sectionId, bool isLandscape) {
+    if (isLandscape) {
+      // Show section in detail pane
+      // We'll need to get the children from the build method
+      // For now, trigger section click behavior
+      switch (sectionId) {
+        case 'general':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                GeneralSectionContent(
+                  showLanguageDialog: _showLanguageDialog,
+                  showThemeDialog: _showThemeDialog,
+                  showThemeColorDialog: _showThemeColorDialog,
+                ),
+              ],
+            ),
+            title: 'general'.tr(),
+          );
+          break;
+        case 'appearance':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                AppearanceSectionContent(
+                  showFontSizeScaleDialog: _showFontSizeScaleDialog,
+                  showIconSizeDialog: _showIconSizeDialog,
+                  showCardBorderRadiusDialog: _showCardBorderRadiusDialog,
+                  showCardElevationDialog: _showCardElevationDialog,
+                  showCardSpacingDialog: _showCardSpacingDialog,
+                  showHabitCheckboxStyleDialog: _showHabitCheckboxStyleDialog,
+                  showProgressIndicatorStyleDialog:
+                      _showProgressIndicatorStyleDialog,
+                  showCompletionColorDialog: _showCompletionColorDialog,
+                  showStreakColorSchemeDialog: _showStreakColorSchemeDialog,
+                ),
+              ],
+            ),
+            title: 'appearance'.tr(),
+          );
+          break;
+        case 'dateTime':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                DateTimeSectionContent(
+                  showDateFormatDialog: _showDateFormatDialog,
+                  showFirstDayOfWeekDialog: _showFirstDayOfWeekDialog,
+                ),
+              ],
+            ),
+            title: 'date_time'.tr(),
+          );
+          break;
+        case 'display':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                DisplaySectionContent(
+                  showTimelineDaysDialog: _showTimelineDaysDialog,
+                  showModalTimelineDaysDialog: _showModalTimelineDaysDialog,
+                  showHabitCardTimelineDaysDialog:
+                      _showHabitCardTimelineDaysDialog,
+                  showTimelineSpacingDialog: _showTimelineSpacingDialog,
+                  showDaySquareSizeDialog: _showDaySquareSizeDialog,
+                  revertTimelineDays: _revertTimelineDays,
+                  revertModalTimelineDays: _revertModalTimelineDays,
+                  revertHabitCardTimelineDays: _revertHabitCardTimelineDays,
+                  revertDaySquareSize: _revertDaySquareSize,
+                ),
+              ],
+            ),
+            title: 'display'.tr(),
+          );
+          break;
+        case 'notifications':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                NotificationsSectionContent(
+                  showBadHabitLogicModeDialog: _showBadHabitLogicModeDialog,
+                ),
+              ],
+            ),
+            title: 'notifications'.tr(),
+          );
+          break;
+        case 'tags':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: const [TagsSectionContent()],
+            ),
+            title: 'tags'.tr(),
+          );
+          break;
+        case 'data':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                DataSectionContent(
+                  showExportDialog: _showExportDialog,
+                  showImportDialog: _showImportDialog,
+                  showDatabaseStatsDialog: _showDatabaseStatsDialog,
+                  optimizeDatabase: _optimizeDatabase,
+                ),
+              ],
+            ),
+            title: 'data_management'.tr(),
+          );
+          break;
+        case 'advanced':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                AdvancedSectionContent(
+                  showResetHabitsDialog: _showResetHabitsDialog,
+                  showResetSettingsDialog: _showResetSettingsDialog,
+                  showClearAllDataDialog: _showClearAllDataDialog,
+                  showLogsDialog: _showLogsDialog,
+                  returnToOnboarding: _returnToOnboarding,
+                ),
+              ],
+            ),
+            title: 'advanced'.tr(),
+          );
+          break;
+        case 'about':
+          _showSectionInDetailPane(
+            sectionId: sectionId,
+            content: FutureBuilder<PackageInfo?>(
+              future: _getPackageInfo(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    AboutSectionContent(
+                      showLibrariesDialog: _showLibrariesDialog,
+                      showLicenseDialog: _showLicenseDialog,
+                      showUsageRightsDialog: _showUsageRightsDialog,
+                      showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
+                      launchUrl: (context, url) =>
+                          AboutDialogs.launchUrlWithFallback(context, url),
+                    ),
+                  ],
+                );
+              },
+            ),
+            title: 'about'.tr(),
+          );
+          break;
+      }
+    } else {
+      // Expand section in portrait
+      switch (sectionId) {
+        case 'general':
+          setState(() => _generalExpanded = true);
+          _saveExpansionState('general', true);
+          break;
+        case 'appearance':
+          setState(() => _appearanceExpanded = true);
+          _saveExpansionState('appearance', true);
+          break;
+        case 'dateTime':
+          setState(() => _dateTimeExpanded = true);
+          _saveExpansionState('dateTime', true);
+          break;
+        case 'display':
+          setState(() => _displayLayoutExpanded = true);
+          _saveExpansionState('displayLayout', true);
+          break;
+        case 'notifications':
+          setState(() => _notificationsExpanded = true);
+          _saveExpansionState('notifications', true);
+          break;
+        case 'tags':
+          setState(() => _tagsExpanded = true);
+          _saveExpansionState('tags', true);
+          break;
+        case 'data':
+          setState(() => _dataExportExpanded = true);
+          _saveExpansionState('dataExport', true);
+          break;
+        case 'advanced':
+          setState(() => _advancedExpanded = true);
+          _saveExpansionState('advanced', true);
+          break;
+        case 'about':
+          setState(() => _aboutExpanded = true);
+          _saveExpansionState('about', true);
+          break;
+      }
+    }
+  }
+
+  /// Show section content in split-screen detail pane (landscape mode)
+  void _showSectionInDetailPane({
+    required String sectionId,
+    required Widget content,
+    required String title,
   }) {
-    if (_searchQuery.isEmpty) return children;
+    if (ResponsiveDialog.shouldUseSplitScreen(context)) {
+      setState(() {
+        _selectedSectionId = sectionId;
+        _detailContent = content;
+        _detailTitle = title;
+      });
+    }
+  }
 
-    final query = _searchQuery.toLowerCase();
+  /// Clear the detail pane
+  void _clearDetailPane() {
+    setState(() {
+      _selectedSectionId = null;
+      _detailContent = null;
+      _detailTitle = null;
+      _highlightedItemId = null;
+    });
+  }
 
-    bool matchesText(String? text) {
-      if (text == null) return false;
-      return text.toLowerCase().contains(query);
+  /// Check if text matches the search query
+  bool _matchesText(String? text, String queryLower) {
+    if (text == null) return false;
+    return text.toLowerCase().contains(queryLower);
+  }
+
+  /// Check if a widget matches the search query and return match info
+  ({bool matches, String? matchText}) _checkWidgetMatch(
+    Widget widget,
+    String? itemTag,
+    String queryLower,
+  ) {
+    final titleText = _getTitleFromWidget(widget);
+    final subtitleText = _getSubtitleFromWidget(widget);
+
+    // Priority 1: Check the specific tag for this item (most reliable)
+    if (itemTag != null && _matchesText(itemTag, queryLower)) {
+      return (matches: true, matchText: itemTag);
+    }
+    // Priority 2: Check title text (user-visible, most important)
+    if (titleText != null && _matchesText(titleText, queryLower)) {
+      return (matches: true, matchText: titleText);
+    }
+    // Priority 3: Check subtitle text (less important, but useful)
+    if (subtitleText != null && _matchesText(subtitleText, queryLower)) {
+      return (matches: true, matchText: subtitleText);
     }
 
-    // If the section title itself matches, keep all children.
-    if (matchesText(sectionTitle)) {
-      return children;
+    return (matches: false, matchText: null);
+  }
+
+  /// Process a single widget and add to results if it matches
+  void _processWidgetForSearch({
+    required Widget widget,
+    required String sectionId,
+    required String sectionTitle,
+    required IconData sectionIcon,
+    required String? itemTag,
+    required String queryLower,
+    required List<SearchResult> results,
+    required int itemIndex,
+  }) {
+    final match = _checkWidgetMatch(widget, itemTag, queryLower);
+    if (match.matches && match.matchText != null) {
+      results.add(
+        SearchResult(
+          sectionId: sectionId,
+          sectionTitle: sectionTitle,
+          sectionIcon: sectionIcon,
+          item: widget,
+          itemTitle: _getTitleFromWidget(widget),
+          itemSubtitle: _getSubtitleFromWidget(widget),
+          itemIndex: itemIndex,
+          searchMatchText: match.matchText,
+        ),
+      );
+    }
+  }
+
+  /// Get search results with memoization
+  List<SearchResult> _getSearchResults(
+    String trimmedQuery,
+    Map<String, Map<String, dynamic>> sectionsMap,
+  ) {
+    // Return cached results if query hasn't changed
+    if (trimmedQuery == _cachedSearchQuery && _cachedSearchResults != null) {
+      return _cachedSearchResults!;
     }
 
-    bool widgetMatches(Widget child, String? extraText) {
-      if (child is ListTile) {
-        final titleWidget = child.title;
-        final subtitleWidget = child.subtitle;
-        String? titleText;
-        String? subtitleText;
+    // Calculate new results
+    final results = trimmedQuery.isEmpty
+        ? <SearchResult>[]
+        : _performSearch(query: trimmedQuery, sections: sectionsMap);
 
-        if (titleWidget is Text) {
-          titleText = titleWidget.data;
+    // Cache the results
+    _cachedSearchResults = results;
+    _cachedSearchQuery = trimmedQuery;
+
+    return results;
+  }
+
+  /// Perform unified search across all sections
+  List<SearchResult> _performSearch({
+    required String query,
+    required Map<String, Map<String, dynamic>> sections,
+  }) {
+    if (query.isEmpty) return [];
+
+    final queryLower = query.toLowerCase();
+    final results = <SearchResult>[];
+
+    // Process each section
+    sections.forEach((sectionId, sectionData) {
+      final sectionTitle = sectionData['title'] as String;
+      final sectionIcon = sectionData['icon'] as IconData;
+      final children = sectionData['children'] as List<Widget>;
+      final tags = sectionData['tags'] as List<String>?;
+
+      int itemIndex = 0;
+
+      for (int i = 0; i < children.length; i++) {
+        final child = children[i];
+
+        // If child is a Column (like section content), extract individual items
+        if (child is Column) {
+          final items = _extractItemsFromColumn(child);
+          // Tags array should correspond to items in order (one tag per item)
+          for (int itemIdx = 0; itemIdx < items.length; itemIdx++) {
+            final item = items[itemIdx];
+            final itemTag = (tags != null && itemIdx < tags.length)
+                ? tags[itemIdx]
+                : null;
+
+            _processWidgetForSearch(
+              widget: item,
+              sectionId: sectionId,
+              sectionTitle: sectionTitle,
+              sectionIcon: sectionIcon,
+              itemTag: itemTag,
+              queryLower: queryLower,
+              results: results,
+              itemIndex: itemIndex,
+            );
+            itemIndex++;
+          }
+        } else {
+          // Regular widget (not a Column)
+          final itemTag = (tags != null && i < tags.length) ? tags[i] : null;
+
+          _processWidgetForSearch(
+            widget: child,
+            sectionId: sectionId,
+            sectionTitle: sectionTitle,
+            sectionIcon: sectionIcon,
+            itemTag: itemTag,
+            queryLower: queryLower,
+            results: results,
+            itemIndex: itemIndex,
+          );
+          itemIndex++;
         }
-        if (subtitleWidget is Text) {
-          subtitleText = subtitleWidget.data;
-        }
-        if (matchesText(titleText) || matchesText(subtitleText)) {
-          return true;
-        }
-        if (extraText != null && matchesText(extraText)) {
-          return true;
-        }
-        return false;
       }
+    });
 
-      if (child is SwitchListTile) {
-        final titleWidget = child.title;
-        final subtitleWidget = child.subtitle;
-        String? titleText;
-        String? subtitleText;
-
-        if (titleWidget is Text) {
-          titleText = titleWidget.data;
-        }
-        if (subtitleWidget is Text) {
-          subtitleText = subtitleWidget.data;
-        }
-        if (matchesText(titleText) || matchesText(subtitleText)) {
-          return true;
-        }
-        if (extraText != null && matchesText(extraText)) {
-          return true;
-        }
-        return false;
-      }
-
-      if (extraText != null && matchesText(extraText)) {
-        return true;
-      }
-
-      return false;
-    }
-
-    final result = <Widget>[];
-    for (var i = 0; i < children.length; i++) {
-      final child = children[i];
-      final tagText = (tags != null && i < tags.length) ? tags[i] : null;
-      if (widgetMatches(child, tagText)) {
-        result.add(child);
-      }
-    }
-    return result;
+    return results;
   }
 
   Future<void> _saveExpansionState(String section, bool expanded) async {
@@ -227,54 +973,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       // Fallback for Linux when /proc/self/exe is not available
       // Return null and use fallback values in the UI
       return null;
-    }
-  }
-
-  /// Launch a URL in the default browser
-  Future<void> _launchUrl(String urlString) async {
-    // Try url_launcher first, with Linux fallback using xdg-open
-    try {
-      final uri = Uri.parse(urlString);
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-      return; // Success, exit early
-    } on PlatformException {
-      // If url_launcher fails on Linux, try xdg-open directly
-      if (Platform.isLinux) {
-        try {
-          await Process.run('xdg-open', [urlString]);
-          return; // Success with xdg-open
-        } catch (e) {
-          // xdg-open also failed, fall through to error handling
-        }
-      }
-    } catch (e) {
-      // Other errors, fall through to error handling
-    }
-
-    // If all methods failed, show error message with copy option
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'could_not_open_link'.tr(namedArgs: {'url': urlString}),
-          ),
-          duration: const Duration(seconds: 4),
-          action: SnackBarAction(
-            label: 'copy'.tr(),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: urlString));
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('url_copied_to_clipboard'.tr()),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              }
-            },
-          ),
-        ),
-      );
     }
   }
 
@@ -346,30 +1044,31 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('packages_used'.tr()),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: packages.length,
-            itemBuilder: (context, index) {
-              final package = packages[index];
-              return ListTile(
-                dense: true,
-                title: Text(
-                  package['name'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  '${package['version']} - ${package['description']}',
-                ),
-                onTap: () =>
-                    _launchUrl('https://pub.dev/packages/${package['name']}'),
-                trailing: const Icon(Icons.open_in_new, size: 16),
-              );
-            },
-          ),
+        scrollable: true,
+        content: ListView.builder(
+          shrinkWrap: true,
+          itemCount: packages.length,
+          itemBuilder: (context, index) {
+            final package = packages[index];
+            return ListTile(
+              dense: true,
+              title: Text(
+                package['name'] as String,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                '${package['version']} - ${package['description']}',
+              ),
+              onTap: () => AboutDialogs.launchUrlWithFallback(
+                context,
+                'https://pub.dev/packages/${package['name']}',
+              ),
+              trailing: const Icon(Icons.open_in_new, size: 16),
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -384,8 +1083,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _showLicenseDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('license'.tr()),
+        scrollable: true,
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,7 +1126,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               Text('• ${'license_sharealike'.tr()}'),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => _launchUrl(
+                onPressed: () => AboutDialogs.launchUrlWithFallback(
+                  context,
                   'https://creativecommons.org/licenses/by-nc-sa/4.0/',
                 ),
                 child: Text('view_license'.tr()),
@@ -446,8 +1148,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _showUsageRightsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('usage_rights'.tr()),
+        scrollable: true,
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,8 +1215,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void _showPrivacyPolicyDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('privacy_policy'.tr()),
+        scrollable: true,
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,7 +1358,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // First, show what to export
     final exportType = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('export_data'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -708,12 +1415,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'export_error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showErrorSnackBar(context, '${'export_error'.tr()}: $e');
         }
       }
       return;
@@ -741,12 +1443,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'export_error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showErrorSnackBar(context, '${'export_error'.tr()}: $e');
         }
       }
       return;
@@ -757,11 +1454,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final repository = ref.read(habitRepositoryProvider);
 
       // Show loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      _showLoadingDialog(context);
 
       try {
         // Fetch all data
@@ -780,12 +1473,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         }
 
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
+          _closeLoadingDialog(context);
 
           // Show format selection
           final format = await showDialog<String>(
             context: context,
-            builder: (context) => AlertDialog(
+            builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+              context: context,
               title: Text('select_format'.tr()),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -847,13 +1541,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         }
       } catch (e) {
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'export_error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showErrorSnackBar(context, '${'export_error'.tr()}: $e');
         }
       }
     }
@@ -862,7 +1551,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _showImportDialog(BuildContext context, WidgetRef ref) async {
     final importType = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('import_data'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -915,7 +1605,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           return ValueListenableBuilder<String>(
             valueListenable: messageNotifier,
             builder: (context, message, _) {
-              return AlertDialog(
+              return ResponsiveDialog.responsiveAlertDialog(
+                context: context,
+                title: const SizedBox.shrink(),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -978,7 +1670,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final theme = Theme.of(context);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Row(
           children: [
             Icon(
@@ -993,6 +1686,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ],
         ),
+        scrollable: true,
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1128,11 +1822,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final stats = await repository.getDatabaseStats();
 
       if (context.mounted) {
-        Navigator.pop(context); // Close loading
+        _closeLoadingDialog(context);
 
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+            context: context,
             title: Text('database_statistics'.tr()),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1155,13 +1850,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${'error'.tr()}: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _closeLoadingDialog(context);
+        _showErrorSnackBar(context, '${'error'.tr()}: $e');
       }
     }
   }
@@ -1188,7 +1878,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('reset_all_habits'.tr()),
         content: Text('reset_all_habits_confirmation'.tr()),
         actions: [
@@ -1208,33 +1899,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (confirmed == true && context.mounted) {
       final repository = ref.read(habitRepositoryProvider);
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      _showLoadingDialog(context);
 
       try {
         await repository.deleteAllHabits();
 
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('habits_reset_success'.tr()),
-              backgroundColor: Colors.green,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showSuccessSnackBar(context, 'habits_reset_success'.tr());
         }
       } catch (e) {
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showErrorSnackBar(context, '${'error'.tr()}: $e');
         }
       }
     }
@@ -1246,7 +1923,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('reset_all_settings'.tr()),
         content: Text('reset_all_settings_confirmation'.tr()),
         actions: [
@@ -1264,17 +1942,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
 
     if (confirmed == true && context.mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      _showLoadingDialog(context);
 
       try {
         final success = await PreferencesService.resetAllSettings();
 
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
+          _closeLoadingDialog(context);
 
           if (success) {
             // Invalidate all settings providers to reload from cleared preferences
@@ -1318,30 +1992,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             // Reload expansion states to defaults
             _loadExpansionStates();
 
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('settings_reset_success'.tr()),
-                backgroundColor: Colors.green,
-              ),
-            );
+            _showSuccessSnackBar(context, 'settings_reset_success'.tr());
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('settings_reset_failed'.tr()),
-                backgroundColor: Colors.red,
-              ),
-            );
+            _showErrorSnackBar(context, 'settings_reset_failed'.tr());
           }
         }
       } catch (e) {
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showErrorSnackBar(context, '${'error'.tr()}: $e');
         }
       }
     }
@@ -1353,7 +2012,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('clear_all_data'.tr()),
         content: Text('clear_all_data_confirmation'.tr()),
         actions: [
@@ -1373,34 +2033,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (confirmed == true && context.mounted) {
       final repository = ref.read(habitRepositoryProvider);
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      _showLoadingDialog(context);
 
       try {
         await repository.deleteAllData();
         await PreferencesService.resetAllSettings();
 
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('all_data_cleared_success'.tr()),
-              backgroundColor: Colors.green,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showSuccessSnackBar(context, 'all_data_cleared_success'.tr());
         }
       } catch (e) {
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showErrorSnackBar(context, '${'error'.tr()}: $e');
         }
       }
     }
@@ -1409,7 +2055,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _returnToOnboarding(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('return_to_onboarding'.tr()),
         content: Text('return_to_onboarding_confirmation'.tr()),
         actions: [
@@ -1436,7 +2083,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _optimizeDatabase(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('optimize_database'.tr()),
         content: Text('optimize_database_confirmation'.tr()),
         actions: [
@@ -1455,33 +2103,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (confirmed == true && context.mounted) {
       final repository = ref.read(habitRepositoryProvider);
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      _showLoadingDialog(context);
 
       try {
         await repository.vacuumDatabase();
 
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('database_optimized_success'.tr()),
-              backgroundColor: Colors.green,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showSuccessSnackBar(context, 'database_optimized_success'.tr());
         }
       } catch (e) {
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showErrorSnackBar(context, '${'error'.tr()}: $e');
         }
       }
     }
@@ -1502,8 +2136,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('logs'.tr()),
+        scrollable: true,
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1638,7 +2274,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } finally {
       // Always close loading dialog
       if (context.mounted) {
-        Navigator.pop(context); // Close loading
+        _closeLoadingDialog(context);
       }
     }
 
@@ -1646,78 +2282,74 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (context.mounted) {
       showDialog(
         context: context,
-        builder: (context) => Dialog(
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            height: MediaQuery.of(context).size.height * 0.8,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'logs'.tr(),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const Divider(),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey[900]
-                          : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: SingleChildScrollView(
-                      child: SelectableText(
-                        logContent.isEmpty
-                            ? 'no_logs_available'.tr()
-                            : logContent,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey[300]
-                              : Colors.grey[900],
-                        ),
+        builder: (context) => ResponsiveDialog.responsiveDialog(
+          context: context,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'logs'.tr(),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const Divider(),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[900]
+                        : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      logContent.isEmpty
+                          ? 'no_logs_available'.tr()
+                          : logContent,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[300]
+                            : Colors.grey[900],
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: logContent));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('logs_copied_to_clipboard'.tr()),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.copy),
-                      label: Text('copy'.tr()),
-                    ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text('close'.tr()),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: logContent));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('logs_copied_to_clipboard'.tr()),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.copy),
+                    label: Text('copy'.tr()),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('close'.tr()),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       );
@@ -1735,33 +2367,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final filePath = await LoggingService.exportLogs();
 
       if (context.mounted) {
-        Navigator.pop(context); // Close loading
+        _closeLoadingDialog(context);
 
         if (filePath != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('logs_downloaded_successfully'.tr()),
-              backgroundColor: Colors.green,
-            ),
-          );
+          _showSuccessSnackBar(context, 'logs_downloaded_successfully'.tr());
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: ${'failed_to_export_logs'.tr()}'),
-              backgroundColor: Colors.red,
-            ),
+          _showErrorSnackBar(
+            context,
+            '${'error'.tr()}: ${'failed_to_export_logs'.tr()}',
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${'error'.tr()}: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _closeLoadingDialog(context);
+        _showErrorSnackBar(context, '${'error'.tr()}: $e');
       }
     }
   }
@@ -1777,33 +2397,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final success = await LoggingService.rotateAndCleanupLogs();
 
       if (context.mounted) {
-        Navigator.pop(context); // Close loading
+        _closeLoadingDialog(context);
 
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('logs_rotated_and_cleaned_successfully'.tr()),
-              backgroundColor: Colors.green,
-            ),
+          _showSuccessSnackBar(
+            context,
+            'logs_rotated_and_cleaned_successfully'.tr(),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: ${'failed_to_rotate_logs'.tr()}'),
-              backgroundColor: Colors.red,
-            ),
+          _showErrorSnackBar(
+            context,
+            '${'error'.tr()}: ${'failed_to_rotate_logs'.tr()}',
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${'error'.tr()}: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _closeLoadingDialog(context);
+        _showErrorSnackBar(context, '${'error'.tr()}: $e');
       }
     }
   }
@@ -1811,7 +2422,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _clearLogs(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('clear_logs'.tr()),
         content: Text('clear_logs_confirmation'.tr()),
         actions: [
@@ -1829,45 +2441,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
 
     if (confirmed == true && context.mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      _showLoadingDialog(context);
 
       try {
         final success = await LoggingService.clearLogs();
 
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
+          _closeLoadingDialog(context);
 
           if (success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('logs_cleared_successfully'.tr()),
-                backgroundColor: Colors.green,
-              ),
-            );
+            _showSuccessSnackBar(context, 'logs_cleared_successfully'.tr());
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  '${'error'.tr()}: ${'failed_to_clear_logs'.tr()}',
-                ),
-                backgroundColor: Colors.red,
-              ),
+            _showErrorSnackBar(
+              context,
+              '${'error'.tr()}: ${'failed_to_clear_logs'.tr()}',
             );
           }
         }
       } catch (e) {
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showErrorSnackBar(context, '${'error'.tr()}: $e');
         }
       }
     }
@@ -1879,30 +2473,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('send_logs_to_github'.tr()),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                  labelText: 'github_issue_title'.tr(),
-                  hintText: 'github_issue_title_hint'.tr(),
-                ),
+        scrollable: true,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: InputDecoration(
+                labelText: 'github_issue_title'.tr(),
+                hintText: 'github_issue_title_hint'.tr(),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'github_issue_description'.tr(),
-                  hintText: 'github_issue_description_hint'.tr(),
-                ),
-                maxLines: 4,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: descriptionController,
+              decoration: InputDecoration(
+                labelText: 'github_issue_description'.tr(),
+                hintText: 'github_issue_description_hint'.tr(),
               ),
-            ],
-          ),
+              maxLines: 4,
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -1928,11 +2522,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return;
       }
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
+      _showLoadingDialog(context);
 
       try {
         final success = await LoggingService.sendLogsToGitHub(
@@ -1941,33 +2531,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
 
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
+          _closeLoadingDialog(context);
 
           if (success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('logs_sent_successfully'.tr()),
-                backgroundColor: Colors.green,
-              ),
-            );
+            _showSuccessSnackBar(context, 'logs_sent_successfully'.tr());
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('${'error'.tr()}: ${'failed_to_send_logs'.tr()}'),
-                backgroundColor: Colors.red,
-              ),
+            _showErrorSnackBar(
+              context,
+              '${'error'.tr()}: ${'failed_to_send_logs'.tr()}',
             );
           }
         }
       } catch (e) {
         if (context.mounted) {
-          Navigator.pop(context); // Close loading
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'error'.tr()}: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _closeLoadingDialog(context);
+          _showErrorSnackBar(context, '${'error'.tr()}: $e');
         }
       }
     }
@@ -1979,22 +2557,44 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required List<Widget> children,
     required bool isExpanded,
     required ValueChanged<bool> onExpansionChanged,
+    required String sectionId,
   }) {
     final theme = Theme.of(context);
+    final isLandscape = ResponsiveDialog.shouldUseSplitScreen(context);
+    final isSelected = _selectedSectionId == sectionId && isLandscape;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-          width: 1,
+          color: isSelected
+              ? theme.colorScheme.primary
+              : theme.dividerColor.withValues(alpha: 0.5),
+          width: isSelected ? 2 : 1,
         ),
       ),
       child: Column(
         children: [
           InkWell(
-            onTap: () => onExpansionChanged(!isExpanded),
+            onTap: () {
+              if (isLandscape) {
+                // In landscape: show section content in detail pane
+                _showSectionInDetailPane(
+                  sectionId: sectionId,
+                  content: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: children,
+                  ),
+                  title: title,
+                );
+                // Don't expand in left pane when in landscape
+              } else {
+                // In portrait: toggle expansion as normal
+                onExpansionChanged(!isExpanded);
+              }
+            },
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2004,12 +2604,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      color: isSelected
+                          ? theme.colorScheme.primary.withValues(alpha: 0.2)
+                          : theme.colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       icon,
-                      color: theme.colorScheme.primary,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.primary,
                       size: 20,
                     ),
                   ),
@@ -2019,28 +2623,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: isSelected ? theme.colorScheme.primary : null,
                       ),
                     ),
                   ),
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.expand_more,
-                      color: theme.colorScheme.onSurfaceVariant,
+                  if (!isLandscape)
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.expand_more,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
+                  if (isLandscape && isSelected)
+                    Icon(Icons.chevron_right, color: theme.colorScheme.primary),
                 ],
               ),
             ),
           ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: isExpanded
-                ? Column(children: children)
-                : const SizedBox.shrink(),
-          ),
+          // Only show expanded content in portrait mode
+          if (!isLandscape)
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: isExpanded
+                  ? Column(children: children)
+                  : const SizedBox.shrink(),
+            ),
         ],
       ),
     );
@@ -2052,7 +2662,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('select_language'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2106,7 +2717,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('select_theme'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2175,11 +2787,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final currentColor = ref.watch(themeColorProvider);
     final notifier = ref.read(themeColorNotifierProvider);
     final navigator = Navigator.of(context);
-    final mediaQuery = MediaQuery.of(context);
-    final screenWidth = mediaQuery.size.width;
-    final isLandscape = screenWidth > mediaQuery.size.height;
-    final maxWidth = 600.0; // Same as settings list max width
-    final contentWidth = isLandscape ? maxWidth : screenWidth * 0.5;
     final colors = [
       Colors.deepPurple,
       Colors.blue,
@@ -2197,14 +2804,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('select_theme_color'.tr()),
-        content: SizedBox(
-          width: contentWidth,
-          child: GridView.builder(
+      builder: (dialogContext) {
+        final crossAxisCount = ResponsiveDialog.getGridCrossAxisCount(
+          context,
+          itemCount: colors.length,
+        );
+        return ResponsiveDialog.responsiveAlertDialog(
+          context: context,
+          title: Text('select_theme_color'.tr()),
+          content: GridView.builder(
             shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
@@ -2235,14 +2847,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               );
             },
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => navigator.pop(),
-            child: Text('cancel'.tr()),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => navigator.pop(),
+              child: Text('cancel'.tr()),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -2253,7 +2865,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('day_square_size'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2327,7 +2940,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('date_format'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2403,11 +3017,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               } else {
                 // Show error for invalid input
                 if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(
-                      content: Text('please_enter_valid_number'.tr()),
-                      backgroundColor: Colors.red,
-                    ),
+                  _showErrorSnackBar(
+                    dialogContext,
+                    'please_enter_valid_number'.tr(),
                   );
                 }
               }
@@ -2426,7 +3038,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('first_day_of_week'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -2479,52 +3092,46 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final currentStyle = ref.watch(habitCheckboxStyleProvider);
     final notifier = ref.read(habitCheckboxStyleNotifierProvider);
     final navigator = Navigator.of(context);
-    final mediaQuery = MediaQuery.of(context);
-    final screenWidth = mediaQuery.size.width;
-    final isLandscape = screenWidth > mediaQuery.size.height;
-    final maxWidth = 600.0; // Same as settings list max width
-    final contentWidth = isLandscape ? maxWidth : screenWidth * 0.5;
 
     final styles = HabitCheckboxStyle.values;
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('habit_checkbox_style'.tr()),
-        content: SizedBox(
-          width: contentWidth,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: styles.map((style) {
-              final styleString = habitCheckboxStyleToString(style);
-              return _buildRadioListItem<String>(
-                context: dialogContext,
-                title: Row(
-                  children: [
-                    Text(_getCheckboxStyleName(styleString)),
-                    const SizedBox(width: 16),
-                    // Preview: completed state
-                    buildCheckboxWidget(style, true, 24, null),
-                    const SizedBox(width: 8),
-                    // Preview: uncompleted state
-                    buildCheckboxWidget(style, false, 24, null),
-                  ],
-                ),
-                value: styleString,
-                groupValue: currentStyle,
-                onChanged: (value) async {
-                  if (value != null) {
-                    await notifier.setHabitCheckboxStyle(value);
-                    ref.invalidate(habitCheckboxStyleNotifierProvider);
-                    ref.invalidate(habitCheckboxStyleProvider);
-                    if (dialogContext.mounted) {
-                      navigator.pop();
-                    }
+        scrollable: styles.length > 5,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: styles.map((style) {
+            final styleString = habitCheckboxStyleToString(style);
+            return _buildRadioListItem<String>(
+              context: dialogContext,
+              title: Row(
+                children: [
+                  Text(_getCheckboxStyleName(styleString)),
+                  const SizedBox(width: 16),
+                  // Preview: completed state
+                  buildCheckboxWidget(style, true, 24, null),
+                  const SizedBox(width: 8),
+                  // Preview: uncompleted state
+                  buildCheckboxWidget(style, false, 24, null),
+                ],
+              ),
+              value: styleString,
+              groupValue: currentStyle,
+              onChanged: (value) async {
+                if (value != null) {
+                  await notifier.setHabitCheckboxStyle(value);
+                  ref.invalidate(habitCheckboxStyleNotifierProvider);
+                  ref.invalidate(habitCheckboxStyleProvider);
+                  if (dialogContext.mounted) {
+                    navigator.pop();
                   }
-                },
-              );
-            }).toList(),
-          ),
+                }
+              },
+            );
+          }).toList(),
         ),
         actions: [
           TextButton(
@@ -2632,11 +3239,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               } else {
                 // Show error for invalid input
                 if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(
-                      content: Text('please_enter_valid_number'.tr()),
-                      backgroundColor: Colors.red,
-                    ),
+                  _showErrorSnackBar(
+                    dialogContext,
+                    'please_enter_valid_number'.tr(),
                   );
                 }
               }
@@ -2689,11 +3294,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               } else {
                 // Show error for invalid input
                 if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(
-                      content: Text('please_enter_valid_number'.tr()),
-                      backgroundColor: Colors.red,
-                    ),
+                  _showErrorSnackBar(
+                    dialogContext,
+                    'please_enter_valid_number'.tr(),
                   );
                 }
               }
@@ -2888,11 +3491,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     Provider<dynamic>? valueProvider,
   ) {
     final navigator = Navigator.of(context);
-    final mediaQuery = MediaQuery.of(context);
-    final screenWidth = mediaQuery.size.width;
-    final isLandscape = screenWidth > mediaQuery.size.height;
-    final maxWidth = 600.0;
-    final contentWidth = isLandscape ? maxWidth : screenWidth * 0.5;
     final colors = [
       Colors.green,
       Colors.blue,
@@ -2910,14 +3508,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(titleKey.tr()),
-        content: SizedBox(
-          width: contentWidth,
-          child: GridView.builder(
+      builder: (dialogContext) {
+        final crossAxisCount = ResponsiveDialog.getGridCrossAxisCount(
+          context,
+          itemCount: colors.length,
+        );
+        return ResponsiveDialog.responsiveAlertDialog(
+          context: context,
+          title: Text(titleKey.tr()),
+          content: GridView.builder(
             shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
@@ -2950,14 +3553,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               );
             },
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => navigator.pop(),
-            child: Text('cancel'.tr()),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => navigator.pop(),
+              child: Text('cancel'.tr()),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -3300,7 +3903,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      builder: (dialogContext) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('bad_habit_logic_mode'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -3358,8 +3962,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final isLandscape = mediaQuery.size.width > mediaQuery.size.height;
-    final maxWidth = 600.0; // Maximum width for the centered content
-    final hasSearch = _searchQuery.isNotEmpty;
+    final trimmedQuery = _searchController.text.trim();
+    final hasSearch = trimmedQuery.isNotEmpty;
 
     // Build children for each section so we can filter them.
     final generalTitle = 'general'.tr();
@@ -3375,11 +3979,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('theme'),
       _keyToSearchText('select_theme_color'),
     ];
-    final generalFiltered = _filterSectionChildren(
-      generalTitle,
-      generalChildren,
-      tags: generalTags,
-    );
 
     final appearanceTitle = 'appearance'.tr();
     final appearanceChildren = <Widget>[
@@ -3413,11 +4012,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('main_timeline_bad_habit_completion_color'),
       _keyToSearchText('streak_color_scheme'),
     ];
-    final appearanceFiltered = _filterSectionChildren(
-      appearanceTitle,
-      appearanceChildren,
-      tags: appearanceTags,
-    );
 
     // Date & Time section
     final dateTimeTitle = 'date_time'.tr();
@@ -3431,11 +4025,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('date_format'),
       _keyToSearchText('first_day_of_week'),
     ];
-    final dateTimeFiltered = _filterSectionChildren(
-      dateTimeTitle,
-      dateTimeChildren,
-      tags: dateTimeTags,
-    );
 
     // Display section (habits, habit cards, timelines, statistics)
     final displayTitle = 'display'.tr();
@@ -3479,11 +4068,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('modal_timeline_days'),
       _keyToSearchText('show_statistics_card'),
     ];
-    final displayFiltered = _filterSectionChildren(
-      displayTitle,
-      displayChildren,
-      tags: displayTags,
-    );
 
     // Notifications & behavior
     final notificationsTitle = 'notifications'.tr();
@@ -3496,21 +4080,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('enable_notifications'),
       _keyToSearchText('bad_habit_logic_mode'),
     ];
-    final notificationsFiltered = _filterSectionChildren(
-      notificationsTitle,
-      notificationsChildren,
-      tags: notificationsTags,
-    );
 
     // Tags management
     final tagsTitle = 'tags'.tr();
     final tagsChildren = <Widget>[const TagsSectionContent()];
     final tagsTags = <String>[_keyToSearchText('tags')];
-    final tagsFiltered = _filterSectionChildren(
-      tagsTitle,
-      tagsChildren,
-      tags: tagsTags,
-    );
 
     final dataTitle = 'data_management'.tr();
     final dataChildren = <Widget>[
@@ -3527,11 +4101,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('database_statistics'),
       _keyToSearchText('optimize_database'),
     ];
-    final dataFiltered = _filterSectionChildren(
-      dataTitle,
-      dataChildren,
-      tags: dataTags,
-    );
 
     final advancedTitle = 'advanced'.tr();
     final advancedChildren = <Widget>[
@@ -3550,246 +4119,345 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       _keyToSearchText('logs'),
       _keyToSearchText('return_to_onboarding'),
     ];
-    final advancedFiltered = _filterSectionChildren(
-      advancedTitle,
-      advancedChildren,
-      tags: advancedTags,
-    );
 
     final aboutTitle = 'about'.tr();
 
+    // Collect all sections for unified search
+    final sectionsMap = <String, Map<String, dynamic>>{
+      'general': {
+        'title': generalTitle,
+        'icon': Icons.settings,
+        'children': generalChildren,
+        'tags': generalTags,
+      },
+      'appearance': {
+        'title': appearanceTitle,
+        'icon': Icons.palette,
+        'children': appearanceChildren,
+        'tags': appearanceTags,
+      },
+      'dateTime': {
+        'title': dateTimeTitle,
+        'icon': Icons.calendar_today,
+        'children': dateTimeChildren,
+        'tags': dateTimeTags,
+      },
+      'display': {
+        'title': displayTitle,
+        'icon': Icons.view_quilt,
+        'children': displayChildren,
+        'tags': displayTags,
+      },
+      'notifications': {
+        'title': notificationsTitle,
+        'icon': Icons.notifications,
+        'children': notificationsChildren,
+        'tags': notificationsTags,
+      },
+      'tags': {
+        'title': tagsTitle,
+        'icon': Icons.label,
+        'children': tagsChildren,
+        'tags': tagsTags,
+      },
+      'data': {
+        'title': dataTitle,
+        'icon': Icons.storage,
+        'children': dataChildren,
+        'tags': dataTags,
+      },
+      'advanced': {
+        'title': advancedTitle,
+        'icon': Icons.settings_applications,
+        'children': advancedChildren,
+        'tags': advancedTags,
+      },
+      'about': {
+        'title': aboutTitle,
+        'icon': Icons.info,
+        'children': [
+          FutureBuilder<PackageInfo?>(
+            future: _getPackageInfo(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const ListTile(
+                  leading: CircularProgressIndicator(),
+                  title: Text('loading'),
+                );
+              }
+              return Column(
+                children: [
+                  AboutSectionContent(
+                    showLibrariesDialog: _showLibrariesDialog,
+                    showLicenseDialog: _showLicenseDialog,
+                    showUsageRightsDialog: _showUsageRightsDialog,
+                    showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
+                    launchUrl: (context, url) =>
+                        AboutDialogs.launchUrlWithFallback(context, url),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+        'tags': [_keyToSearchText('about')],
+      },
+    };
+
+    // Perform search with memoization (only recalculate when query changes)
+    final searchResults = _getSearchResults(trimmedQuery, sectionsMap);
+
+    // Build settings list - always show normal sections (never affected by search)
     final settingsList = ListView(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
-              hintText: 'search_settings'.tr(),
-              border: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(24)),
-              ),
-              isDense: true,
-            ),
-            textInputAction: TextInputAction.search,
-          ),
+        _buildCollapsibleSection(
+          title: generalTitle,
+          icon: Icons.settings,
+          isExpanded: _generalExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _generalExpanded = expanded;
+            });
+            _saveExpansionState('general', expanded);
+          },
+          children: generalChildren,
+          sectionId: 'general',
         ),
-        if (!hasSearch || generalFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: generalTitle,
-            icon: Icons.settings,
-            isExpanded: hasSearch ? true : _generalExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _generalExpanded = expanded;
-              });
-              _saveExpansionState('general', expanded);
-            },
-            children: generalFiltered,
-          ),
-        if (!hasSearch || appearanceFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: appearanceTitle,
-            icon: Icons.palette,
-            isExpanded: hasSearch ? true : _appearanceExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _appearanceExpanded = expanded;
-              });
-              _saveExpansionState('appearance', expanded);
-            },
-            children: appearanceFiltered,
-          ),
+        _buildCollapsibleSection(
+          title: appearanceTitle,
+          icon: Icons.palette,
+          isExpanded: _appearanceExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _appearanceExpanded = expanded;
+            });
+            _saveExpansionState('appearance', expanded);
+          },
+          children: appearanceChildren,
+          sectionId: 'appearance',
+        ),
         // Date & Time before Display
-        if (!hasSearch || dateTimeFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: dateTimeTitle,
-            icon: Icons.calendar_today,
-            isExpanded: hasSearch ? true : _dateTimeExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _dateTimeExpanded = expanded;
-              });
-              _saveExpansionState('dateTime', expanded);
-            },
-            children: dateTimeFiltered,
-          ),
-        if (!hasSearch || displayFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: displayTitle,
-            icon: Icons.view_quilt,
-            isExpanded: hasSearch ? true : _displayLayoutExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _displayLayoutExpanded = expanded;
-              });
-              _saveExpansionState('displayLayout', expanded);
-            },
-            children: displayFiltered,
-          ),
-        if (!hasSearch || notificationsFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: notificationsTitle,
-            icon: Icons.notifications,
-            isExpanded: hasSearch ? true : _notificationsExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _notificationsExpanded = expanded;
-              });
-              _saveExpansionState('notifications', expanded);
-            },
-            children: notificationsFiltered,
-          ),
-        if (!hasSearch || tagsFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: tagsTitle,
-            icon: Icons.label,
-            isExpanded: hasSearch ? true : _tagsExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _tagsExpanded = expanded;
-              });
-              _saveExpansionState('tags', expanded);
-            },
-            children: tagsFiltered,
-          ),
-        if (!hasSearch || dataFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: dataTitle,
-            icon: Icons.storage,
-            isExpanded: hasSearch ? true : _dataExportExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _dataExportExpanded = expanded;
-              });
-              _saveExpansionState('dataExport', expanded);
-            },
-            children: dataFiltered,
-          ),
-        if (!hasSearch || advancedFiltered.isNotEmpty)
-          _buildCollapsibleSection(
-            title: advancedTitle,
-            icon: Icons.settings_applications,
-            isExpanded: hasSearch ? true : _advancedExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _advancedExpanded = expanded;
-              });
-              _saveExpansionState('advanced', expanded);
-            },
-            children: advancedFiltered,
-          ),
-        // About section remains unfiltered except by its title; we still
-        // auto-expand it during search if it matches.
-        if (!hasSearch ||
-            _filterSectionChildren(aboutTitle, const [SizedBox()]).isNotEmpty)
-          _buildCollapsibleSection(
-            title: aboutTitle,
-            icon: Icons.info,
-            isExpanded: hasSearch ? true : _aboutExpanded,
-            onExpansionChanged: (expanded) {
-              if (hasSearch) return;
-              setState(() {
-                _aboutExpanded = expanded;
-              });
-              _saveExpansionState('about', expanded);
-            },
-            children: [
-              FutureBuilder<PackageInfo?>(
-                future: _getPackageInfo(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return ListTile(
-                      leading: const CircularProgressIndicator(),
-                      title: Text('loading'.tr()),
-                    );
-                  }
-
-                  return Column(
-                    children: [
-                      AboutSectionContent(
-                        showLibrariesDialog: _showLibrariesDialog,
-                        showLicenseDialog: _showLicenseDialog,
-                        showUsageRightsDialog: _showUsageRightsDialog,
-                        showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
-                        launchUrl: (context, url) => _launchUrl(url),
-                      ),
-                    ],
+        _buildCollapsibleSection(
+          title: dateTimeTitle,
+          icon: Icons.calendar_today,
+          isExpanded: _dateTimeExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _dateTimeExpanded = expanded;
+            });
+            _saveExpansionState('dateTime', expanded);
+          },
+          children: dateTimeChildren,
+          sectionId: 'dateTime',
+        ),
+        _buildCollapsibleSection(
+          title: displayTitle,
+          icon: Icons.view_quilt,
+          isExpanded: _displayLayoutExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _displayLayoutExpanded = expanded;
+            });
+            _saveExpansionState('displayLayout', expanded);
+          },
+          children: displayChildren,
+          sectionId: 'display',
+        ),
+        _buildCollapsibleSection(
+          title: notificationsTitle,
+          icon: Icons.notifications,
+          isExpanded: _notificationsExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _notificationsExpanded = expanded;
+            });
+            _saveExpansionState('notifications', expanded);
+          },
+          children: notificationsChildren,
+          sectionId: 'notifications',
+        ),
+        _buildCollapsibleSection(
+          title: tagsTitle,
+          icon: Icons.label,
+          isExpanded: _tagsExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _tagsExpanded = expanded;
+            });
+            _saveExpansionState('tags', expanded);
+          },
+          children: tagsChildren,
+          sectionId: 'tags',
+        ),
+        _buildCollapsibleSection(
+          title: dataTitle,
+          icon: Icons.storage,
+          isExpanded: _dataExportExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _dataExportExpanded = expanded;
+            });
+            _saveExpansionState('dataExport', expanded);
+          },
+          children: dataChildren,
+          sectionId: 'data',
+        ),
+        _buildCollapsibleSection(
+          title: advancedTitle,
+          icon: Icons.settings_applications,
+          isExpanded: _advancedExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _advancedExpanded = expanded;
+            });
+            _saveExpansionState('advanced', expanded);
+          },
+          children: advancedChildren,
+          sectionId: 'advanced',
+        ),
+        // About section
+        _buildCollapsibleSection(
+          title: aboutTitle,
+          icon: Icons.info,
+          isExpanded: _aboutExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _aboutExpanded = expanded;
+            });
+            _saveExpansionState('about', expanded);
+          },
+          children: [
+            FutureBuilder<PackageInfo?>(
+              future: _getPackageInfo(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return ListTile(
+                    leading: const CircularProgressIndicator(),
+                    title: Text('loading'.tr()),
                   );
-                },
-              ),
-            ],
-          ),
+                }
+
+                return Column(
+                  children: [
+                    AboutSectionContent(
+                      showLibrariesDialog: _showLibrariesDialog,
+                      showLicenseDialog: _showLicenseDialog,
+                      showUsageRightsDialog: _showUsageRightsDialog,
+                      showPrivacyPolicyDialog: _showPrivacyPolicyDialog,
+                      launchUrl: (context, url) =>
+                          AboutDialogs.launchUrlWithFallback(context, url),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+          sectionId: 'about',
+        ),
       ],
     );
 
-    final bodyContent = isLandscape
+    // Clear detail pane when switching to portrait
+    if (!isLandscape && _selectedSectionId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _clearDetailPane();
+      });
+    }
+
+    // In landscape with search, show grouped results in right pane
+    final landscapeDetailContent =
+        isLandscape && hasSearch && searchResults.isNotEmpty
+        ? _buildGroupedSearchResults(searchResults, trimmedQuery)
+        : _detailContent;
+
+    final landscapeDetailTitle =
+        isLandscape && hasSearch && searchResults.isNotEmpty
+        ? 'search_results'.tr()
+        : _detailTitle;
+
+    // Show empty state in right pane if search is active but no results
+    final finalLandscapeDetailContent =
+        isLandscape && hasSearch && searchResults.isEmpty
         ? Center(
-            key: const ValueKey('landscape'),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: settingsList,
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 64,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'no_results_found'.tr(),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+              ),
             ),
           )
-        : Container(key: const ValueKey('portrait'), child: settingsList);
+        : landscapeDetailContent;
+
+    final bodyContent = isLandscape
+        ? SplitScreenSettingsLayout(
+            key: const ValueKey('landscape'),
+            settingsList: settingsList,
+            detailContent: finalLandscapeDetailContent,
+            detailTitle: landscapeDetailTitle,
+            onCloseDetail: _clearDetailPane,
+          )
+        : SizedBox(
+            key: const ValueKey('portrait'),
+            width: double.infinity,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: settingsList,
+              ),
+            ),
+          );
 
     if (isLandscape) {
       return Scaffold(
-        body: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: Column(
-              children: [
-                AppBar(
-                  title: Text('settings'.tr()),
-                  automaticallyImplyLeading: true,
-                ),
-                Expanded(
-                  child: PageTransitionSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    transitionBuilder:
-                        (
-                          Widget child,
-                          Animation<double> primaryAnimation,
-                          Animation<double> secondaryAnimation,
-                        ) {
-                          return SharedAxisTransition(
-                            animation: primaryAnimation,
-                            secondaryAnimation: secondaryAnimation,
-                            transitionType: SharedAxisTransitionType.horizontal,
-                            fillColor: Colors.transparent,
-                            child: child,
-                          );
-                        },
-                    child: bodyContent,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        appBar: AppBar(
+          title: Text('settings'.tr()),
+          automaticallyImplyLeading: true,
+          actions: [_buildExpandableSearch()],
+        ),
+        body: PageTransitionSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder:
+              (
+                Widget child,
+                Animation<double> primaryAnimation,
+                Animation<double> secondaryAnimation,
+              ) {
+                return SharedAxisTransition(
+                  animation: primaryAnimation,
+                  secondaryAnimation: secondaryAnimation,
+                  transitionType: SharedAxisTransitionType.horizontal,
+                  fillColor: Colors.transparent,
+                  child: child,
+                );
+              },
+          child: bodyContent,
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('settings'.tr())),
+      appBar: AppBar(
+        title: Text('settings'.tr()),
+        actions: [_buildExpandableSearch()],
+      ),
       body: PageTransitionSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder:

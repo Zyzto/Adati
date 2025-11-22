@@ -6,6 +6,7 @@ import '../../../../core/database/app_database.dart' as db;
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/import_service.dart';
 import '../../../habits/providers/habit_providers.dart';
+import '../responsive_dialog.dart';
 
 /// Static dialog methods for Data Management section  
 class DataDialogs {
@@ -14,7 +15,8 @@ class DataDialogs {
     // First, show what to export
     final exportType = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('export_data'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -147,7 +149,8 @@ class DataDialogs {
           // Show format selection
           final format = await showDialog<String>(
             context: context,
-            builder: (context) => AlertDialog(
+            builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+              context: context,
               title: Text('select_format'.tr()),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -225,7 +228,8 @@ class DataDialogs {
   static Future<void> showImportDialog(BuildContext context, WidgetRef ref) async {
     final importType = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('import_data'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -278,7 +282,9 @@ class DataDialogs {
           return ValueListenableBuilder<String>(
             valueListenable: messageNotifier,
             builder: (context, message, _) {
-              return AlertDialog(
+              return ResponsiveDialog.responsiveAlertDialog(
+                context: context,
+                title: const SizedBox.shrink(),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -289,6 +295,7 @@ class DataDialogs {
                     Text(message),
                   ],
                 ),
+                actions: null,
               );
             },
           );
@@ -341,15 +348,16 @@ class DataDialogs {
   static void showImportResultDialog(BuildContext context, ImportResult result) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text(
           result.success ? 'import_success'.tr() : 'import_failed'.tr(),
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        scrollable: true,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               if (result.habitsImported > 0)
                 _buildResultRow(
                   'habits_imported'.tr(),
@@ -425,7 +433,6 @@ class DataDialogs {
               ],
             ],
           ),
-        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -500,7 +507,8 @@ class DataDialogs {
 
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+            context: context,
             title: Text('database_statistics'.tr()),
             content: Column(
               mainAxisSize: MainAxisSize.min,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/services/preferences_service.dart';
 import '../../../habits/providers/habit_providers.dart';
+import '../responsive_dialog.dart';
 
 /// Static dialog methods for Advanced section (reset, clear, logs, onboarding)
 class AdvancedDialogs {
@@ -15,7 +16,8 @@ class AdvancedDialogs {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('reset_all_habits'.tr()),
         content: Text('reset_all_habits_confirmation'.tr()),
         actions: [
@@ -68,7 +70,8 @@ class AdvancedDialogs {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('reset_all_settings'.tr()),
         content: Text('reset_all_settings_confirmation'.tr()),
         actions: [
@@ -115,7 +118,8 @@ class AdvancedDialogs {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('clear_all_data'.tr()),
         content: Text('clear_all_data_confirmation'.tr()),
         actions: [
@@ -174,7 +178,8 @@ class AdvancedDialogs {
     // Placeholder for now
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('logs'.tr()),
         content: Text('Logs dialog implementation'),
         actions: [
@@ -191,7 +196,8 @@ class AdvancedDialogs {
   static Future<void> returnToOnboarding(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('return_to_onboarding'.tr()),
         content: Text('return_to_onboarding_confirmation'.tr()),
         actions: [
@@ -222,7 +228,8 @@ class AdvancedDialogs {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('optimize_database'.tr()),
         content: Text('optimize_database_confirmation'.tr()),
         actions: [

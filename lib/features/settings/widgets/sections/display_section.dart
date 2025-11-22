@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/settings_providers.dart';
 import '../../utils/settings_formatters.dart';
 import '../settings_section.dart';
+import '../responsive_dialog.dart';
 
 /// Display settings section (habits, timelines, habit cards, statistics)
 class DisplaySectionContent extends ConsumerStatefulWidget {
@@ -476,15 +477,17 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         String temp = currentMode;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
+            return ResponsiveDialog.responsiveAlertDialog(
+              context: context,
               title: Text('habits_layout_mode'.tr()),
               content: RadioGroup<String>(
                 groupValue: temp,
                 onChanged: (value) {
-                  if (value == null) return;
-                  setDialogState(() {
-                    temp = value;
-                  });
+                  if (value != null) {
+                    setDialogState(() {
+                      temp = value;
+                    });
+                  }
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -532,15 +535,17 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         String temp = currentMode;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
+            return ResponsiveDialog.responsiveAlertDialog(
+              context: context,
               title: Text('habit_card_layout_mode'.tr()),
               content: RadioGroup<String>(
                 groupValue: temp,
                 onChanged: (value) {
-                  if (value == null) return;
-                  setDialogState(() {
-                    temp = value;
-                  });
+                  if (value != null) {
+                    setDialogState(() {
+                      temp = value;
+                    });
+                  }
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -590,15 +595,17 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         String temp = currentPlacement;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
+            return ResponsiveDialog.responsiveAlertDialog(
+              context: context,
               title: Text('grid_completion_button_placement'.tr()),
               content: RadioGroup<String>(
                 groupValue: temp,
                 onChanged: (value) {
-                  if (value == null) return;
-                  setDialogState(() {
-                    temp = value;
-                  });
+                  if (value != null) {
+                    setDialogState(() {
+                      temp = value;
+                    });
+                  }
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -650,15 +657,17 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
         String temp = currentSize;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
+            return ResponsiveDialog.responsiveAlertDialog(
+              context: context,
               title: Text('grid_timeline_box_size'.tr()),
               content: RadioGroup<String>(
                 groupValue: temp,
                 onChanged: (value) {
-                  if (value == null) return;
-                  setDialogState(() {
-                    temp = value;
-                  });
+                  if (value != null) {
+                    setDialogState(() {
+                      temp = value;
+                    });
+                  }
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -769,7 +778,8 @@ class _DisplaySectionContentState extends ConsumerState<DisplaySectionContent> {
     final result = await showDialog<int>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveDialog.responsiveAlertDialog(
+          context: context,
           title: Text('main_timeline_lines'.tr()),
           content: StatefulBuilder(
             builder: (context, setDialogState) {

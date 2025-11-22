@@ -1704,8 +1704,9 @@ class HabitGridCard extends ConsumerWidget {
                               );
                               return tagsAsync.maybeWhen(
                                 data: (tags) {
-                                  if (tags.isEmpty)
+                                  if (tags.isEmpty) {
                                     return const SizedBox.shrink();
+                                  }
                                   return Padding(
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Wrap(
@@ -1768,12 +1769,12 @@ class HabitGridCard extends ConsumerWidget {
                               },
                               loading: () =>
                                   const SizedBox(width: 32, height: 32),
-                              error: (_, __) =>
+                              error: (_, _) =>
                                   const Icon(Icons.error, size: 20),
                             ),
                             loading: () =>
                                 const SizedBox(width: 32, height: 32),
-                            error: (_, __) => const Icon(Icons.error, size: 20),
+                            error: (_, _) => const Icon(Icons.error, size: 20),
                           ),
                         ],
                       ],
@@ -1819,10 +1820,10 @@ class HabitGridCard extends ConsumerWidget {
                       return _buildTrackingButton(context, ref, entry, true);
                     },
                     loading: () => const SizedBox(width: 24, height: 24),
-                    error: (_, __) => const Icon(Icons.error, size: 20),
+                    error: (_, _) => const Icon(Icons.error, size: 20),
                   ),
                   loading: () => const SizedBox(width: 24, height: 24),
-                  error: (_, __) => const Icon(Icons.error, size: 20),
+                  error: (_, _) => const Icon(Icons.error, size: 20),
                 ),
               ),
           ],

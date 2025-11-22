@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../responsive_dialog.dart';
 
 /// Static dialog methods for About section
 class AboutDialogs {
@@ -123,30 +124,30 @@ class AboutDialogs {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('packages_used'.tr()),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: packages.length,
-            itemBuilder: (context, index) {
-              final package = packages[index];
-              return ListTile(
-                dense: true,
-                title: Text(
-                  package['name'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  '${package['version']} - ${package['description']}',
-                ),
-                onTap: () =>
-                    launchUrlWithFallback(context, 'https://pub.dev/packages/${package['name']}'),
-                trailing: const Icon(Icons.open_in_new, size: 16),
-              );
-            },
-          ),
+        scrollable: true,
+        content: ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: packages.length,
+          itemBuilder: (context, index) {
+            final package = packages[index];
+            return ListTile(
+              dense: true,
+              title: Text(
+                package['name'] as String,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                '${package['version']} - ${package['description']}',
+              ),
+              onTap: () =>
+                  launchUrlWithFallback(context, 'https://pub.dev/packages/${package['name']}'),
+              trailing: const Icon(Icons.open_in_new, size: 16),
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -162,55 +163,55 @@ class AboutDialogs {
   static void showLicenseDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('license'.tr()),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'license_title'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        scrollable: true,
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'license_title'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'license_description_full'.tr(),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'you_are_free_to'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('• ${'license_share'.tr()}'),
+            Text('• ${'license_adapt'.tr()}'),
+            const SizedBox(height: 16),
+            Text(
+              'under_following_terms'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('• ${'license_attribution'.tr()}'),
+            Text('• ${'license_noncommercial'.tr()}'),
+            Text('• ${'license_sharealike'.tr()}'),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => launchUrlWithFallback(
+                context,
+                'https://creativecommons.org/licenses/by-nc-sa/4.0/',
               ),
-              const SizedBox(height: 16),
-              Text(
-                'license_description_full'.tr(),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'you_are_free_to'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('• ${'license_share'.tr()}'),
-              Text('• ${'license_adapt'.tr()}'),
-              const SizedBox(height: 16),
-              Text(
-                'under_following_terms'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('• ${'license_attribution'.tr()}'),
-              Text('• ${'license_noncommercial'.tr()}'),
-              Text('• ${'license_sharealike'.tr()}'),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => launchUrlWithFallback(
-                  context,
-                  'https://creativecommons.org/licenses/by-nc-sa/4.0/',
-                ),
-                child: Text('view_license'.tr()),
-              ),
-            ],
-          ),
+              child: Text('view_license'.tr()),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -226,57 +227,57 @@ class AboutDialogs {
   static void showUsageRightsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('usage_rights'.tr()),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'terms_and_conditions'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'usage_agreement'.tr(),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '1. ${'usage_license_section'.tr()}',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('usage_license_text'.tr()),
-              const SizedBox(height: 16),
-              Text(
-                '2. ${'usage_usage_section'.tr()}',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('• ${'usage_personal'.tr()}'),
-              Text('• ${'usage_modify'.tr()}'),
-              Text('• ${'usage_attribution'.tr()}'),
-              const SizedBox(height: 16),
-              Text(
-                '3. ${'usage_limitations_section'.tr()}',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('• ${'usage_no_commercial'.tr()}'),
-              Text('• ${'usage_no_warranty'.tr()}'),
-              Text('• ${'usage_at_own_risk'.tr()}'),
-            ],
-          ),
+        scrollable: true,
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'terms_and_conditions'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'usage_agreement'.tr(),
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '1. ${'usage_license_section'.tr()}',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('usage_license_text'.tr()),
+            const SizedBox(height: 16),
+            Text(
+              '2. ${'usage_usage_section'.tr()}',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('• ${'usage_personal'.tr()}'),
+            Text('• ${'usage_modify'.tr()}'),
+            Text('• ${'usage_attribution'.tr()}'),
+            const SizedBox(height: 16),
+            Text(
+              '3. ${'usage_limitations_section'.tr()}',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('• ${'usage_no_commercial'.tr()}'),
+            Text('• ${'usage_no_warranty'.tr()}'),
+            Text('• ${'usage_at_own_risk'.tr()}'),
+          ],
         ),
         actions: [
           TextButton(
@@ -292,59 +293,59 @@ class AboutDialogs {
   static void showPrivacyPolicyDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+        context: context,
         title: Text('privacy_policy'.tr()),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'privacy_policy'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'privacy_data_storage'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('privacy_data_storage_text'.tr()),
-              const SizedBox(height: 16),
-              Text(
-                'privacy_data_collection'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('privacy_data_collection_text'.tr()),
-              const SizedBox(height: 16),
-              Text(
-                'privacy_permissions'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('• ${'privacy_notifications'.tr()}'),
-              Text('• ${'privacy_file_access'.tr()}'),
-              Text('• ${'privacy_network'.tr()}'),
-              const SizedBox(height: 16),
-              Text(
-                'privacy_your_rights'.tr(),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('privacy_your_rights_text'.tr()),
-            ],
-          ),
+        scrollable: true,
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'privacy_policy'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'privacy_data_storage'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('privacy_data_storage_text'.tr()),
+            const SizedBox(height: 16),
+            Text(
+              'privacy_data_collection'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('privacy_data_collection_text'.tr()),
+            const SizedBox(height: 16),
+            Text(
+              'privacy_permissions'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('• ${'privacy_notifications'.tr()}'),
+            Text('• ${'privacy_file_access'.tr()}'),
+            Text('• ${'privacy_network'.tr()}'),
+            const SizedBox(height: 16),
+            Text(
+              'privacy_your_rights'.tr(),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('privacy_your_rights_text'.tr()),
+          ],
         ),
         actions: [
           TextButton(

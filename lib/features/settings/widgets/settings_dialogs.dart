@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'responsive_dialog.dart';
+import 'dialog_content_builders.dart';
 
 /// Helper class for creating settings dialogs
 class SettingsDialogs {
@@ -24,7 +26,8 @@ class SettingsDialogs {
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           double value = currentValue;
-          return AlertDialog(
+          return ResponsiveDialog.responsiveAlertDialog(
+            context: context,
             title: Text(title),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -68,8 +71,10 @@ class SettingsDialogs {
       context: context,
       builder: (context) {
         T tempValue = currentValue;
-        return AlertDialog(
+        return ResponsiveDialog.responsiveAlertDialog(
+          context: context,
           title: Text(title),
+          scrollable: options.length > 5,
           content: StatefulBuilder(
             builder: (context, setDialogState) {
               return RadioGroup<T>(
@@ -121,7 +126,8 @@ class SettingsDialogs {
     return showDialog<Color>(
       context: context,
       builder: (context) {
-        return AlertDialog(
+        return ResponsiveDialog.responsiveAlertDialog(
+          context: context,
           title: Text(title),
           content: const Text('Color picker not yet implemented'),
           actions: [
@@ -185,18 +191,5 @@ class SettingsDialogs {
       onTap: () => onChanged(value),
     );
   }
-}
-
-/// Model for radio dialog options
-class RadioOption<T> {
-  final String label;
-  final String? subtitle;
-  final T value;
-
-  const RadioOption({
-    required this.label,
-    this.subtitle,
-    required this.value,
-  });
 }
 
