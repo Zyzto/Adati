@@ -269,7 +269,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
 
     /// Creates a Column with filtered children, preserving original properties.
-    Widget _createFilteredColumn(Column original, List<Widget> filteredChildren) {
+    Widget createFilteredColumn(Column original, List<Widget> filteredChildren) {
       return Column(
         crossAxisAlignment: original.crossAxisAlignment,
         mainAxisAlignment: original.mainAxisAlignment,
@@ -282,7 +282,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
 
     /// Filters column children, hiding subsections with no matching items.
-    List<Widget> _filterColumnChildren(List<Widget> columnChildren) {
+    List<Widget> filterColumnChildren(List<Widget> columnChildren) {
       final filteredColumnChildren = <Widget>[];
       List<Widget> pendingSubsectionWidgets = [];
       bool hasMatchingItemsInSubsection = false;
@@ -324,9 +324,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               final builtWidget = child.build(context, ref);
 
               if (builtWidget is Column) {
-                final filteredColumnChildren = _filterColumnChildren(builtWidget.children);
+                final filteredColumnChildren = filterColumnChildren(builtWidget.children);
                 return filteredColumnChildren.isNotEmpty
-                    ? _createFilteredColumn(builtWidget, filteredColumnChildren)
+                    ? createFilteredColumn(builtWidget, filteredColumnChildren)
                     : const SizedBox.shrink();
               }
 
@@ -336,9 +336,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
         );
       } else if (child is Column) {
-        final filteredColumnChildren = _filterColumnChildren(child.children);
+        final filteredColumnChildren = filterColumnChildren(child.children);
         if (filteredColumnChildren.isNotEmpty) {
-          result.add(_createFilteredColumn(child, filteredColumnChildren));
+          result.add(createFilteredColumn(child, filteredColumnChildren));
         }
       } else if (widgetMatches(child)) {
         result.add(child);
