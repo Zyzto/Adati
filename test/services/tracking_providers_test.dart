@@ -51,7 +51,7 @@ void main() {
         
         provider.when(
           data: (entries) {
-            if (entries.length >= 1) {
+            if (entries.isNotEmpty) {
               expect(entries.length, equals(1));
               expect(entries[0].completed, equals(true));
               gotData = true;
@@ -76,11 +76,9 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 200));
       
       // Initially empty - check if we have data
-      var hasInitialData = false;
       provider.when(
         data: (entries) {
           expect(entries, isEmpty);
-          hasInitialData = true;
         },
         loading: () {
           // Loading is acceptable initially
@@ -102,7 +100,7 @@ void main() {
         
         updatedProvider.when(
           data: (entries) {
-            if (entries.length >= 1) {
+            if (entries.isNotEmpty) {
               expect(entries.length, equals(1));
               gotUpdate = true;
             }

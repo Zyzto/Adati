@@ -412,6 +412,7 @@
   "clear": "مسح",
   "optimize": "تحسين",
   "about": "حول",
+  "app_name_label": "اسم التطبيق",
   "version": "الإصدار",
   "description": "الوصف",
   "package_name": "اسم الحزمة",

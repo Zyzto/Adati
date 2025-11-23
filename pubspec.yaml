@@ -34,9 +34,6 @@ dependencies:
   # Collections & utilities
   collection: ^1.18.0
   
-  # Environment variables
-  flutter_dotenv: ^6.0.0
-  
   # UI & animations
   animations: ^2.1.0
   skeletonizer: ^2.1.0+1

@@ -157,6 +157,12 @@ class HabitRepository with Loggable {
   Stream<List<db.TrackingEntry>> watchEntriesByDate(DateTime date) =>
       _trackingEntryDao.watchEntriesByDate(date);
 
+  Future<List<db.TrackingEntry>> getEntriesByDateRange(DateTime startDate, DateTime endDate) =>
+      _trackingEntryDao.getEntriesByDateRange(startDate, endDate);
+
+  Stream<List<db.TrackingEntry>> watchEntriesByDateRange(DateTime startDate, DateTime endDate) =>
+      _trackingEntryDao.watchEntriesByDateRange(startDate, endDate);
+
   Future<bool> toggleCompletion(
     int habitId,
     DateTime date,

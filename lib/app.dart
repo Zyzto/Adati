@@ -75,7 +75,7 @@ class App extends ConsumerWidget {
     );
 
     return MaterialApp.router(
-      title: 'app_name'.tr(),
+      title: context.locale.languageCode == 'ar' ? 'عادتي' : 'Adati',
       debugShowCheckedModeBanner: false,
       // Custom scroll behavior enables mouse drag support on desktop platforms
       // (Linux, Windows, macOS). Without this, users cannot drag PageView or

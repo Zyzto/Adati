@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:adati/features/habits/widgets/cards/habit_card.dart';
 import '../helpers/test_helpers.dart';
-import '../helpers/localization_helpers.dart';
 import '../fixtures/habit_fixtures.dart';
 
 void main() {

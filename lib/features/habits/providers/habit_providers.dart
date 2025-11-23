@@ -17,6 +17,7 @@ final habitRepositoryProvider = Provider<HabitRepository>((ref) {
 });
 
 final habitsProvider = StreamProvider<List<db.Habit>>((ref) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   try {
     await for (final habits in repository.watchAllHabits()) {
@@ -33,6 +34,7 @@ final habitsProvider = StreamProvider<List<db.Habit>>((ref) async* {
 });
 
 final tagsProvider = StreamProvider<List<db.Tag>>((ref) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   try {
     await for (final tags in repository.watchAllTags()) {
@@ -52,6 +54,7 @@ final habitTagsProvider = StreamProvider.family<List<db.Tag>, int>((
   ref,
   habitId,
 ) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   try {
     await for (final tags in repository.watchTagsForHabit(habitId)) {
@@ -71,12 +74,14 @@ final habitByIdProvider = StreamProvider.family<db.Habit?, int>((
   ref,
   id,
 ) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   try {
+    // Get initial value
     final habitData = await repository.getHabitById(id);
     yield habitData;
 
-    // Also watch for changes
+    // Watch for changes - the keepAlive() above prevents recreation on hot reload
     await for (final habits in repository.watchAllHabits()) {
       final habitData = habits.where((h) => h.id == id).firstOrNull;
       yield habitData;
@@ -95,6 +100,7 @@ final habitByIdProvider = StreamProvider.family<db.Habit?, int>((
 final filteredSortedHabitsProvider = StreamProvider<List<db.Habit>>((
   ref,
 ) async* {
+  ref.keepAlive();
   final sortOrder = ref.watch(habitSortOrderProvider);
   final filterQuery = ref.watch(habitFilterQueryProvider);
   final filterByType = ref.watch(habitFilterByTypeProvider);
@@ -177,11 +183,16 @@ final filteredSortedHabitsProvider = StreamProvider<List<db.Habit>>((
         break;
       case 'streak':
       case 'streak_desc':
-        // Sort by streak - requires async lookup
+        // Sort by streak - batch queries for better performance
         final streaks = <int, int>{};
-        for (final habit in sorted) {
+        // Batch all streak queries
+        final streakFutures = sorted.map((habit) async {
           final streak = await repository.getStreakByHabit(habit.id);
-          streaks[habit.id] = streak?.combinedStreak ?? 0;
+          return MapEntry(habit.id, streak?.combinedStreak ?? 0);
+        });
+        final streakResults = await Future.wait(streakFutures);
+        for (final entry in streakResults) {
+          streaks[entry.key] = entry.value;
         }
         if (sortOrder == 'streak') {
           sorted.sort(
@@ -324,6 +335,7 @@ void updateSessionViewOptions(WidgetRef ref, SessionViewOptions newOptions) {
 
 // Demo data provider
 final hasDemoDataProvider = StreamProvider<bool>((ref) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   await for (final _ in repository.watchAllHabits()) {
     try {

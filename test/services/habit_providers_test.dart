@@ -134,7 +134,7 @@ void main() {
         
         provider.when(
           data: (habits) {
-            if (habits.length >= 1) {
+            if (habits.isNotEmpty) {
               expect(habits.length, equals(1));
               habitAppeared = true;
             }

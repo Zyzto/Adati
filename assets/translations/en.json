@@ -415,7 +415,7 @@
   "optimize": "Optimize",
   "error": "Error",
   "about": "About",
-  "app_name": "App Name",
+  "app_name_label": "App Name",
   "version": "Version",
   "description": "Description",
   "package_name": "Package Name",

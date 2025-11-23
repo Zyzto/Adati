@@ -5,8 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:easy_logger/easy_logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Represents a log entry for aggregation
 class _LogEntry {
@@ -89,8 +87,8 @@ class LoggingService {
     if (_initialized) return;
 
     try {
-      // Load log level from environment variable
-      _loadLogLevelFromEnv();
+      // Set default log level (DEBUG in debug mode, INFO in release mode)
+      _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
 
       final directory = await getApplicationDocumentsDirectory();
       final logsDir = Directory(path.join(directory.path, 'logs'));
@@ -116,43 +114,6 @@ class LoggingService {
     }
   }
 
-  /// Load log level from environment variable
-  static void _loadLogLevelFromEnv() {
-    try {
-      final logLevelStr = dotenv.env['LOG_LEVEL']?.toUpperCase();
-      if (logLevelStr == null || logLevelStr.isEmpty) {
-        // Default to DEBUG in debug mode, INFO in release mode
-        _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
-        return;
-      }
-
-      switch (logLevelStr) {
-        case 'DEBUG':
-          _minLogLevel = _levelDebug;
-          break;
-        case 'INFO':
-          _minLogLevel = _levelInfo;
-          break;
-        case 'WARNING':
-        case 'WARN':
-          _minLogLevel = _levelWarning;
-          break;
-        case 'ERROR':
-          _minLogLevel = _levelError;
-          break;
-        case 'SEVERE':
-        case 'FATAL':
-          _minLogLevel = _levelSevere;
-          break;
-        default:
-          // Invalid value, use default
-          _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
-      }
-    } catch (e) {
-      // If dotenv is not loaded yet or error occurs, use default
-      _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
-    }
-  }
 
   /// Check if a log level should be logged
   static bool _shouldLog(int level) {
@@ -1511,74 +1472,9 @@ class LoggingService {
     }
 
     try {
-      // Get GitHub token from environment or use placeholder
-      final token = dotenv.env['GITHUB_TOKEN'];
-      if (token == null || token.isEmpty) {
-        error('GITHUB_TOKEN not found in environment variables');
-        return false;
-      }
-
-      // Read log content
-      final buffer = StringBuffer();
-      buffer.writeln(description);
-      buffer.writeln('');
-      buffer.writeln('---');
-      buffer.writeln('');
-
-      // Add main log (last 5000 lines to avoid size limits)
-      if (_logFile != null && await _logFile!.exists()) {
-        final logContent = await _logFile!.readAsString();
-        final lines = logContent.split('\n');
-        final recentLines = lines.length > 5000
-            ? lines.sublist(lines.length - 5000)
-            : lines;
-        buffer.writeln('### Main Log (last ${recentLines.length} lines)');
-        buffer.writeln('```');
-        buffer.writeln(recentLines.join('\n'));
-        buffer.writeln('```');
-        buffer.writeln('');
-      }
-
-      // Add crash log
-      if (_crashLogFile != null && await _crashLogFile!.exists()) {
-        final crashContent = await _crashLogFile!.readAsString();
-        if (crashContent.isNotEmpty) {
-          buffer.writeln('### Crash Log');
-          buffer.writeln('```');
-          buffer.writeln(crashContent);
-          buffer.writeln('```');
-        }
-      }
-
-      // Create GitHub issue
-      final response = await http.post(
-        Uri.parse('https://api.github.com/repos/Zyzto/Adati/issues'),
-        headers: {
-          'Authorization': 'token $token',
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'title': title,
-          'body': buffer.toString(),
-          'labels': ['bug', 'logs'],
-        }),
-      );
-
-      if (response.statusCode == 201) {
-        final issueData = jsonDecode(response.body);
-        info(
-          'Logs sent to GitHub issue #${issueData['number']}',
-          component: 'LoggingService',
-        );
-        return true;
-      } else {
-        error(
-          'Failed to create GitHub issue: ${response.statusCode} - ${response.body}',
-          component: 'LoggingService',
-        );
-        return false;
-      }
+      // GitHub token is no longer supported - return false
+      error('GitHub issue creation is not available (GITHUB_TOKEN removed)');
+      return false;
     } catch (e, stackTrace) {
       error(
         'Failed to send logs to GitHub',

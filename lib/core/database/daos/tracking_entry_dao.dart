@@ -65,6 +65,37 @@ class TrackingEntryDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  Future<List<TrackingEntry>> getEntriesByDateRange(DateTime startDate, DateTime endDate) async {
+    logDebug('getEntriesByDateRange(startDate=$startDate, endDate=$endDate) called');
+    try {
+      final startOfFirstDay = DateTime(startDate.year, startDate.month, startDate.day);
+      final endOfLastDay = DateTime(endDate.year, endDate.month, endDate.day).add(const Duration(days: 1));
+      final result = await (select(db.trackingEntries)..where(
+            (e) =>
+                e.date.isBiggerOrEqualValue(startOfFirstDay) &
+                e.date.isSmallerThanValue(endOfLastDay),
+          ))
+          .get();
+      logDebug('getEntriesByDateRange(startDate=$startDate, endDate=$endDate) returned ${result.length} entries');
+      return result;
+    } catch (e, stackTrace) {
+      logError('getEntriesByDateRange(startDate=$startDate, endDate=$endDate) failed', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  Stream<List<TrackingEntry>> watchEntriesByDateRange(DateTime startDate, DateTime endDate) {
+    logDebug('watchEntriesByDateRange(startDate=$startDate, endDate=$endDate) called');
+    final startOfFirstDay = DateTime(startDate.year, startDate.month, startDate.day);
+    final endOfLastDay = DateTime(endDate.year, endDate.month, endDate.day).add(const Duration(days: 1));
+    return (select(db.trackingEntries)..where(
+          (e) =>
+              e.date.isBiggerOrEqualValue(startOfFirstDay) &
+              e.date.isSmallerThanValue(endOfLastDay),
+        ))
+        .watch();
+  }
+
   Future<TrackingEntry?> getEntry(int habitId, DateTime date) async {
     logDebug('getEntry(habitId=$habitId, date=$date) called');
     try {

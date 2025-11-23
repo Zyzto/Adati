@@ -5,6 +5,7 @@ import 'habit_providers.dart';
 
 final trackingEntriesProvider =
     StreamProvider.family<List<db.TrackingEntry>, int>((ref, habitId) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   await for (final entries in repository.watchEntriesByHabit(habitId)) {
     yield entries;
@@ -12,6 +13,7 @@ final trackingEntriesProvider =
 });
 
 final streakProvider = StreamProvider.family<db.Streak?, int>((ref, habitId) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   await for (final streak in repository.watchStreakByHabit(habitId)) {
     yield streak;
@@ -20,13 +22,17 @@ final streakProvider = StreamProvider.family<db.Streak?, int>((ref, habitId) asy
 
 final dayEntriesProvider =
     StreamProvider.family<Map<int, bool>, DateTime>((ref, date) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   final dateOnly = app_date_utils.DateUtils.getDateOnly(date);
   
+  // Get initial habits
+  final initialHabits = await ref.watch(habitsProvider.future);
+  
   // Watch for entry changes by date - this will update when any entry changes
   await for (final entries in repository.watchEntriesByDate(dateOnly)) {
-    // Get all current habits
-    final habits = await ref.watch(habitsProvider.future);
+    // Get current habits (may have changed)
+    final habits = ref.read(habitsProvider).value ?? initialHabits;
     final entriesMap = <int, bool>{};
     
     for (final habit in habits) {
@@ -39,6 +45,7 @@ final dayEntriesProvider =
 });
 
 final todayEntryProvider = StreamProvider.family<bool, int>((ref, habitId) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   final today = app_date_utils.DateUtils.getToday();
   
@@ -55,19 +62,78 @@ final todayEntryProvider = StreamProvider.family<bool, int>((ref, habitId) async
   }
 });
 
+// Date range parameter class for family provider
+class DateRange {
+  final DateTime startDate;
+  final DateTime endDate;
+
+  const DateRange({
+    required this.startDate,
+    required this.endDate,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DateRange &&
+          runtimeType == other.runtimeType &&
+          startDate == other.startDate &&
+          endDate == other.endDate;
+
+  @override
+  int get hashCode => startDate.hashCode ^ endDate.hashCode;
+}
+
+// Provider for date range entries - batches queries for multiple dates
+final dateRangeEntriesProvider = StreamProvider.family<Map<DateTime, Map<int, bool>>, DateRange>((ref, params) async* {
+  ref.keepAlive();
+  final repository = ref.watch(habitRepositoryProvider);
+  final startDateOnly = app_date_utils.DateUtils.getDateOnly(params.startDate);
+  final endDateOnly = app_date_utils.DateUtils.getDateOnly(params.endDate);
+  
+  // Get initial habits
+  final initialHabits = await ref.watch(habitsProvider.future);
+  
+  // Watch for entry changes in the date range
+  await for (final entries in repository.watchEntriesByDateRange(startDateOnly, endDateOnly)) {
+    // Get current habits (may have changed)
+    final habits = ref.read(habitsProvider).value ?? initialHabits;
+    
+    // Group entries by date
+    final entriesByDate = <DateTime, Map<int, bool>>{};
+    
+    // Initialize all dates in range with false for all habits
+    var currentDate = startDateOnly;
+    while (!currentDate.isAfter(endDateOnly)) {
+      entriesByDate[currentDate] = <int, bool>{};
+      for (final habit in habits) {
+        entriesByDate[currentDate]![habit.id] = false;
+      }
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
+    
+    // Fill in actual entry data
+    for (final entry in entries) {
+      final entryDate = app_date_utils.DateUtils.getDateOnly(entry.date);
+      if (entriesByDate.containsKey(entryDate)) {
+        entriesByDate[entryDate]![entry.habitId] = entry.completed;
+      }
+    }
+    
+    yield entriesByDate;
+  }
+});
+
 final allStreaksProvider = StreamProvider<List<db.Streak>>((ref) async* {
+  ref.keepAlive();
   final repository = ref.watch(habitRepositoryProvider);
   
   // Watch for habit changes
   await for (final habits in repository.watchAllHabits()) {
-    // Get initial streaks for all habits
-    final streaks = <db.Streak>[];
-    for (final habit in habits) {
-      final streak = await repository.getStreakByHabit(habit.id);
-      if (streak != null) {
-        streaks.add(streak);
-      }
-    }
+    // Get initial streaks for all habits - batch queries
+    final streakFutures = habits.map((habit) => repository.getStreakByHabit(habit.id));
+    final streakResults = await Future.wait(streakFutures);
+    final streaks = streakResults.whereType<db.Streak>().toList();
     yield List.from(streaks);
     
     // Watch individual streak streams for each habit
@@ -77,14 +143,10 @@ final allStreaksProvider = StreamProvider<List<db.Streak>>((ref) async* {
       // When any habit's tracking changes, its streak updates, which triggers this
       await for (final updatedStreak in repository.watchStreakByHabit(habits.first.id)) {
         if (updatedStreak != null) {
-          // Recalculate all streaks when any streak changes
-          final updatedStreaks = <db.Streak>[];
-          for (final habit in habits) {
-            final streak = await repository.getStreakByHabit(habit.id);
-            if (streak != null) {
-              updatedStreaks.add(streak);
-            }
-          }
+          // Recalculate all streaks when any streak changes - batch queries
+          final updatedStreakFutures = habits.map((habit) => repository.getStreakByHabit(habit.id));
+          final updatedStreakResults = await Future.wait(updatedStreakFutures);
+          final updatedStreaks = updatedStreakResults.whereType<db.Streak>().toList();
           yield List.from(updatedStreaks);
         }
         // Break after first update to avoid too many recalculations

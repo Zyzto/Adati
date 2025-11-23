@@ -112,17 +112,40 @@ class CalendarGrid extends ConsumerWidget {
           days = app_date_utils.DateUtils.getLastNDays(daysToShow);
         }
 
-        return Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: days.map<Widget>((day) {
-        // Use provider to watch for changes reactively
-        final dayEntriesAsync = ref.watch(dayEntriesProvider(day));
+        // Calculate date range for batched query
+        final startDate = days.isNotEmpty ? days.first : DateTime.now();
+        final endDate = days.isNotEmpty ? days.last : DateTime.now();
+        
+        // Use batched date range provider instead of individual day queries
+        final dateRangeEntriesAsync = ref.watch(
+          dateRangeEntriesProvider(DateRange(startDate: startDate, endDate: endDate)),
+        );
 
-            return dayEntriesAsync.when(
-              data: (entries) {
-                final badHabitLogicMode =
-                    ref.watch(badHabitLogicModeProvider);
+        return dateRangeEntriesAsync.when(
+          data: (entriesByDate) {
+            final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
+            
+            // Check if only bad habits exist
+            final hasGoodHabits = habits.any(
+              (h) => h.habitType == HabitType.good.value,
+            );
+            final hasBadHabits = habits.any(
+              (h) => h.habitType == HabitType.bad.value,
+            );
+            final onlyBadHabits = !hasGoodHabits && hasBadHabits;
+
+            // Use bad habit color if only bad habits exist, otherwise use good habit color
+            final completionColor = onlyBadHabits
+                ? ref.watch(mainTimelineBadHabitCompletionColorProvider)
+                : ref.watch(mainTimelineCompletionColorProvider);
+
+            return Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: days.map<Widget>((day) {
+                final dayOnly = app_date_utils.DateUtils.getDateOnly(day);
+                final entries = entriesByDate[dayOnly] ?? <int, bool>{};
+                
                 final completionRate = _calculateWeightedCompletionRate(
                   habits,
                   entries,
@@ -130,41 +153,33 @@ class CalendarGrid extends ConsumerWidget {
                   day,
                 );
 
-                // Check if only bad habits exist
-                final hasGoodHabits = habits.any(
-                  (h) => h.habitType == HabitType.good.value,
-                );
-                final hasBadHabits = habits.any(
-                  (h) => h.habitType == HabitType.bad.value,
-                );
-                final onlyBadHabits = !hasGoodHabits && hasBadHabits;
-
-                // Use bad habit color if only bad habits exist, otherwise use good habit color
-                final completionColor = onlyBadHabits
-                    ? ref.watch(mainTimelineBadHabitCompletionColorProvider)
-                    : ref.watch(mainTimelineCompletionColorProvider);
-
                 return DaySquare(
                   date: day,
                   completed: completionRate > 0,
                   onTap: null, // Disabled for now, might be used later
                   completionColor: completionColor,
                 );
-              },
-              loading: () => DaySquare(
-                date: day,
-                completed: false,
-                completionColor:
-                    ref.watch(mainTimelineCompletionColorProvider),
-              ),
-              error: (_, _) => DaySquare(
-                date: day,
-                completed: false,
-                completionColor:
-                    ref.watch(mainTimelineCompletionColorProvider),
-              ),
+              }).toList(),
             );
-          }).toList(),
+          },
+          loading: () => Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: days.map<Widget>((day) => DaySquare(
+              date: day,
+              completed: false,
+              completionColor: ref.watch(mainTimelineCompletionColorProvider),
+            )).toList(),
+          ),
+          error: (_, _) => Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: days.map<Widget>((day) => DaySquare(
+              date: day,
+              completed: false,
+              completionColor: ref.watch(mainTimelineCompletionColorProvider),
+            )).toList(),
+          ),
         );
       },
     );

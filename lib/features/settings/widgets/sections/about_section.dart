@@ -53,7 +53,7 @@ class AboutSectionContent extends ConsumerWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.apps),
-              title: Text('app_name'.tr()),
+              title: Text('app_name_label'.tr()),
               subtitle: Text(appName),
             ),
             ListTile(

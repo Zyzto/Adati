@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:adati/features/timeline/widgets/day_square.dart';
 import 'package:adati/core/utils/date_utils.dart' as date_utils;
 import '../helpers/test_helpers.dart';
-import '../helpers/localization_helpers.dart';
 
 void main() {
   setUpAll(() async {

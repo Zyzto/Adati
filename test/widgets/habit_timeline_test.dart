@@ -4,7 +4,6 @@ import 'package:adati/features/habits/widgets/cards/habit_timeline.dart';
 import 'package:adati/features/habits/habit_repository.dart';
 import 'package:adati/features/habits/providers/habit_providers.dart';
 import '../helpers/test_helpers.dart';
-import '../helpers/localization_helpers.dart';
 import '../helpers/database_helpers.dart';
 import '../fixtures/habit_fixtures.dart';
 
