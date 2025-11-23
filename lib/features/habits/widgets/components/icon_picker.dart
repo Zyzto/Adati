@@ -34,12 +34,15 @@ class _IconPickerWidgetState extends State<IconPickerWidget> {
     super.dispose();
   }
 
-  List<IconData> _getFilteredIcons() {
+  List<IconData> _getFilteredIcons(BuildContext context) {
     if (widget.searchQuery.isEmpty) {
       return IconConstants.commonIcons;
     }
     return IconConstants.commonIcons
-        .where((icon) => IconConstants.matchesSearch(icon, widget.searchQuery))
+        .where(
+          (icon) =>
+              IconConstants.matchesSearch(icon, widget.searchQuery, context),
+        )
         .toList();
   }
 
@@ -56,7 +59,7 @@ class _IconPickerWidgetState extends State<IconPickerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredIcons = _getFilteredIcons();
+    final filteredIcons = _getFilteredIcons(context);
     final showNoIcon = _shouldShowNoIconOption();
     final itemCount = filteredIcons.length + (showNoIcon ? 1 : 0);
 
