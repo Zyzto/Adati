@@ -77,6 +77,13 @@ class LoggingService {
   static const int _levelError = 3;
   static const int _levelSevere = 4;
 
+  static bool _disableFileLogging = false;
+
+  /// Disable file logging (useful for tests)
+  static void disableFileLogging() {
+    _disableFileLogging = true;
+  }
+
   /// Initialize logging service with file persistence
   static Future<void> init() async {
     if (_initialized) return;
@@ -185,6 +192,7 @@ class LoggingService {
     Object? error,
     StackTrace? stackTrace,
   ]) async {
+    if (_disableFileLogging) return; // Skip file logging in tests
     if (!_initialized) {
       await init();
     }
@@ -248,6 +256,8 @@ class LoggingService {
 
   /// Write a single log entry to file
   static Future<void> _writeLogEntry(_LogEntry entry) async {
+    if (_disableFileLogging) return; // Skip file logging in tests
+    if (_logFile == null) return; // Add this check
     try {
       final timestamp = entry.timestamp.toIso8601String();
       final buffer = StringBuffer();
@@ -410,6 +420,8 @@ class LoggingService {
 
   /// Write an aggregated log entry
   static Future<void> _writeAggregatedLog(_AggregatedLogGroup group) async {
+    if (_disableFileLogging) return; // Skip file logging in tests
+    if (_logFile == null) return; // Add this check too
     try {
       final timestamp = group.firstTimestamp.toIso8601String();
       final buffer = StringBuffer();

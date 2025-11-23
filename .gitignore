@@ -137,6 +137,9 @@ firebase_options.dart
 **/fastlane/screenshots
 **/fastlane/test_output
 
+# Plans directory (internal planning documents)
+plans/
+
 # Temporary files
 *.tmp
 *.temp

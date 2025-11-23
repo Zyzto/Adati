@@ -11,7 +11,7 @@ part 'app_database.g.dart';
 
 @DriftDatabase(tables: [Habits, TrackingEntries, Streaks, Tags, HabitTags])
 class AppDatabase extends _$AppDatabase with Loggable {
-  AppDatabase() : super(openConnection()) {
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? openConnection()) {
     logDebug('AppDatabase initialized');
   }
 
