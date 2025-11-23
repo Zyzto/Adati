@@ -1,7 +1,9 @@
 import 'dart:convert';
+
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:easy_localization/easy_localization.dart';
+
 import '../../../../../main.dart';
 
 /// Shared icon list for habit and tag forms
@@ -13,13 +15,13 @@ class IconConstants {
     Icons.star,
     Icons.favorite,
     Icons.home,
-    
+
     // Work & Education
     Icons.work,
     Icons.school,
     Icons.business,
     Icons.apartment,
-    
+
     // Health & Fitness
     Icons.fitness_center,
     Icons.directions_walk,
@@ -31,7 +33,7 @@ class IconConstants {
     Icons.airline_seat_flat,
     Icons.health_and_safety,
     Icons.spa,
-    
+
     // Sports & Activities
     Icons.sports_soccer,
     Icons.surfing,
@@ -43,14 +45,14 @@ class IconConstants {
     Icons.forest,
     Icons.terrain,
     Icons.rocket_launch,
-    
+
     // Food & Dining
     Icons.local_dining,
     Icons.restaurant,
     Icons.local_cafe,
     Icons.local_bar,
     Icons.coffee,
-    
+
     // Entertainment
     Icons.music_note,
     Icons.movie,
@@ -64,19 +66,19 @@ class IconConstants {
     Icons.auto_stories,
     Icons.newspaper,
     Icons.article,
-    
+
     // Nature & Animals
     Icons.nature,
     Icons.pets,
     Icons.beach_access,
-    
+
     // Daily Life
     Icons.bedtime,
     Icons.water_drop,
     Icons.shopping_cart,
     Icons.shopping_bag,
     Icons.shopping_basket,
-    
+
     // Travel & Transportation
     Icons.directions_car,
     Icons.flight,
@@ -94,7 +96,7 @@ class IconConstants {
     Icons.navigation,
     Icons.explore,
     Icons.travel_explore,
-    
+
     // Finance
     Icons.account_balance,
     Icons.account_balance_wallet,
@@ -109,7 +111,7 @@ class IconConstants {
     Icons.pie_chart,
     Icons.show_chart,
     Icons.analytics,
-    
+
     // Technology
     Icons.computer,
     Icons.laptop,
@@ -125,7 +127,7 @@ class IconConstants {
     Icons.mic,
     Icons.code,
     Icons.calculate,
-    
+
     // Media & Creative
     Icons.palette,
     Icons.brush,
@@ -133,7 +135,7 @@ class IconConstants {
     Icons.image,
     Icons.photo_library,
     Icons.photo_camera,
-    
+
     // Documents & Notes
     Icons.description,
     Icons.note,
@@ -149,7 +151,7 @@ class IconConstants {
     Icons.attach_file,
     Icons.link,
     Icons.insert_link,
-    
+
     // Tools & Building
     Icons.build,
     Icons.construction,
@@ -165,7 +167,7 @@ class IconConstants {
     Icons.nightlight,
     Icons.bed,
     Icons.hotel_class,
-    
+
     // Places & Services
     Icons.store,
     Icons.storefront,
@@ -178,7 +180,7 @@ class IconConstants {
     Icons.local_post_office,
     Icons.local_parking,
     Icons.local_atm,
-    
+
     // Social & People
     Icons.account_circle,
     Icons.person,
@@ -191,7 +193,7 @@ class IconConstants {
     Icons.family_restroom,
     Icons.volunteer_activism,
     Icons.celebration,
-    
+
     // Achievements & Rewards
     Icons.badge,
     Icons.workspace_premium,
@@ -205,7 +207,7 @@ class IconConstants {
     Icons.redeem,
     Icons.local_offer,
     Icons.local_activity,
-    
+
     // Tech & Connectivity
     Icons.qr_code,
     Icons.qr_code_scanner,
@@ -219,7 +221,7 @@ class IconConstants {
     Icons.power,
     Icons.power_off,
     Icons.power_settings_new,
-    
+
     // Settings & Security
     Icons.settings,
     Icons.settings_applications,
@@ -238,7 +240,7 @@ class IconConstants {
     Icons.verified_user,
     Icons.shield,
     Icons.privacy_tip,
-    
+
     // Actions
     Icons.check_circle,
     Icons.check,
@@ -259,7 +261,7 @@ class IconConstants {
     Icons.block,
     Icons.cancel,
     Icons.close,
-    
+
     // Cloud & Sync
     Icons.cloud_upload,
     Icons.cloud_download,
@@ -281,7 +283,7 @@ class IconConstants {
     Icons.publish,
     Icons.file_upload,
     Icons.file_download,
-    
+
     // Files & Folders
     Icons.folder,
     Icons.folder_open,
@@ -303,7 +305,7 @@ class IconConstants {
     Icons.copy_all,
     Icons.cut,
     Icons.paste,
-    
+
     // Language & Communication
     Icons.public,
     Icons.language,
@@ -314,7 +316,7 @@ class IconConstants {
     Icons.compass_calibration,
     Icons.explore_off,
   ];
-  
+
   /// Available colors for forms (700 shade for better contrast)
   static final List<Color> availableColors = [
     Colors.deepPurple[700]!,
@@ -359,13 +361,13 @@ class IconConstants {
     Icons.star.codePoint: 'icon_star_keywords',
     Icons.favorite.codePoint: 'icon_favorite_keywords',
     Icons.home.codePoint: 'icon_home_keywords',
-    
+
     // Work & Education
     Icons.work.codePoint: 'icon_work_keywords',
     Icons.school.codePoint: 'icon_school_keywords',
     Icons.business.codePoint: 'icon_business_keywords',
     Icons.apartment.codePoint: 'icon_apartment_keywords',
-    
+
     // Health & Fitness
     Icons.fitness_center.codePoint: 'icon_fitness_center_keywords',
     Icons.directions_walk.codePoint: 'icon_directions_walk_keywords',
@@ -377,7 +379,7 @@ class IconConstants {
     Icons.airline_seat_flat.codePoint: 'icon_airline_seat_flat_keywords',
     Icons.health_and_safety.codePoint: 'icon_health_and_safety_keywords',
     Icons.spa.codePoint: 'icon_spa_keywords',
-    
+
     // Sports & Activities
     Icons.sports_soccer.codePoint: 'icon_sports_soccer_keywords',
     Icons.surfing.codePoint: 'icon_surfing_keywords',
@@ -389,14 +391,14 @@ class IconConstants {
     Icons.forest.codePoint: 'icon_forest_keywords',
     Icons.terrain.codePoint: 'icon_terrain_keywords',
     Icons.rocket_launch.codePoint: 'icon_rocket_launch_keywords',
-    
+
     // Food & Dining
     Icons.local_dining.codePoint: 'icon_local_dining_keywords',
     Icons.restaurant.codePoint: 'icon_restaurant_keywords',
     Icons.local_cafe.codePoint: 'icon_local_cafe_keywords',
     Icons.local_bar.codePoint: 'icon_local_bar_keywords',
     Icons.coffee.codePoint: 'icon_coffee_keywords',
-    
+
     // Entertainment
     Icons.music_note.codePoint: 'icon_music_note_keywords',
     Icons.movie.codePoint: 'icon_movie_keywords',
@@ -410,19 +412,19 @@ class IconConstants {
     Icons.auto_stories.codePoint: 'icon_auto_stories_keywords',
     Icons.newspaper.codePoint: 'icon_newspaper_keywords',
     Icons.article.codePoint: 'icon_article_keywords',
-    
+
     // Nature & Animals
     Icons.nature.codePoint: 'icon_nature_keywords',
     Icons.pets.codePoint: 'icon_pets_keywords',
     Icons.beach_access.codePoint: 'icon_beach_access_keywords',
-    
+
     // Daily Life
     Icons.bedtime.codePoint: 'icon_bedtime_keywords',
     Icons.water_drop.codePoint: 'icon_water_drop_keywords',
     Icons.shopping_cart.codePoint: 'icon_shopping_cart_keywords',
     Icons.shopping_bag.codePoint: 'icon_shopping_bag_keywords',
     Icons.shopping_basket.codePoint: 'icon_shopping_basket_keywords',
-    
+
     // Travel & Transportation
     Icons.directions_car.codePoint: 'icon_directions_car_keywords',
     Icons.flight.codePoint: 'icon_flight_keywords',
@@ -440,10 +442,11 @@ class IconConstants {
     Icons.navigation.codePoint: 'icon_navigation_keywords',
     Icons.explore.codePoint: 'icon_explore_keywords',
     Icons.travel_explore.codePoint: 'icon_travel_explore_keywords',
-    
+
     // Finance
     Icons.account_balance.codePoint: 'icon_account_balance_keywords',
-    Icons.account_balance_wallet.codePoint: 'icon_account_balance_wallet_keywords',
+    Icons.account_balance_wallet.codePoint:
+        'icon_account_balance_wallet_keywords',
     Icons.savings.codePoint: 'icon_savings_keywords',
     Icons.payments.codePoint: 'icon_payments_keywords',
     Icons.credit_card.codePoint: 'icon_credit_card_keywords',
@@ -455,7 +458,7 @@ class IconConstants {
     Icons.pie_chart.codePoint: 'icon_pie_chart_keywords',
     Icons.show_chart.codePoint: 'icon_show_chart_keywords',
     Icons.analytics.codePoint: 'icon_analytics_keywords',
-    
+
     // Technology
     Icons.computer.codePoint: 'icon_computer_keywords',
     Icons.laptop.codePoint: 'icon_laptop_keywords',
@@ -471,7 +474,7 @@ class IconConstants {
     Icons.mic.codePoint: 'icon_mic_keywords',
     Icons.code.codePoint: 'icon_code_keywords',
     Icons.calculate.codePoint: 'icon_calculate_keywords',
-    
+
     // Media & Creative
     Icons.palette.codePoint: 'icon_palette_keywords',
     Icons.brush.codePoint: 'icon_brush_keywords',
@@ -479,7 +482,7 @@ class IconConstants {
     Icons.image.codePoint: 'icon_image_keywords',
     Icons.photo_library.codePoint: 'icon_photo_library_keywords',
     Icons.photo_camera.codePoint: 'icon_photo_camera_keywords',
-    
+
     // Documents & Notes
     Icons.description.codePoint: 'icon_description_keywords',
     Icons.note.codePoint: 'icon_note_keywords',
@@ -495,7 +498,7 @@ class IconConstants {
     Icons.attach_file.codePoint: 'icon_attach_file_keywords',
     Icons.link.codePoint: 'icon_link_keywords',
     Icons.insert_link.codePoint: 'icon_insert_link_keywords',
-    
+
     // Tools & Building
     Icons.build.codePoint: 'icon_build_keywords',
     Icons.construction.codePoint: 'icon_construction_keywords',
@@ -511,7 +514,7 @@ class IconConstants {
     Icons.nightlight.codePoint: 'icon_nightlight_keywords',
     Icons.bed.codePoint: 'icon_bed_keywords',
     Icons.hotel_class.codePoint: 'icon_hotel_class_keywords',
-    
+
     // Places & Services
     Icons.store.codePoint: 'icon_store_keywords',
     Icons.storefront.codePoint: 'icon_storefront_keywords',
@@ -519,12 +522,13 @@ class IconConstants {
     Icons.local_pharmacy.codePoint: 'icon_local_pharmacy_keywords',
     Icons.local_hospital.codePoint: 'icon_local_hospital_keywords',
     Icons.local_police.codePoint: 'icon_local_police_keywords',
-    Icons.local_fire_department.codePoint: 'icon_local_fire_department_keywords',
+    Icons.local_fire_department.codePoint:
+        'icon_local_fire_department_keywords',
     Icons.local_library.codePoint: 'icon_local_library_keywords',
     Icons.local_post_office.codePoint: 'icon_local_post_office_keywords',
     Icons.local_parking.codePoint: 'icon_local_parking_keywords',
     Icons.local_atm.codePoint: 'icon_local_atm_keywords',
-    
+
     // Social & People
     Icons.account_circle.codePoint: 'icon_account_circle_keywords',
     Icons.person.codePoint: 'icon_person_keywords',
@@ -537,21 +541,22 @@ class IconConstants {
     Icons.family_restroom.codePoint: 'icon_family_restroom_keywords',
     Icons.volunteer_activism.codePoint: 'icon_volunteer_activism_keywords',
     Icons.celebration.codePoint: 'icon_celebration_keywords',
-    
+
     // Achievements & Rewards
     Icons.badge.codePoint: 'icon_badge_keywords',
     Icons.workspace_premium.codePoint: 'icon_workspace_premium_keywords',
     Icons.emoji_events.codePoint: 'icon_emoji_events_keywords',
     Icons.military_tech.codePoint: 'icon_military_tech_keywords',
     Icons.stars.codePoint: 'icon_stars_keywords',
-    Icons.workspace_premium_outlined.codePoint: 'icon_workspace_premium_outlined_keywords',
+    Icons.workspace_premium_outlined.codePoint:
+        'icon_workspace_premium_outlined_keywords',
     Icons.card_giftcard.codePoint: 'icon_card_giftcard_keywords',
     Icons.card_membership.codePoint: 'icon_card_membership_keywords',
     Icons.loyalty.codePoint: 'icon_loyalty_keywords',
     Icons.redeem.codePoint: 'icon_redeem_keywords',
     Icons.local_offer.codePoint: 'icon_local_offer_keywords',
     Icons.local_activity.codePoint: 'icon_local_activity_keywords',
-    
+
     // Tech & Connectivity
     Icons.qr_code.codePoint: 'icon_qr_code_keywords',
     Icons.qr_code_scanner.codePoint: 'icon_qr_code_scanner_keywords',
@@ -560,15 +565,17 @@ class IconConstants {
     Icons.bluetooth.codePoint: 'icon_bluetooth_keywords',
     Icons.wifi.codePoint: 'icon_wifi_keywords',
     Icons.signal_wifi_4_bar.codePoint: 'icon_signal_wifi_4_bar_keywords',
-    Icons.signal_cellular_4_bar.codePoint: 'icon_signal_cellular_4_bar_keywords',
+    Icons.signal_cellular_4_bar.codePoint:
+        'icon_signal_cellular_4_bar_keywords',
     Icons.battery_full.codePoint: 'icon_battery_full_keywords',
     Icons.power.codePoint: 'icon_power_keywords',
     Icons.power_off.codePoint: 'icon_power_off_keywords',
     Icons.power_settings_new.codePoint: 'icon_power_settings_new_keywords',
-    
+
     // Settings & Security
     Icons.settings.codePoint: 'icon_settings_keywords',
-    Icons.settings_applications.codePoint: 'icon_settings_applications_keywords',
+    Icons.settings_applications.codePoint:
+        'icon_settings_applications_keywords',
     Icons.tune.codePoint: 'icon_tune_keywords',
     Icons.build_circle.codePoint: 'icon_build_circle_keywords',
     Icons.admin_panel_settings.codePoint: 'icon_admin_panel_settings_keywords',
@@ -579,12 +586,13 @@ class IconConstants {
     Icons.password.codePoint: 'icon_password_keywords',
     Icons.fingerprint.codePoint: 'icon_fingerprint_keywords',
     Icons.face.codePoint: 'icon_face_keywords',
-    Icons.face_retouching_natural.codePoint: 'icon_face_retouching_natural_keywords',
+    Icons.face_retouching_natural.codePoint:
+        'icon_face_retouching_natural_keywords',
     Icons.verified.codePoint: 'icon_verified_keywords',
     Icons.verified_user.codePoint: 'icon_verified_user_keywords',
     Icons.shield.codePoint: 'icon_shield_keywords',
     Icons.privacy_tip.codePoint: 'icon_privacy_tip_keywords',
-    
+
     // Actions
     Icons.check_circle.codePoint: 'icon_check_circle_keywords',
     Icons.check.codePoint: 'icon_check_keywords',
@@ -605,7 +613,7 @@ class IconConstants {
     Icons.block.codePoint: 'icon_block_keywords',
     Icons.cancel.codePoint: 'icon_cancel_keywords',
     Icons.close.codePoint: 'icon_close_keywords',
-    
+
     // Cloud & Sync
     Icons.cloud_upload.codePoint: 'icon_cloud_upload_keywords',
     Icons.cloud_download.codePoint: 'icon_cloud_download_keywords',
@@ -627,15 +635,17 @@ class IconConstants {
     Icons.publish.codePoint: 'icon_publish_keywords',
     Icons.file_upload.codePoint: 'icon_file_upload_keywords',
     Icons.file_download.codePoint: 'icon_file_download_keywords',
-    
+
     // Files & Folders
     Icons.folder.codePoint: 'icon_folder_keywords',
     Icons.folder_open.codePoint: 'icon_folder_open_keywords',
     Icons.folder_shared.codePoint: 'icon_folder_shared_keywords',
     Icons.insert_drive_file.codePoint: 'icon_insert_drive_file_keywords',
-    Icons.drive_file_rename_outline.codePoint: 'icon_drive_file_rename_outline_keywords',
+    Icons.drive_file_rename_outline.codePoint:
+        'icon_drive_file_rename_outline_keywords',
     Icons.drive_file_move.codePoint: 'icon_drive_file_move_keywords',
-    Icons.drive_file_move_outline.codePoint: 'icon_drive_file_move_outline_keywords',
+    Icons.drive_file_move_outline.codePoint:
+        'icon_drive_file_move_outline_keywords',
     Icons.drive_file_move_rtl.codePoint: 'icon_drive_file_move_rtl_keywords',
     Icons.create_new_folder.codePoint: 'icon_create_new_folder_keywords',
     Icons.folder_copy.codePoint: 'icon_folder_copy_keywords',
@@ -649,7 +659,7 @@ class IconConstants {
     Icons.copy_all.codePoint: 'icon_copy_all_keywords',
     Icons.cut.codePoint: 'icon_cut_keywords',
     Icons.paste.codePoint: 'icon_paste_keywords',
-    
+
     // Language & Communication
     Icons.public.codePoint: 'icon_public_keywords',
     Icons.language.codePoint: 'icon_language_keywords',
@@ -661,26 +671,32 @@ class IconConstants {
     Icons.explore_off.codePoint: 'icon_explore_off_keywords',
   };
 
-  /// Cache for loaded translations
+  /// Cache for loaded translations by locale code
   static final Map<String, Map<String, dynamic>> _translationsCache = {};
+
+  /// Future cache to prevent duplicate loading requests
   static final Map<String, Future<Map<String, dynamic>>> _loadingFutures = {};
-  
-  /// Returns searchable keywords for an icon from translations
+
+  /// Returns searchable keywords for an icon from translations.
+  ///
+  /// Returns an empty list if:
+  /// - No translation key exists for the icon
+  /// - No context is available
+  /// - Translation loading fails
   static List<String> getSearchKeywords(IconData icon, BuildContext? context) {
     final translationKey = _iconTranslationKeys[icon.codePoint];
     if (translationKey == null) return [];
-    
-    // If no context, try using navigatorKey
+
+    // Use provided context or fallback to navigatorKey
     final ctx = context ?? navigatorKey.currentContext;
     if (ctx == null) return [];
-    
+
     try {
       final easyLocalization = EasyLocalization.of(ctx);
       if (easyLocalization == null) return [];
-      
-      final locale = easyLocalization.locale;
-      final localeCode = locale.languageCode;
-      
+
+      final localeCode = easyLocalization.locale.languageCode;
+
       // Return from cache if available
       if (_translationsCache.containsKey(localeCode)) {
         final translations = _translationsCache[localeCode];
@@ -691,30 +707,36 @@ class IconConstants {
           }
         }
       } else {
-        // Start loading translations asynchronously (for future calls)
+        // Start loading translations asynchronously for future calls
         if (!_loadingFutures.containsKey(localeCode)) {
           _loadingFutures[localeCode] = rootBundle
               .loadString('assets/translations/$localeCode.json')
               .then((jsonString) {
-            final translations = jsonDecode(jsonString) as Map<String, dynamic>;
-            _translationsCache[localeCode] = translations;
-            return translations;
-          });
+                final translations =
+                    jsonDecode(jsonString) as Map<String, dynamic>;
+                _translationsCache[localeCode] = translations;
+                return translations;
+              });
         }
       }
     } catch (e) {
-      // Fallback to empty list if translation fails
+      // Silently fail - return empty list if translation loading fails
     }
-    
+
     return [];
   }
 
   /// Checks if an icon matches the search query
-  static bool matchesSearch(IconData icon, String query, BuildContext? context) {
+  static bool matchesSearch(
+    IconData icon,
+    String query,
+    BuildContext? context,
+  ) {
     if (query.isEmpty) return true;
     final keywords = getSearchKeywords(icon, context);
     final lowerQuery = query.toLowerCase();
-    return keywords.any((keyword) => keyword.toLowerCase().contains(lowerQuery));
+    return keywords.any(
+      (keyword) => keyword.toLowerCase().contains(lowerQuery),
+    );
   }
 }
-
