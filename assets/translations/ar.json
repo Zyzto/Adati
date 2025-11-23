@@ -177,6 +177,8 @@
   "basic_info": "المعلومات الأساسية",
   "select_icon": "اختر الأيقونة",
   "no_icon": "بدون أيقونة",
+  "search_icons": "البحث عن الأيقونات...",
+  "no_icons_found": "لم يتم العثور على أيقونات",
   "organization": "التنظيم",
   "select_categories": "اختر الفئات",
   "no_categories": "لا توجد فئات متاحة",

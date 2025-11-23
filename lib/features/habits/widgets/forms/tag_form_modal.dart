@@ -200,6 +200,7 @@ class _TagFormModalState extends ConsumerState<TagFormModal> {
                             onIconSelected: (icon) {
                               setState(() => _selectedIcon = icon);
                             },
+                            searchQuery: '', // No search in tag form
                           ),
                           const SizedBox(height: 24),
 

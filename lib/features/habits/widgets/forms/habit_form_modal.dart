@@ -52,6 +52,11 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
   String _reminderFrequency = 'daily'; // daily, weekly, monthly
   List<int> _reminderDays = []; // For weekly: 1-7 (Mon-Sun), For monthly: 1-31
   TimeOfDay _reminderTime = const TimeOfDay(hour: 9, minute: 0);
+  // Icon search
+  final _iconSearchController = TextEditingController();
+  final _iconSearchFocusNode = FocusNode();
+  bool _isIconSearchExpanded = false;
+  String _iconSearchQuery = '';
 
   @override
   void initState() {
@@ -133,6 +138,8 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
     _unitController.dispose();
     _goalValueController.dispose();
     _occurrenceNameController.dispose();
+    _iconSearchController.dispose();
+    _iconSearchFocusNode.dispose();
     super.dispose();
   }
 
@@ -595,6 +602,31 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
     );
   }
 
+  void _toggleIconSearch() {
+    if (!mounted) return;
+    
+    if (_isIconSearchExpanded) {
+      // Collapse: clear search and close
+      _iconSearchController.clear();
+      _iconSearchFocusNode.unfocus();
+      setState(() {
+        _isIconSearchExpanded = false;
+        _iconSearchQuery = '';
+      });
+    } else {
+      // Expand: open search field
+      setState(() {
+        _isIconSearchExpanded = true;
+      });
+      // Request focus after the widget is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _isIconSearchExpanded) {
+          _iconSearchFocusNode.requestFocus();
+        }
+      });
+    }
+  }
+
   Widget _buildAppearanceSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,20 +648,78 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
           },
         ),
         const SizedBox(height: 20),
-        Text(
-          'select_icon'.tr(),
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
+        // "Select icon" label with search button next to it
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Text(
+                'select_icon'.tr(),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: _toggleIconSearch,
+              tooltip: 'search_icons'.tr(),
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
+        // Expanded search field (appears below the label when expanded)
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: _isIconSearchExpanded
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TextField(
+                    controller: _iconSearchController,
+                    focusNode: _iconSearchFocusNode,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _iconSearchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _iconSearchController.clear();
+                                setState(() {
+                                  _iconSearchQuery = '';
+                                });
+                              },
+                            )
+                          : null,
+                      hintText: 'search_icons'.tr(),
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) {
+                      setState(() {
+                        _iconSearchQuery = value;
+                      });
+                    },
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
         IconPickerWidget(
           selectedIcon: _selectedIcon,
           onIconSelected: (icon) {
             setState(() => _selectedIcon = icon);
           },
+          searchQuery: _iconSearchQuery,
         ),
         const SizedBox(height: 24),
       ],

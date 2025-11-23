@@ -346,5 +346,328 @@ class IconConstants {
     'reps',
     'sets',
   ];
+
+  /// Map of icon codePoints to searchable keywords
+  static final Map<int, List<String>> _iconSearchKeywords = {
+    // Basic & Common
+    Icons.label.codePoint: ['label', 'tag', 'mark'],
+    Icons.category.codePoint: ['category', 'categories', 'group'],
+    Icons.star.codePoint: ['star', 'favorite', 'favourite', 'rating'],
+    Icons.favorite.codePoint: ['favorite', 'favourite', 'heart', 'like', 'love'],
+    Icons.home.codePoint: ['home', 'house', 'residence', 'dwelling'],
+    
+    // Work & Education
+    Icons.work.codePoint: ['work', 'job', 'office', 'career', 'business'],
+    Icons.school.codePoint: ['school', 'education', 'learn', 'study', 'university'],
+    Icons.business.codePoint: ['business', 'company', 'corporate', 'enterprise'],
+    Icons.apartment.codePoint: ['apartment', 'flat', 'residence', 'housing'],
+    
+    // Health & Fitness
+    Icons.fitness_center.codePoint: ['fitness', 'gym', 'exercise', 'workout', 'training'],
+    Icons.directions_walk.codePoint: ['walk', 'walking', 'pedestrian', 'stroll'],
+    Icons.directions_run.codePoint: ['run', 'running', 'jog', 'jogging'],
+    Icons.bike_scooter.codePoint: ['bike', 'bicycle', 'scooter', 'cycling'],
+    Icons.directions_bike.codePoint: ['bike', 'bicycle', 'cycling', 'cycle'],
+    Icons.pool.codePoint: ['pool', 'swimming', 'swim', 'water'],
+    Icons.self_improvement.codePoint: ['meditation', 'yoga', 'mindfulness', 'wellness'],
+    Icons.airline_seat_flat.codePoint: ['sleep', 'rest', 'bed', 'relax'],
+    Icons.health_and_safety.codePoint: ['health', 'safety', 'medical', 'care'],
+    Icons.spa.codePoint: ['spa', 'relaxation', 'wellness', 'massage'],
+    
+    // Sports & Activities
+    Icons.sports_soccer.codePoint: ['soccer', 'football', 'sport', 'ball'],
+    Icons.surfing.codePoint: ['surf', 'surfing', 'wave', 'ocean'],
+    Icons.skateboarding.codePoint: ['skateboard', 'skating', 'skate'],
+    Icons.snowboarding.codePoint: ['snowboard', 'snow', 'winter'],
+    Icons.sailing.codePoint: ['sail', 'sailing', 'boat', 'yacht'],
+    Icons.kayaking.codePoint: ['kayak', 'kayaking', 'paddle'],
+    Icons.hiking.codePoint: ['hike', 'hiking', 'trail', 'mountain'],
+    Icons.forest.codePoint: ['forest', 'tree', 'nature', 'wood'],
+    Icons.terrain.codePoint: ['terrain', 'mountain', 'landscape'],
+    Icons.rocket_launch.codePoint: ['rocket', 'space', 'launch', 'travel'],
+    
+    // Food & Dining
+    Icons.local_dining.codePoint: ['dining', 'restaurant', 'food', 'eat', 'meal'],
+    Icons.restaurant.codePoint: ['restaurant', 'dining', 'food', 'eat'],
+    Icons.local_cafe.codePoint: ['cafe', 'coffee', 'cafe', 'drink'],
+    Icons.local_bar.codePoint: ['bar', 'drink', 'alcohol', 'pub'],
+    Icons.coffee.codePoint: ['coffee', 'drink', 'caffeine', 'brew'],
+    
+    // Entertainment
+    Icons.music_note.codePoint: ['music', 'song', 'audio', 'sound'],
+    Icons.movie.codePoint: ['movie', 'film', 'cinema', 'video'],
+    Icons.games.codePoint: ['game', 'games', 'play', 'gaming'],
+    Icons.book.codePoint: ['book', 'read', 'reading', 'literature'],
+    Icons.library_books.codePoint: ['library', 'books', 'reading'],
+    Icons.library_music.codePoint: ['library', 'music', 'audio'],
+    Icons.theater_comedy.codePoint: ['theater', 'theatre', 'comedy', 'show'],
+    Icons.video_library.codePoint: ['video', 'library', 'movies'],
+    Icons.menu_book.codePoint: ['book', 'menu', 'reading'],
+    Icons.auto_stories.codePoint: ['story', 'stories', 'book', 'read'],
+    Icons.newspaper.codePoint: ['newspaper', 'news', 'article'],
+    Icons.article.codePoint: ['article', 'text', 'document'],
+    
+    // Nature & Animals
+    Icons.nature.codePoint: ['nature', 'outdoor', 'environment'],
+    Icons.pets.codePoint: ['pet', 'pets', 'animal', 'dog', 'cat'],
+    Icons.beach_access.codePoint: ['beach', 'ocean', 'sea', 'sand'],
+    
+    // Daily Life
+    Icons.bedtime.codePoint: ['bedtime', 'sleep', 'night', 'bed'],
+    Icons.water_drop.codePoint: ['water', 'drink', 'hydration', 'drop'],
+    Icons.shopping_cart.codePoint: ['shopping', 'cart', 'buy', 'purchase'],
+    Icons.shopping_bag.codePoint: ['shopping', 'bag', 'buy', 'purchase'],
+    Icons.shopping_basket.codePoint: ['shopping', 'basket', 'buy', 'purchase'],
+    
+    // Travel & Transportation
+    Icons.directions_car.codePoint: ['car', 'vehicle', 'drive', 'automobile'],
+    Icons.flight.codePoint: ['flight', 'plane', 'airplane', 'travel'],
+    Icons.flight_takeoff.codePoint: ['takeoff', 'plane', 'flight', 'departure'],
+    Icons.flight_land.codePoint: ['land', 'plane', 'flight', 'arrival'],
+    Icons.hotel.codePoint: ['hotel', 'accommodation', 'stay'],
+    Icons.train.codePoint: ['train', 'railway', 'transport'],
+    Icons.directions_bus.codePoint: ['bus', 'transport', 'public'],
+    Icons.directions_subway.codePoint: ['subway', 'metro', 'underground', 'train'],
+    Icons.directions_boat.codePoint: ['boat', 'ship', 'water', 'travel'],
+    Icons.local_taxi.codePoint: ['taxi', 'cab', 'ride'],
+    Icons.map.codePoint: ['map', 'location', 'navigation'],
+    Icons.place.codePoint: ['place', 'location', 'pin', 'marker'],
+    Icons.location_on.codePoint: ['location', 'place', 'pin', 'gps'],
+    Icons.navigation.codePoint: ['navigation', 'compass', 'direction'],
+    Icons.explore.codePoint: ['explore', 'discover', 'travel'],
+    Icons.travel_explore.codePoint: ['travel', 'explore', 'trip', 'journey'],
+    
+    // Finance
+    Icons.account_balance.codePoint: ['bank', 'finance', 'money', 'account'],
+    Icons.account_balance_wallet.codePoint: ['wallet', 'money', 'finance', 'account'],
+    Icons.savings.codePoint: ['savings', 'money', 'save', 'bank'],
+    Icons.payments.codePoint: ['payment', 'pay', 'money', 'transaction'],
+    Icons.credit_card.codePoint: ['card', 'credit', 'payment', 'money'],
+    Icons.receipt.codePoint: ['receipt', 'bill', 'payment'],
+    Icons.attach_money.codePoint: ['money', 'dollar', 'currency', 'cash'],
+    Icons.trending_up.codePoint: ['trend', 'up', 'growth', 'increase'],
+    Icons.trending_down.codePoint: ['trend', 'down', 'decrease', 'fall'],
+    Icons.bar_chart.codePoint: ['chart', 'graph', 'data', 'statistics'],
+    Icons.pie_chart.codePoint: ['chart', 'pie', 'graph', 'data'],
+    Icons.show_chart.codePoint: ['chart', 'graph', 'data', 'analytics'],
+    Icons.analytics.codePoint: ['analytics', 'data', 'statistics', 'analysis'],
+    
+    // Technology
+    Icons.computer.codePoint: ['computer', 'pc', 'desktop', 'tech'],
+    Icons.laptop.codePoint: ['laptop', 'computer', 'notebook'],
+    Icons.phone_android.codePoint: ['phone', 'android', 'mobile', 'smartphone'],
+    Icons.phone_iphone.codePoint: ['phone', 'iphone', 'mobile', 'smartphone'],
+    Icons.tablet.codePoint: ['tablet', 'ipad', 'device'],
+    Icons.watch.codePoint: ['watch', 'time', 'clock', 'wearable'],
+    Icons.headphones.codePoint: ['headphone', 'headphones', 'audio', 'music'],
+    Icons.speaker.codePoint: ['speaker', 'sound', 'audio', 'music'],
+    Icons.tv.codePoint: ['tv', 'television', 'screen', 'entertainment'],
+    Icons.camera_alt.codePoint: ['camera', 'photo', 'picture', 'photography'],
+    Icons.videocam.codePoint: ['video', 'camera', 'record', 'film'],
+    Icons.mic.codePoint: ['mic', 'microphone', 'audio', 'record'],
+    Icons.code.codePoint: ['code', 'programming', 'develop', 'software'],
+    Icons.calculate.codePoint: ['calculate', 'calculator', 'math', 'compute'],
+    
+    // Media & Creative
+    Icons.palette.codePoint: ['palette', 'color', 'art', 'paint'],
+    Icons.brush.codePoint: ['brush', 'paint', 'art', 'draw'],
+    Icons.color_lens.codePoint: ['color', 'lens', 'palette', 'art'],
+    Icons.image.codePoint: ['image', 'picture', 'photo', 'graphic'],
+    Icons.photo_library.codePoint: ['photo', 'library', 'gallery', 'images'],
+    Icons.photo_camera.codePoint: ['camera', 'photo', 'picture', 'photography'],
+    
+    // Documents & Notes
+    Icons.description.codePoint: ['description', 'document', 'file', 'text'],
+    Icons.note.codePoint: ['note', 'notes', 'text', 'write'],
+    Icons.note_add.codePoint: ['note', 'add', 'new', 'create'],
+    Icons.edit_note.codePoint: ['edit', 'note', 'write', 'modify'],
+    Icons.draw.codePoint: ['draw', 'sketch', 'art', 'pencil'],
+    Icons.create.codePoint: ['create', 'new', 'add', 'make'],
+    Icons.edit.codePoint: ['edit', 'modify', 'change', 'update'],
+    Icons.border_color.codePoint: ['color', 'paint', 'edit', 'draw'],
+    Icons.format_paint.codePoint: ['paint', 'format', 'style', 'color'],
+    Icons.text_snippet.codePoint: ['text', 'snippet', 'document', 'note'],
+    Icons.sticky_note_2.codePoint: ['note', 'sticky', 'reminder', 'memo'],
+    Icons.attach_file.codePoint: ['attach', 'file', 'document', 'link'],
+    Icons.link.codePoint: ['link', 'url', 'connect', 'chain'],
+    Icons.insert_link.codePoint: ['link', 'insert', 'url', 'connect'],
+    
+    // Tools & Building
+    Icons.build.codePoint: ['build', 'tool', 'construct', 'repair'],
+    Icons.construction.codePoint: ['construction', 'build', 'tool', 'work'],
+    Icons.handyman.codePoint: ['handyman', 'repair', 'tool', 'fix'],
+    Icons.auto_fix_high.codePoint: ['fix', 'repair', 'tool', 'auto'],
+    Icons.auto_fix_normal.codePoint: ['fix', 'repair', 'tool', 'auto'],
+    Icons.electric_bolt.codePoint: ['electric', 'bolt', 'power', 'energy'],
+    Icons.flash_on.codePoint: ['flash', 'light', 'bright', 'energy'],
+    Icons.lightbulb.codePoint: ['light', 'bulb', 'idea', 'bright'],
+    Icons.light_mode.codePoint: ['light', 'mode', 'bright', 'day'],
+    Icons.dark_mode.codePoint: ['dark', 'mode', 'night', 'theme'],
+    Icons.wb_sunny.codePoint: ['sun', 'sunny', 'weather', 'bright'],
+    Icons.nightlight.codePoint: ['night', 'light', 'dark', 'sleep'],
+    Icons.bed.codePoint: ['bed', 'sleep', 'rest', 'room'],
+    Icons.hotel_class.codePoint: ['hotel', 'class', 'star', 'rating'],
+    
+    // Places & Services
+    Icons.store.codePoint: ['store', 'shop', 'retail', 'buy'],
+    Icons.storefront.codePoint: ['store', 'shop', 'front', 'retail'],
+    Icons.local_gas_station.codePoint: ['gas', 'station', 'fuel', 'petrol'],
+    Icons.local_pharmacy.codePoint: ['pharmacy', 'drug', 'medicine', 'health'],
+    Icons.local_hospital.codePoint: ['hospital', 'medical', 'health', 'care'],
+    Icons.local_police.codePoint: ['police', 'law', 'security', 'safety'],
+    Icons.local_fire_department.codePoint: ['fire', 'department', 'emergency', 'safety'],
+    Icons.local_library.codePoint: ['library', 'book', 'read', 'study'],
+    Icons.local_post_office.codePoint: ['post', 'office', 'mail', 'letter'],
+    Icons.local_parking.codePoint: ['parking', 'car', 'vehicle', 'space'],
+    Icons.local_atm.codePoint: ['atm', 'bank', 'money', 'cash'],
+    
+    // Social & People
+    Icons.account_circle.codePoint: ['account', 'user', 'person', 'profile'],
+    Icons.person.codePoint: ['person', 'user', 'people', 'human'],
+    Icons.person_add.codePoint: ['person', 'add', 'user', 'friend'],
+    Icons.group.codePoint: ['group', 'people', 'team', 'community'],
+    Icons.groups.codePoint: ['groups', 'people', 'team', 'community'],
+    Icons.people.codePoint: ['people', 'persons', 'users', 'group'],
+    Icons.people_outline.codePoint: ['people', 'outline', 'group', 'team'],
+    Icons.supervisor_account.codePoint: ['supervisor', 'account', 'admin', 'manager'],
+    Icons.family_restroom.codePoint: ['family', 'restroom', 'bathroom', 'toilet'],
+    Icons.volunteer_activism.codePoint: ['volunteer', 'activism', 'help', 'charity'],
+    Icons.celebration.codePoint: ['celebration', 'party', 'event', 'festival'],
+    
+    // Achievements & Rewards
+    Icons.badge.codePoint: ['badge', 'achievement', 'award', 'reward'],
+    Icons.workspace_premium.codePoint: ['premium', 'workspace', 'award', 'achievement'],
+    Icons.emoji_events.codePoint: ['event', 'trophy', 'award', 'achievement'],
+    Icons.military_tech.codePoint: ['military', 'tech', 'medal', 'award'],
+    Icons.stars.codePoint: ['stars', 'star', 'rating', 'favorite'],
+    Icons.workspace_premium_outlined.codePoint: ['premium', 'workspace', 'award'],
+    Icons.card_giftcard.codePoint: ['gift', 'card', 'present', 'reward'],
+    Icons.card_membership.codePoint: ['membership', 'card', 'loyalty'],
+    Icons.loyalty.codePoint: ['loyalty', 'reward', 'points'],
+    Icons.redeem.codePoint: ['redeem', 'reward', 'claim', 'exchange'],
+    Icons.local_offer.codePoint: ['offer', 'deal', 'discount', 'sale'],
+    Icons.local_activity.codePoint: ['activity', 'event', 'ticket', 'entertainment'],
+    
+    // Tech & Connectivity
+    Icons.qr_code.codePoint: ['qr', 'code', 'scan', 'barcode'],
+    Icons.qr_code_scanner.codePoint: ['qr', 'scanner', 'scan', 'code'],
+    Icons.qr_code_2.codePoint: ['qr', 'code', 'scan'],
+    Icons.nfc.codePoint: ['nfc', 'wireless', 'connect', 'tap'],
+    Icons.bluetooth.codePoint: ['bluetooth', 'wireless', 'connect'],
+    Icons.wifi.codePoint: ['wifi', 'wireless', 'internet', 'network'],
+    Icons.signal_wifi_4_bar.codePoint: ['wifi', 'signal', 'network', 'internet'],
+    Icons.signal_cellular_4_bar.codePoint: ['cellular', 'signal', 'phone', 'network'],
+    Icons.battery_full.codePoint: ['battery', 'power', 'charge', 'energy'],
+    Icons.power.codePoint: ['power', 'on', 'energy', 'electric'],
+    Icons.power_off.codePoint: ['power', 'off', 'shutdown', 'turn'],
+    Icons.power_settings_new.codePoint: ['power', 'settings', 'control'],
+    
+    // Settings & Security
+    Icons.settings.codePoint: ['settings', 'config', 'preferences', 'options'],
+    Icons.settings_applications.codePoint: ['settings', 'app', 'config', 'preferences'],
+    Icons.tune.codePoint: ['tune', 'adjust', 'settings', 'config'],
+    Icons.build_circle.codePoint: ['build', 'circle', 'tool', 'settings'],
+    Icons.admin_panel_settings.codePoint: ['admin', 'panel', 'settings', 'control'],
+    Icons.security.codePoint: ['security', 'safe', 'protect', 'shield'],
+    Icons.lock.codePoint: ['lock', 'secure', 'protected', 'locked'],
+    Icons.lock_open.codePoint: ['lock', 'open', 'unlock', 'unlocked'],
+    Icons.vpn_key.codePoint: ['key', 'vpn', 'password', 'access'],
+    Icons.password.codePoint: ['password', 'key', 'secure', 'lock'],
+    Icons.fingerprint.codePoint: ['fingerprint', 'biometric', 'security', 'auth'],
+    Icons.face.codePoint: ['face', 'person', 'profile', 'avatar'],
+    Icons.face_retouching_natural.codePoint: ['face', 'retouch', 'natural', 'beauty'],
+    Icons.verified.codePoint: ['verified', 'check', 'confirm', 'valid'],
+    Icons.verified_user.codePoint: ['verified', 'user', 'trusted', 'confirmed'],
+    Icons.shield.codePoint: ['shield', 'protect', 'security', 'defense'],
+    Icons.privacy_tip.codePoint: ['privacy', 'tip', 'security', 'protect'],
+    
+    // Actions
+    Icons.check_circle.codePoint: ['check', 'circle', 'done', 'complete'],
+    Icons.check.codePoint: ['check', 'done', 'complete', 'tick'],
+    Icons.add_circle.codePoint: ['add', 'circle', 'new', 'create'],
+    Icons.add.codePoint: ['add', 'plus', 'new', 'create'],
+    Icons.remove_circle.codePoint: ['remove', 'circle', 'delete', 'minus'],
+    Icons.remove.codePoint: ['remove', 'delete', 'minus', 'subtract'],
+    Icons.delete.codePoint: ['delete', 'remove', 'trash', 'bin'],
+    Icons.delete_forever.codePoint: ['delete', 'forever', 'remove', 'permanent'],
+    Icons.restore.codePoint: ['restore', 'recover', 'undo', 'bring'],
+    Icons.restore_from_trash.codePoint: ['restore', 'trash', 'recover', 'undo'],
+    Icons.archive.codePoint: ['archive', 'store', 'save', 'keep'],
+    Icons.unarchive.codePoint: ['unarchive', 'restore', 'bring', 'back'],
+    Icons.download.codePoint: ['download', 'save', 'get', 'fetch'],
+    Icons.upload.codePoint: ['upload', 'send', 'share', 'post'],
+    Icons.report.codePoint: ['report', 'flag', 'alert', 'issue'],
+    Icons.flag.codePoint: ['flag', 'mark', 'report', 'signal'],
+    Icons.block.codePoint: ['block', 'stop', 'ban', 'prevent'],
+    Icons.cancel.codePoint: ['cancel', 'close', 'stop', 'abort'],
+    Icons.close.codePoint: ['close', 'exit', 'cancel', 'dismiss'],
+    
+    // Cloud & Sync
+    Icons.cloud_upload.codePoint: ['cloud', 'upload', 'sync', 'backup'],
+    Icons.cloud_download.codePoint: ['cloud', 'download', 'sync', 'get'],
+    Icons.cloud.codePoint: ['cloud', 'storage', 'online', 'server'],
+    Icons.cloud_done.codePoint: ['cloud', 'done', 'complete', 'synced'],
+    Icons.cloud_off.codePoint: ['cloud', 'off', 'offline', 'disconnected'],
+    Icons.cloud_sync.codePoint: ['cloud', 'sync', 'synchronize', 'update'],
+    Icons.backup.codePoint: ['backup', 'save', 'copy', 'protect'],
+    Icons.sync.codePoint: ['sync', 'synchronize', 'update', 'refresh'],
+    Icons.sync_alt.codePoint: ['sync', 'alt', 'synchronize', 'alternate'],
+    Icons.refresh.codePoint: ['refresh', 'reload', 'update', 'renew'],
+    Icons.autorenew.codePoint: ['auto', 'renew', 'refresh', 'update'],
+    Icons.cached.codePoint: ['cache', 'cached', 'stored', 'saved'],
+    Icons.update.codePoint: ['update', 'refresh', 'upgrade', 'new'],
+    Icons.system_update.codePoint: ['system', 'update', 'upgrade', 'refresh'],
+    Icons.install_mobile.codePoint: ['install', 'mobile', 'app', 'download'],
+    Icons.install_desktop.codePoint: ['install', 'desktop', 'app', 'download'],
+    Icons.get_app.codePoint: ['get', 'app', 'download', 'install'],
+    Icons.publish.codePoint: ['publish', 'share', 'post', 'upload'],
+    Icons.file_upload.codePoint: ['file', 'upload', 'send', 'share'],
+    Icons.file_download.codePoint: ['file', 'download', 'get', 'save'],
+    
+    // Files & Folders
+    Icons.folder.codePoint: ['folder', 'directory', 'file', 'organize'],
+    Icons.folder_open.codePoint: ['folder', 'open', 'directory'],
+    Icons.folder_shared.codePoint: ['folder', 'shared', 'share', 'collaborate'],
+    Icons.insert_drive_file.codePoint: ['file', 'document', 'drive'],
+    Icons.drive_file_rename_outline.codePoint: ['file', 'rename', 'edit', 'name'],
+    Icons.drive_file_move.codePoint: ['file', 'move', 'transfer', 'relocate'],
+    Icons.drive_file_move_outline.codePoint: ['file', 'move', 'outline'],
+    Icons.drive_file_move_rtl.codePoint: ['file', 'move', 'rtl', 'right'],
+    Icons.create_new_folder.codePoint: ['folder', 'new', 'create', 'add'],
+    Icons.folder_copy.codePoint: ['folder', 'copy', 'duplicate'],
+    Icons.folder_delete.codePoint: ['folder', 'delete', 'remove', 'trash'],
+    Icons.folder_zip.codePoint: ['folder', 'zip', 'archive', 'compress'],
+    Icons.folder_special.codePoint: ['folder', 'special', 'important', 'star'],
+    Icons.folder_off.codePoint: ['folder', 'off', 'disabled', 'unavailable'],
+    Icons.content_copy.codePoint: ['copy', 'duplicate', 'clone'],
+    Icons.content_cut.codePoint: ['cut', 'move', 'remove'],
+    Icons.content_paste.codePoint: ['paste', 'insert', 'add'],
+    Icons.copy_all.codePoint: ['copy', 'all', 'duplicate', 'everything'],
+    Icons.cut.codePoint: ['cut', 'move', 'remove'],
+    Icons.paste.codePoint: ['paste', 'insert', 'add'],
+    
+    // Language & Communication
+    Icons.public.codePoint: ['public', 'world', 'global', 'internet'],
+    Icons.language.codePoint: ['language', 'translate', 'locale', 'tongue'],
+    Icons.translate.codePoint: ['translate', 'language', 'convert', 'interpret'],
+    Icons.g_translate.codePoint: ['translate', 'google', 'language'],
+    Icons.currency_exchange.codePoint: ['currency', 'exchange', 'money', 'convert'],
+    Icons.confirmation_number.codePoint: ['confirmation', 'number', 'ticket', 'code'],
+    Icons.compass_calibration.codePoint: ['compass', 'calibration', 'navigation', 'direction'],
+    Icons.explore_off.codePoint: ['explore', 'off', 'disabled', 'unavailable'],
+  };
+
+  /// Returns searchable keywords for an icon
+  static List<String> getSearchKeywords(IconData icon) {
+    return _iconSearchKeywords[icon.codePoint] ?? [];
+  }
+
+  /// Checks if an icon matches the search query
+  static bool matchesSearch(IconData icon, String query) {
+    if (query.isEmpty) return true;
+    final keywords = getSearchKeywords(icon);
+    final lowerQuery = query.toLowerCase();
+    return keywords.any((keyword) => keyword.toLowerCase().contains(lowerQuery));
+  }
 }
 

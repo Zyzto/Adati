@@ -177,6 +177,8 @@
   "basic_info": "Basic Information",
   "select_icon": "Select Icon",
   "no_icon": "No Icon",
+  "search_icons": "Search icons...",
+  "no_icons_found": "No icons found",
   "organization": "Organization",
   "select_categories": "Select Categories",
   "no_categories": "No categories available",
