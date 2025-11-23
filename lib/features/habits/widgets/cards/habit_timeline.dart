@@ -45,15 +45,25 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
     List<DateTime> days,
     Map<DateTime, bool> entriesMap,
     bool isGoodHabit,
+    DateTime habitCreatedAt,
   ) {
     final streakMap = <DateTime, int>{};
     int currentStreak = 0;
+    final habitCreatedAtOnly = app_date_utils.DateUtils.getDateOnly(habitCreatedAt);
     
     // Calculate streaks going forward from oldest to newest
     // For good habits: completed == true means success
     // For bad habits: completed == false means success (not doing bad habit)
     for (int i = 0; i < days.length; i++) {
       final day = days[i];
+      final dayOnly = app_date_utils.DateUtils.getDateOnly(day);
+      
+      // Skip days before habit creation
+      if (!app_date_utils.DateUtils.isDateAfterHabitCreation(dayOnly, habitCreatedAtOnly)) {
+        streakMap[day] = 0;
+        continue;
+      }
+      
       final entryCompleted = entriesMap[day] ?? false;
       final isSuccess = isGoodHabit ? entryCompleted : !entryCompleted;
       
@@ -143,13 +153,17 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
               final needsScroll = days.length > 100;
               // Calculate streaks based on habit type
               final streakMap =
-                  _calculateStreaks(days, entriesMap, isGoodHabit);
+                  _calculateStreaks(days, entriesMap, isGoodHabit, habit.createdAt);
 
               final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
+              final habitCreatedAtOnly = app_date_utils.DateUtils.getDateOnly(habit.createdAt);
               final timelineWidget = Wrap(
                 spacing: spacing,
                 runSpacing: spacing,
                 children: days.map((day) {
+                  final dayOnly = app_date_utils.DateUtils.getDateOnly(day);
+                  final isBeforeCreation = !app_date_utils.DateUtils.isDateAfterHabitCreation(dayOnly, habitCreatedAtOnly);
+                  
                   final entryCompleted = entriesMap[day] ?? false;
                   // For display: respect bad habit logic mode setting
                   final displayCompleted = isGoodHabit
@@ -193,15 +207,18 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                       key: ValueKey(
                         '${day.toIso8601String()}_${displayCompleted}_$streakLength',
                       ),
-                      child: DaySquare(
-                        date: day,
-                        completed: displayCompleted,
-                        size: _getSquareSize(),
-                        onTap: null,
-                        streakLength: streakLength,
-                        highlightWeek: isCurrentWeek,
-                        highlightMonth: isCurrentMonth,
-                        completionColor: completionColor,
+                      child: Opacity(
+                        opacity: isBeforeCreation ? 0.3 : 1.0,
+                        child: DaySquare(
+                          date: day,
+                          completed: displayCompleted,
+                          size: _getSquareSize(),
+                          onTap: null,
+                          streakLength: streakLength,
+                          highlightWeek: isCurrentWeek,
+                          highlightMonth: isCurrentMonth,
+                          completionColor: completionColor,
+                        ),
                       ),
                     ),
                   );

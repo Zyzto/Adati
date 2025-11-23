@@ -261,58 +261,70 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
                 // Calendar with animated month transitions
                 entriesAsync.when(
                   data: (entries) {
-                    if (entries.isEmpty) {
-                      return EmptyStateWidget(
-                        icon: Icons.calendar_today,
-                        title: 'no_entries_yet'.tr(),
-                        message: 'complete_habit_to_see_calendar'.tr(),
-                      );
-                    }
-                    // Merge actual entries with optimistic updates for immediate feedback
-                    final entriesMap = <DateTime, bool>{
-                      for (var entry in entries)
-                        app_date_utils.DateUtils.getDateOnly(entry.date):
-                            entry.completed,
-                    };
-                    // Apply optimistic updates (they override actual entries)
-                    entriesMap.addAll(_optimisticUpdates);
+                    // Get habit from provider for calendar
+                    final habitAsync = ref.watch(habitByIdProvider(widget.habitId));
+                    return habitAsync.when(
+                      data: (habit) {
+                        if (habit == null) {
+                          return const SizedBox.shrink();
+                        }
+                        if (entries.isEmpty) {
+                          return EmptyStateWidget(
+                            icon: Icons.calendar_today,
+                            title: 'no_entries_yet'.tr(),
+                            message: 'complete_habit_to_see_calendar'.tr(),
+                          );
+                        }
+                        // Merge actual entries with optimistic updates for immediate feedback
+                        final entriesMap = <DateTime, bool>{
+                          for (var entry in entries)
+                            app_date_utils.DateUtils.getDateOnly(entry.date):
+                                entry.completed,
+                        };
+                        // Apply optimistic updates (they override actual entries)
+                        entriesMap.addAll(_optimisticUpdates);
 
-                    final entriesWithNotes = {
-                      for (var entry in entries)
-                        if (entry.notes != null && entry.notes!.isNotEmpty)
-                          app_date_utils.DateUtils.getDateOnly(entry.date):
-                              true,
-                    };
-                    return AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      transitionBuilder: (child, animation) {
-                        return SlideTransition(
-                          position:
-                              Tween<Offset>(
-                                begin: const Offset(0.2, 0),
-                                end: Offset.zero,
-                              ).animate(
-                                CurvedAnimation(
+                        final entriesWithNotes = {
+                          for (var entry in entries)
+                            if (entry.notes != null && entry.notes!.isNotEmpty)
+                              app_date_utils.DateUtils.getDateOnly(entry.date):
+                                  true,
+                        };
+                        return AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) {
+                            return SlideTransition(
+                              position:
+                                  Tween<Offset>(
+                                    begin: const Offset(0.2, 0),
+                                    end: Offset.zero,
+                                  ).animate(
+                                    CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutCubic,
+                                    ),
+                                  ),
+                              child: FadeTransition(
+                                opacity: CurvedAnimation(
                                   parent: animation,
-                                  curve: Curves.easeOutCubic,
+                                  curve: Curves.easeOut,
                                 ),
+                                child: child,
                               ),
-                          child: FadeTransition(
-                            opacity: CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOut,
-                            ),
-                            child: child,
+                            );
+                          },
+                          child: _buildCalendar(
+                            entriesMap,
+                            entriesWithNotes,
+                            entries,
+                            habit,
                           ),
                         );
                       },
-                      child: _buildCalendar(
-                        entriesMap,
-                        entriesWithNotes,
-                        entries,
-                      ),
+                      loading: () => const SkeletonCalendar(),
+                      error: (_, _) => const SizedBox.shrink(),
                     );
                   },
                   loading: () => const SkeletonCalendar(),
@@ -614,9 +626,18 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
   Map<DateTime, int> _calculateStreaksForMonth(
     List<db.TrackingEntry> entries,
     List<DateTime> days,
+    DateTime habitCreatedAt,
   ) {
     final streakMap = <DateTime, int>{};
-    final completedEntries = entries
+    final habitCreatedAtOnly = app_date_utils.DateUtils.getDateOnly(habitCreatedAt);
+    
+    // Filter entries to only include dates >= habit creation date
+    final validEntries = entries.where((e) {
+      final entryDate = app_date_utils.DateUtils.getDateOnly(e.date);
+      return app_date_utils.DateUtils.isDateAfterHabitCreation(entryDate, habitCreatedAtOnly);
+    }).toList();
+    
+    final completedEntries = validEntries
         .where((e) => e.completed)
         .map((e) => app_date_utils.DateUtils.getDateOnly(e.date))
         .toSet();
@@ -633,6 +654,12 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
 
     for (final day in sortedDays) {
       final dayOnly = app_date_utils.DateUtils.getDateOnly(day);
+      
+      // Skip days before habit creation
+      if (!app_date_utils.DateUtils.isDateAfterHabitCreation(dayOnly, habitCreatedAtOnly)) {
+        streakMap[day] = 0;
+        continue;
+      }
 
       if (completedEntries.contains(dayOnly)) {
         if (dayOnly.isBefore(today) || dayOnly.isAtSameMomentAs(today)) {
@@ -658,6 +685,7 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
     Map<DateTime, bool> entriesMap,
     Map<DateTime, bool> entriesWithNotes,
     List<db.TrackingEntry> allEntries,
+    db.Habit habit,
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -705,7 +733,7 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
 
     // Calculate streaks for this month
     final monthDays = days.whereType<DateTime>().toList();
-    final streakMap = _calculateStreaksForMonth(allEntries, monthDays);
+    final streakMap = _calculateStreaksForMonth(allEntries, monthDays, habit.createdAt);
 
     // Calculate monthly completion percentage
     final monthCompleted = entriesMap.values.where((v) => v).length;

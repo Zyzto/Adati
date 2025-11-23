@@ -63,5 +63,13 @@ class DateUtils {
   static int getFirstDayOfWeek() {
     return PreferencesService.getFirstDayOfWeek();
   }
+
+  /// Check if a date is on or after the habit creation date
+  /// Returns true if the date is >= habit creation date (same day or later)
+  static bool isDateAfterHabitCreation(DateTime date, DateTime habitCreatedAt) {
+    final dateOnly = getDateOnly(date);
+    final habitCreatedAtOnly = getDateOnly(habitCreatedAt);
+    return !dateOnly.isBefore(habitCreatedAtOnly);
+  }
 }
 

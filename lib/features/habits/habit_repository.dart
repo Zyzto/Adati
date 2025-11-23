@@ -280,7 +280,15 @@ class HabitRepository with Loggable {
     if (habit == null) return false;
 
     final entries = await getEntriesByHabit(habitId);
-    if (entries.isEmpty) {
+    
+    // Filter entries to only include dates >= habit creation date
+    final habitCreatedAt = app_date_utils.DateUtils.getDateOnly(habit.createdAt);
+    final validEntries = entries.where((e) {
+      final entryDate = app_date_utils.DateUtils.getDateOnly(e.date);
+      return app_date_utils.DateUtils.isDateAfterHabitCreation(entryDate, habitCreatedAt);
+    }).toList();
+    
+    if (validEntries.isEmpty) {
       final companion = db.StreaksCompanion(
         id: const drift.Value.absent(),
         habitId: drift.Value(habitId),
@@ -303,7 +311,7 @@ class HabitRepository with Loggable {
     
     // For good habits: completed = true means success
     // For bad habits: completed = false means success (not doing bad habit)
-    final successfulEntries = entries.where((e) {
+    final successfulEntries = validEntries.where((e) {
       if (isGoodHabit) {
         return e.completed;
       } else {

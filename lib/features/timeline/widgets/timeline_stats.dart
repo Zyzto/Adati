@@ -32,6 +32,7 @@ class TimelineStats extends ConsumerWidget {
                   habits,
                   entries,
                   badHabitLogicMode,
+                  today,
                 );
                 final completionRatePercent = (completionRate * 100).toInt();
                 
@@ -42,6 +43,11 @@ class TimelineStats extends ConsumerWidget {
                 int totalBad = 0;
                 
                 for (final habit in habits) {
+                  // Only count habits that were created on or before today
+                  if (!app_date_utils.DateUtils.isDateAfterHabitCreation(today, habit.createdAt)) {
+                    continue;
+                  }
+                  
                   final entryCompleted = entries[habit.id] ?? false;
                   final isGoodHabit = habit.habitType == HabitType.good.value;
                   
@@ -120,13 +126,21 @@ class TimelineStats extends ConsumerWidget {
     List habits,
     Map<int, bool> entries,
     String badHabitLogicMode,
+    DateTime date,
   ) {
     int goodCompleted = 0;
     int badCount = 0; // bad marked (negative) or bad not marked (positive)
     int totalGood = 0;
     int totalBad = 0;
 
+    final dateOnly = app_date_utils.DateUtils.getDateOnly(date);
+
     for (final habit in habits) {
+      // Only count habits that were created on or before the date being calculated
+      if (!app_date_utils.DateUtils.isDateAfterHabitCreation(dateOnly, habit.createdAt)) {
+        continue;
+      }
+
       final entryCompleted = entries[habit.id] ?? false;
       final isGoodHabit = habit.habitType == HabitType.good.value;
 
