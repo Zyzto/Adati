@@ -416,31 +416,34 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader('tracking_type'.tr()),
-        SegmentedButton<TrackingType>(
-          segments: [
-            ButtonSegment<TrackingType>(
-              value: TrackingType.completed,
-              label: Text('completed'.tr()),
-              icon: const Icon(Icons.check_circle),
-            ),
-            ButtonSegment<TrackingType>(
-              value: TrackingType.measurable,
-              label: Text('measurable'.tr()),
-              icon: const Icon(Icons.trending_up),
-            ),
-            ButtonSegment<TrackingType>(
-              value: TrackingType.occurrences,
-              label: Text('occurrences'.tr()),
-              icon: const Icon(Icons.list),
-            ),
-          ],
-          selected: {_trackingType},
-          onSelectionChanged: (Set<TrackingType> newSelection) {
-            setState(() {
-              _trackingType = newSelection.first;
-            });
-          },
-          showSelectedIcon: false,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SegmentedButton<TrackingType>(
+            segments: [
+              ButtonSegment<TrackingType>(
+                value: TrackingType.completed,
+                label: Text('completed'.tr()),
+                icon: const Icon(Icons.check_circle),
+              ),
+              ButtonSegment<TrackingType>(
+                value: TrackingType.measurable,
+                label: Text('measurable'.tr()),
+                icon: const Icon(Icons.trending_up),
+              ),
+              ButtonSegment<TrackingType>(
+                value: TrackingType.occurrences,
+                label: Text('occurrences'.tr()),
+                icon: const Icon(Icons.list),
+              ),
+            ],
+            selected: {_trackingType},
+            onSelectionChanged: (Set<TrackingType> newSelection) {
+              setState(() {
+                _trackingType = newSelection.first;
+              });
+            },
+            showSelectedIcon: false,
+          ),
         ),
         const SizedBox(height: 24),
       ],
