@@ -8,6 +8,7 @@ import 'core/services/notification_service.dart';
 import 'core/services/reminder_service.dart';
 import 'core/services/logging_service.dart';
 import 'core/services/log_helper.dart';
+import 'core/services/auto_backup_service.dart';
 import 'core/database/app_database.dart' as db;
 import 'features/habits/habit_repository.dart';
 import 'app.dart';
@@ -107,9 +108,10 @@ void main() async {
 
   // Initialize reminder service and reschedule all reminders
   // This ensures reminders are up-to-date after app updates or timezone changes
+  HabitRepository? habitRepository;
   try {
     final database = db.AppDatabase();
-    final habitRepository = HabitRepository(database);
+    habitRepository = HabitRepository(database);
     ReminderService.init(habitRepository);
 
     // Reschedule reminders in background to not block app startup
@@ -128,6 +130,37 @@ void main() async {
       stackTrace: stackTrace,
     );
     // Continue - app can function without reminder rescheduling
+  }
+
+  // Initialize auto-backup service (non-critical - app continues even if it fails)
+  if (habitRepository != null) {
+    try {
+      AutoBackupService.init(habitRepository);
+
+      // Check if backup is due on app startup
+      if (PreferencesService.getAutoBackupEnabled()) {
+        // Check if backup is due (run in background to not block app startup)
+        AutoBackupService.checkAndCreateBackupIfDue().catchError((
+          e,
+          stackTrace,
+        ) {
+          Log.error(
+            'Failed to check/create backup on startup',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        });
+      }
+
+      Log.debug('AutoBackupService initialized successfully');
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to initialize AutoBackupService - auto-backups will not be available. Error: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Continue - app can function without auto-backups
+    }
   }
 
   // Get saved language from preferences (with fallback if service failed)
