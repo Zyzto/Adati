@@ -170,12 +170,23 @@ class DemoDataService {
         ),
       );
 
-      final now = DateTime.now();
       final today = app_date_utils.DateUtils.getToday();
 
       // Create habits and entries from config
       for (final habitConfig in habitsConfig) {
         final habitData = habitConfig as Map<String, dynamic>;
+
+        // Calculate creation date based on entries count
+        // Each habit should be created when its first entry would have been
+        // Spread habits out over time for more realism
+        final entriesCount = habitData['entries'] as int;
+        final daysAgo = entriesCount - 1; // First entry was (entries-1) days ago
+        final creationDate = today.subtract(Duration(days: daysAgo));
+        final createdAt = DateTime(
+          creationDate.year,
+          creationDate.month,
+          creationDate.day,
+        );
 
         // Parse habit type
         final habitTypeStr = habitData['habitType'] as String;
@@ -221,8 +232,8 @@ class DemoDataService {
           reminderTime: habitData.containsKey('reminderTime')
               ? drift.Value(habitData['reminderTime'] as String)
               : const drift.Value.absent(),
-          createdAt: drift.Value(now),
-          updatedAt: drift.Value(now),
+          createdAt: drift.Value(createdAt),
+          updatedAt: drift.Value(createdAt),
         );
 
         final habitId = await repository.createHabit(
@@ -231,7 +242,6 @@ class DemoDataService {
         );
 
         // Generate tracking entries
-        final entries = habitData['entries'] as int;
         final completionRate = (habitData['completionRate'] as num).toDouble();
         final pattern = habitData['pattern'] as String? ?? 'consistent';
         final goalValue = habitData.containsKey('goalValue')
@@ -247,20 +257,24 @@ class DemoDataService {
             habitId,
             trackingType,
             today,
-            entries,
+            createdAt,
+            entriesCount,
             completionRate,
             goalValue!,
             goalPeriod,
             pattern,
           );
         } else {
-          // Generate daily entries
-          for (int i = 0; i < entries; i++) {
-            final date = today.subtract(Duration(days: entries - i - 1));
+          // Generate daily entries starting from creation date
+          for (int i = 0; i < entriesCount; i++) {
+            final date = createdAt.add(Duration(days: i));
+            // Only create entries up to today
+            if (date.isAfter(today)) break;
+            
             final shouldComplete = _shouldComplete(
               pattern,
               i,
-              entries,
+              entriesCount,
               completionRate,
             );
 
@@ -313,6 +327,7 @@ class DemoDataService {
     int habitId,
     TrackingType trackingType,
     DateTime today,
+    DateTime createdAt,
     int totalDays,
     double completionRate,
     double goalValue,
@@ -320,14 +335,18 @@ class DemoDataService {
     String pattern,
   ) async {
     if (goalPeriod == GoalPeriod.weekly) {
-      // For weekly goals, distribute across the week
+      // For weekly goals, distribute across the week starting from creation date
       final weeks = (totalDays / 7).ceil();
       for (int week = 0; week < weeks; week++) {
-        final weekStart = today.subtract(Duration(days: totalDays - (week * 7) - 1));
+        final weekStart = createdAt.add(Duration(days: week * 7));
         final weekDays = <DateTime>[];
-        for (int d = 0; d < 7 && (week * 7 + d) < totalDays; d++) {
-          weekDays.add(weekStart.add(Duration(days: d)));
+        for (int d = 0; d < 7; d++) {
+          final date = weekStart.add(Duration(days: d));
+          // Only create entries up to today
+          if (date.isAfter(today)) break;
+          weekDays.add(date);
         }
+        if (weekDays.isEmpty) break;
 
         // Decide if week goal is met
         final weekShouldComplete = _random.nextDouble() < completionRate;
@@ -358,14 +377,27 @@ class DemoDataService {
         }
       }
     } else if (goalPeriod == GoalPeriod.monthly) {
-      // For monthly goals, distribute across the month
+      // For monthly goals, distribute across the month starting from creation date
       final months = (totalDays / 30).ceil();
       for (int month = 0; month < months; month++) {
-        final monthStart = today.subtract(Duration(days: totalDays - (month * 30) - 1));
+        final monthStart = DateTime(
+          createdAt.year,
+          createdAt.month + month,
+          1,
+        );
+        final monthEnd = DateTime(
+          monthStart.year,
+          monthStart.month + 1,
+          0,
+        );
         final monthDays = <DateTime>[];
-        for (int d = 0; d < 30 && (month * 30 + d) < totalDays; d++) {
-          monthDays.add(monthStart.add(Duration(days: d)));
+        var currentDate = monthStart.isBefore(createdAt) ? createdAt : monthStart;
+        while (currentDate.isBefore(monthEnd.add(const Duration(days: 1))) &&
+            !currentDate.isAfter(today)) {
+          monthDays.add(currentDate);
+          currentDate = currentDate.add(const Duration(days: 1));
         }
+        if (monthDays.isEmpty) break;
 
         // Decide if month goal is met
         final monthShouldComplete = _random.nextDouble() < completionRate;
