@@ -13,8 +13,22 @@ import 'features/timeline/pages/main_timeline_page.dart';
 import 'features/onboarding/pages/onboarding_page.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final isFirstLaunch = PreferencesService.isFirstLaunch();
-  Log.debug('Router initialized, first launch: $isFirstLaunch');
+  // Safely check if this is the first launch with fallback behavior
+  // If PreferencesService isn't initialized, assume it's the first launch
+  bool isFirstLaunch = true;
+  try {
+    isFirstLaunch = PreferencesService.isFirstLaunch();
+    Log.debug('Router initialized, first launch: $isFirstLaunch');
+  } catch (e, stackTrace) {
+    Log.error(
+      'Failed to check first launch status from PreferencesService, defaulting to onboarding. Error: $e',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    // Default to true (first launch) if we can't determine - safer to show onboarding
+    isFirstLaunch = true;
+  }
+
   return GoRouter(
     initialLocation: isFirstLaunch ? '/onboarding' : '/timeline',
     routes: [

@@ -12,12 +12,11 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize logging service
-  await LoggingService.init();
-
-  // Set up error handlers for crash reporting
+  // Set up error handlers FIRST - before any initialization that might fail
+  // This ensures we can catch and log errors during initialization
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
+    // Use LoggingService directly here since Log helper might not be available yet
     LoggingService.severe(
       'Flutter framework error: ${details.exception}',
       component: 'CrashHandler',
@@ -26,10 +25,10 @@ void main() async {
     );
   };
 
-  // Handle async errors
+  // Handle async errors (uncaught exceptions in async code)
   PlatformDispatcher.instance.onError = (error, stack) {
     LoggingService.severe(
-      'Async error: $error',
+      'Uncaught async error: $error',
       component: 'CrashHandler',
       error: error,
       stackTrace: stack,
@@ -37,30 +36,50 @@ void main() async {
     return true; // Prevent default error handling
   };
 
-  // Initialize timezone
-  tz.initializeTimeZones();
-  Log.debug('Timezone initialized');
-
-  // Initialize localization
+  // Initialize logging service (critical - needed for all other logging)
   try {
-    await EasyLocalization.ensureInitialized();
-    Log.debug('Localization initialized');
+    await LoggingService.init();
+  } catch (e) {
+    // If logging service fails, we can't log it, but we should still try to continue
+    // The service will fall back to console logging
+    // Note: We don't capture stackTrace here since we can't log it anyway
+  }
+
+  // Initialize timezone data (required for notifications and date handling)
+  try {
+    tz.initializeTimeZones();
+    Log.debug('Timezone initialized successfully');
   } catch (e, stackTrace) {
     Log.error(
-      'Failed to initialize localization, continuing with default locale',
+      'Failed to initialize timezone data, some features may not work correctly',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    // Continue - app can function without timezone data, but notifications may fail
+  }
+
+  // Initialize localization (required for i18n support)
+  // If this fails, app will use default locale (English)
+  try {
+    await EasyLocalization.ensureInitialized();
+    Log.debug('Localization initialized successfully');
+  } catch (e, stackTrace) {
+    Log.error(
+      'Failed to initialize localization service, app will use default locale (en). Error: $e',
       error: e,
       stackTrace: stackTrace,
     );
     // Continue with default locale - app can still function
   }
 
-  // Initialize services
+  // Initialize preferences service (critical - stores user settings)
+  // If this fails, app may not function correctly but we'll try to continue
   try {
     await PreferencesService.init();
-    Log.debug('PreferencesService initialized');
+    Log.debug('PreferencesService initialized successfully');
   } catch (e, stackTrace) {
     Log.error(
-      'Failed to initialize PreferencesService',
+      'Failed to initialize PreferencesService - user preferences will not be saved. Error: $e',
       error: e,
       stackTrace: stackTrace,
     );
@@ -68,25 +87,38 @@ void main() async {
     // But we'll continue and let the app handle it gracefully
   }
 
-  // Initialize notifications (non-blocking - app continues even if it fails)
+  // Initialize notifications (non-critical - app continues even if it fails)
+  // Notifications are optional and failure should not prevent app startup
   try {
     await NotificationService.init();
     await NotificationService.requestPermissions();
-    Log.debug('NotificationService initialized');
+    Log.debug('NotificationService initialized successfully');
   } catch (e, stackTrace) {
     Log.error(
-      'Notification initialization failed, continuing without notifications',
+      'Failed to initialize NotificationService - notifications will not be available. Error: $e',
       error: e,
       stackTrace: stackTrace,
     );
+    // Continue without notifications - this is acceptable
   }
 
-  // Get saved language from preferences
-  final savedLanguage = PreferencesService.getLanguage();
-  final startLocale = savedLanguage != null
-      ? Locale(savedLanguage)
-      : const Locale('en');
-  Log.info('Starting app with locale: ${startLocale.languageCode}');
+  // Get saved language from preferences (with fallback if service failed)
+  Locale startLocale;
+  try {
+    final savedLanguage = PreferencesService.getLanguage();
+    startLocale = savedLanguage != null
+        ? Locale(savedLanguage)
+        : const Locale('en');
+    Log.info('Starting app with locale: ${startLocale.languageCode}');
+  } catch (e, stackTrace) {
+    Log.error(
+      'Failed to get saved language from preferences, using default locale. Error: $e',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    startLocale = const Locale('en');
+    Log.info('Using default locale: en (fallback due to preferences error)');
+  }
 
   runApp(
     EasyLocalization(
