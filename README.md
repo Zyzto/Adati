@@ -384,36 +384,9 @@ The project uses `flutter_lints` for code quality:
 flutter analyze
 ```
 
-### Environment Variables
-Create a `.env` file in the root directory for environment-specific configuration (optional):
-```env
-# Example .env file
-
-# Log Level Configuration
-# Options: DEBUG, INFO, WARNING, ERROR, SEVERE
-# Default: DEBUG (in debug mode), INFO (in release mode)
-# Set to ERROR to show only error logs
-LOG_LEVEL=DEBUG
-
-# GitHub Token (optional)
-# Used for sending logs to GitHub Issues
-# GITHUB_TOKEN=your_github_token_here
-```
-
-**Log Level Options:**
-- `DEBUG` - Show all logs (most verbose)
-- `INFO` - Show info, warnings, errors, and severe logs
-- `WARNING` - Show warnings, errors, and severe logs
-- `ERROR` - Show only errors and severe logs
-- `SEVERE` - Show only severe/crash logs
-
-**⚠️ Security Note**: The `.env` file is in `.gitignore` and should never be committed. See [SECURITY.md](SECURITY.md) for security best practices.
-
 ### CI/CD
 The project uses GitHub Actions for automated builds and releases:
 - Workflow file: `.github/workflows/release.yml`
-- For CI/CD, use GitHub Secrets to store sensitive values like `GITHUB_TOKEN`
-- See [SECURITY.md](SECURITY.md) for details on setting up GitHub Secrets
 - Triggers on version tags (v*) or manual dispatch
 - Builds for Android (APK/AAB), Linux (AppImage), and Windows (ZIP)
 - Automatically creates GitHub releases with artifacts

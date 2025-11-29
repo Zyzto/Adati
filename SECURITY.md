@@ -6,7 +6,6 @@ This document outlines security best practices for the Adati project.
 
 The following files should **NEVER** be committed to the repository:
 
-- `.env` - Environment variables (API keys, tokens, etc.)
 - `key.properties` - Android signing configuration
 - `*.jks`, `*.keystore` - Android keystore files
 - `local.properties` - Local Android SDK paths
@@ -31,41 +30,6 @@ git rm --cached <file>
 git commit -m "Remove sensitive file"
 ```
 
-## 🔑 API Keys and Tokens
-
-### GitHub Token
-
-The app uses a GitHub token for sending logs to GitHub Issues. This token should:
-
-1. **Never be hardcoded** in source code
-2. **Never be committed** to the repository
-3. Be stored in `.env` file (local development) or GitHub Secrets (CI/CD)
-
-#### Local Development
-
-Create a `.env` file in the root directory:
-
-```env
-GITHUB_TOKEN=your_token_here
-```
-
-The `.env` file is already in `.gitignore` and will not be committed.
-
-#### CI/CD (GitHub Actions)
-
-For automated builds, use GitHub Secrets:
-
-1. Go to your repository settings
-2. Navigate to **Secrets and variables** → **Actions**
-3. Add a new secret named `GITHUB_TOKEN`
-4. Paste your GitHub Personal Access Token
-
-The workflow can then use it as:
-```yaml
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
 ## 📱 Android Signing
 
 ### Keystore Security
@@ -80,7 +44,7 @@ See `android/SIGNING.md` for detailed signing setup instructions.
 ## 🛡️ Best Practices
 
 1. **Review before committing**: Always review `git status` and `git diff` before committing
-2. **Use environment variables**: Never hardcode secrets in source code
+2. **Never hardcode secrets**: Never hardcode secrets in source code
 3. **Rotate credentials**: If any secret is exposed, rotate it immediately
 4. **Use `.gitattributes`**: Additional protection layer (already configured)
 5. **Regular audits**: Periodically check for accidentally committed secrets
