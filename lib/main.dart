@@ -5,8 +5,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'core/services/preferences_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/reminder_service.dart';
 import 'core/services/logging_service.dart';
 import 'core/services/log_helper.dart';
+import 'core/database/app_database.dart' as db;
+import 'features/habits/habit_repository.dart';
 import 'app.dart';
 
 void main() async {
@@ -100,6 +103,31 @@ void main() async {
       stackTrace: stackTrace,
     );
     // Continue without notifications - this is acceptable
+  }
+
+  // Initialize reminder service and reschedule all reminders
+  // This ensures reminders are up-to-date after app updates or timezone changes
+  try {
+    final database = db.AppDatabase();
+    final habitRepository = HabitRepository(database);
+    ReminderService.init(habitRepository);
+
+    // Reschedule reminders in background to not block app startup
+    ReminderService.rescheduleAllReminders().catchError((e, stackTrace) {
+      Log.error(
+        'Failed to reschedule reminders on startup',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    });
+    Log.debug('ReminderService initialized and rescheduling started');
+  } catch (e, stackTrace) {
+    Log.error(
+      'Failed to initialize ReminderService - reminders may not be up-to-date. Error: $e',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    // Continue - app can function without reminder rescheduling
   }
 
   // Get saved language from preferences (with fallback if service failed)
