@@ -14,6 +14,8 @@ import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/services/demo_data_service.dart';
 import '../../../core/services/preferences_service.dart';
 import '../../../core/services/log_helper.dart';
+import '../../../core/services/reminder_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/database/app_database.dart' as db;
 import '../../../core/database/daos/habit_dao.dart';
 import '../../../core/database/daos/tag_dao.dart';
@@ -124,6 +126,12 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
                       _showPerformanceIndicator = !_showPerformanceIndicator;
                     });
                     break;
+                  case 'test_reminder':
+                    await _testReminderSystem(context, ref);
+                    break;
+                  case 'reschedule_reminders':
+                    await _rescheduleAllReminders(context, ref);
+                    break;
                 }
               },
               itemBuilder: (context) => [
@@ -205,6 +213,27 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
                       Icon(Icons.speed, size: 20),
                       SizedBox(width: 12),
                       Text('Performance Indicator'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'test_reminder',
+                  child: Row(
+                    children: [
+                      Icon(Icons.notifications_active, size: 20),
+                      SizedBox(width: 12),
+                      Text('Test Reminder'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'reschedule_reminders',
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule, size: 20),
+                      SizedBox(width: 12),
+                      Text('Reschedule All Reminders'),
                     ],
                   ),
                 ),
@@ -445,6 +474,100 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _testReminderSystem(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      // Check if notifications are available
+      final isAvailable = NotificationService.isAvailable();
+      Log.info('NotificationService available: $isAvailable');
+
+      // Show immediate test notification (better for testing)
+      await NotificationService.showNotification(
+        id: 999999, // Use a high ID that won't conflict
+        title: 'Test Reminder',
+        body: 'This is a test reminder from the debug menu',
+        payload: 'test',
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAvailable
+                  ? 'Test notification shown'
+                  : 'Test notification shown (notifications may not be available on this platform)',
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      Log.info('Test notification shown');
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to schedule test reminder',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error scheduling test reminder: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _rescheduleAllReminders(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      ReminderService.init(repository);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Rescheduling all reminders...'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      await ReminderService.rescheduleAllReminders();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All reminders rescheduled successfully'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      Log.info('All reminders rescheduled from debug menu');
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to reschedule reminders',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error rescheduling reminders: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
