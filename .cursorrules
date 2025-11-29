@@ -1,0 +1,230 @@
+# Adati - Cursor Rules
+
+## Project Overview
+Adati is a Flutter habit tracking app with timeline visualization. It uses Riverpod for state management, Drift for database operations, and supports multiple platforms (Android, iOS, Linux, macOS, Windows, Web).
+
+## Architecture & Structure
+
+### Project Structure
+- `lib/main.dart` - App entry point, service initialization, error handlers
+- `lib/app.dart` - Main app widget, routing configuration, theme setup
+- `lib/core/` - Core functionality (database, services, theme, utils, widgets)
+- `lib/features/` - Feature modules (habits, timeline, settings, onboarding)
+- Each feature follows: `pages/`, `providers/`, `widgets/` structure
+
+### State Management (Riverpod)
+- Use Riverpod for all state management
+- Providers should be defined in `features/*/providers/` directories
+- Use `StreamProvider` for reactive database queries
+- Use `Provider` for dependencies and repositories
+- Use `StateNotifier` or `Notifier` for complex state that needs mutation
+- Always use `ref.watch()` in widgets, `ref.read()` only in callbacks/event handlers
+- Use `ref.keepAlive()` for providers that should persist across widget rebuilds
+- Handle errors in providers gracefully - yield empty lists/values on error, don't crash
+
+### Database (Drift)
+- All database models in `lib/core/database/models/`
+- DAOs in `lib/core/database/daos/`
+- Use repository pattern: `features/*/habit_repository.dart` for data access
+- Always use transactions for multi-step operations
+- Handle database errors gracefully with try-catch
+- Use `watchAll*` methods for reactive queries
+- Database connection is platform-specific (native vs web)
+
+### Services
+- Services are static classes in `lib/core/services/`
+- Services must be initialized in `main.dart` before `runApp()`
+- Services handle initialization errors gracefully - app continues even if non-critical services fail
+- Key services:
+  - `LoggingService` - Comprehensive logging with file persistence
+  - `PreferencesService` - User preferences storage
+  - `NotificationService` - Local notifications
+  - `ExportService` / `ImportService` - Data import/export
+
+## Code Style & Conventions
+
+### Logging
+- Always use `Log` helper from `core/services/log_helper.dart` (not direct `LoggingService`)
+- Use appropriate log levels:
+  - `Log.debug()` - Development debugging (only in debug mode)
+  - `Log.info()` - Important information
+  - `Log.warning()` - Warnings that don't break functionality
+  - `Log.error()` - Errors that are handled gracefully
+  - `LoggingService.severe()` - Critical errors/crashes
+- Always include `component` parameter for context
+- Include `error` and `stackTrace` parameters when logging exceptions
+- Example: `Log.error('Failed to load habits', component: 'HabitRepository', error: e, stackTrace: stackTrace)`
+
+### Error Handling
+- Always wrap async operations in try-catch blocks
+- Log errors with context (component, error, stackTrace)
+- Don't let errors crash the app - handle gracefully
+- For critical failures, show user-friendly error messages
+- In providers, yield safe defaults (empty lists, null) on error rather than throwing
+
+### Localization
+- Use `easy_localization` package
+- Translation keys in `assets/translations/` (en.json, ar.json)
+- Use `context.tr('key')` or `'key'.tr()` for translations
+- Always support both English and Arabic (RTL)
+- Test RTL layout when adding new UI components
+
+### Widgets
+- Use `const` constructors when possible for performance
+- Extract reusable widgets to `features/*/widgets/` directories
+- Use `ConsumerWidget` or `ConsumerStatefulWidget` when accessing Riverpod providers
+- Prefer composition over large monolithic widgets
+- Use `SkeletonLoader` for loading states (from `core/widgets/skeleton_loader.dart`)
+
+### Navigation
+- Use GoRouter for navigation (defined in `app.dart`)
+- Routes defined in `routerProvider`
+- Use `context.go()` for navigation, `context.push()` for modals
+- Route parameters accessed via `state.pathParameters`
+
+### Theming
+- Theme configuration in `core/theme/app_theme.dart`
+- Use Material Design 3 principles
+- Support light, dark, and system theme modes
+- Theme colors and settings come from `PreferencesService`
+- Use `AppScrollBehavior()` for desktop mouse drag support (already configured in `app.dart`)
+
+## Dependencies & Packages
+
+### Key Dependencies
+- `flutter_riverpod: ^3.0.1` - State management
+- `go_router: ^17.0.0` - Navigation
+- `easy_localization: ^3.0.7` - i18n
+- `drift: ^2.18.0` - Database ORM
+- `shared_preferences: ^2.3.3` - Preferences storage
+- `flutter_local_notifications: ^19.5.0` - Notifications
+- `animations: ^2.1.0` - UI animations
+- `skeletonizer: ^2.1.0+1` - Loading skeletons
+
+### Code Generation
+- Drift requires code generation: `flutter pub run build_runner build --delete-conflicting-outputs`
+- Always run code generation after modifying database models or DAOs
+- Generated files end with `.g.dart`
+
+## Platform-Specific Considerations
+
+### Desktop Support
+- Custom scroll behavior (`AppScrollBehavior`) enables mouse drag on desktop
+- Test on Linux, Windows, macOS for desktop-specific issues
+- Use responsive layouts for different screen sizes
+
+### Mobile Support
+- Android min SDK: 29
+- Handle permissions gracefully (notifications, file access)
+- Test on both Android and iOS
+
+### Web Support
+- Database connection uses web-specific implementation
+- Test file picker and other web-specific features
+
+## Testing
+
+### Test Structure
+- Unit tests in `test/` directory
+- Integration tests in `integration_test/` directory
+- Use test fixtures from `test/fixtures/`
+- Test helpers in `test/helpers/`
+
+### Writing Tests
+- Test services, repositories, and business logic
+- Mock database and external dependencies
+- Use `LoggingService.disableFileLogging()` in tests
+- Test error handling paths
+
+## Security
+
+### Sensitive Data
+- NEVER commit `.env` files, `key.properties`, keystores, or any secrets
+- Use `PreferencesService` for user preferences (not sensitive data)
+- See `SECURITY.md` for detailed security guidelines
+
+### Error Reporting
+- Log errors with context but don't expose sensitive user data
+- Use `LoggingService.severe()` for crashes
+- Crash logs stored separately in `adati_crashes.log`
+
+## Development Workflow
+
+### Before Committing
+- Run `flutter analyze` to check for linting errors
+- Run `flutter test` to ensure tests pass
+- Run code generation if database models changed
+- Review changes for security issues (no secrets committed)
+
+### Code Generation Commands
+```bash
+# Generate Drift code
+flutter pub run build_runner build --delete-conflicting-outputs
+
+# Generate app icons
+flutter pub run flutter_launcher_icons
+```
+
+### Linting
+- Project uses `flutter_lints: ^6.0.0`
+- Configuration in `analysis_options.yaml`
+- Follow Flutter/Dart style guide
+
+## Common Patterns
+
+### Creating a New Feature
+1. Create feature directory: `lib/features/feature_name/`
+2. Add `pages/`, `providers/`, `widgets/` subdirectories
+3. Create repository if needed: `feature_name_repository.dart`
+4. Define providers in `providers/feature_name_providers.dart`
+5. Add routes in `app.dart` if needed
+
+### Database Operations
+1. Define model in `core/database/models/`
+2. Create DAO in `core/database/daos/`
+3. Use repository pattern for business logic
+4. Create Riverpod providers for reactive access
+5. Run code generation after changes
+
+### Adding a New Setting
+1. Add key constant in `PreferencesService`
+2. Add getter/setter methods in `PreferencesService`
+3. Create provider in `features/settings/providers/settings_providers.dart`
+4. Add UI in appropriate settings section
+5. Use provider in widgets that need the setting
+
+## Best Practices
+
+1. **Always log errors** with component, error, and stackTrace
+2. **Handle errors gracefully** - don't crash the app
+3. **Use const constructors** when possible
+4. **Extract reusable widgets** to avoid duplication
+5. **Follow the repository pattern** for data access
+6. **Use StreamProvider** for reactive database queries
+7. **Support both English and Arabic** (RTL)
+8. **Test on multiple platforms** when possible
+9. **Keep widgets small and focused**
+10. **Use meaningful component names** in logs
+
+## Anti-Patterns to Avoid
+
+1. ❌ Don't use `ref.read()` in build methods (use `ref.watch()`)
+2. ❌ Don't throw exceptions in providers (handle gracefully)
+3. ❌ Don't hardcode strings (use localization)
+4. ❌ Don't commit secrets or sensitive files
+5. ❌ Don't skip error handling in async operations
+6. ❌ Don't create large monolithic widgets
+7. ❌ Don't access database directly from widgets (use repository)
+8. ❌ Don't forget to run code generation after database changes
+9. ❌ Don't use `print()` for logging (use `Log` helper)
+10. ❌ Don't ignore RTL layout when adding new UI
+
+## Notes
+
+- The app is offline-first - all data stored locally in SQLite
+- Supports good and bad habits with configurable completion logic
+- Timeline visualization shows completion history
+- Comprehensive logging system for debugging
+- Multi-platform support (mobile, desktop, web)
+- Material Design 3 UI with customizable themes
+
