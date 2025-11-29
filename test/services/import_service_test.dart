@@ -6,8 +6,14 @@ import 'package:adati/core/services/import_service.dart';
 import 'package:adati/core/database/models/tracking_types.dart';
 import 'package:adati/features/habits/habit_repository.dart';
 import '../helpers/database_helpers.dart';
+import '../helpers/test_helpers.dart';
 
 void main() {
+  setUpAll(() async {
+    // Initialize test environment (binding, preferences, logging)
+    await setupTestEnvironment();
+  });
+
   late db.AppDatabase testDatabase;
   late HabitRepository repository;
 
@@ -47,10 +53,14 @@ void main() {
         'tags': [],
       };
 
-      final jsonString = jsonEncode(jsonData);
+      // Create a temporary file for import (importAllData expects a file path)
+      final tempDir = Directory.systemTemp;
+      final tempFile = File('${tempDir.path}/test_import_${DateTime.now().millisecondsSinceEpoch}.json');
+      await tempFile.writeAsString(jsonEncode(jsonData));
+      
       final result = await ImportService.importAllData(
         repository,
-        jsonString,
+        tempFile.path,
         null, // No progress callback for test
       );
 
@@ -61,6 +71,11 @@ void main() {
       final habits = await repository.getAllHabits();
       expect(habits.length, equals(1));
       expect(habits[0].name, equals('Imported Habit'));
+      
+      // Clean up temp file
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
     });
 
     test('importAllData creates tracking entries correctly', () async {
