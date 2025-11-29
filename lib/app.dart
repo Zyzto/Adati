@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -90,7 +91,9 @@ class App extends ConsumerWidget {
 
     return MaterialApp.router(
       title: context.locale.languageCode == 'ar' ? 'عادتي' : 'Adati',
-      debugShowCheckedModeBanner: false,
+      // Show Flutter's built-in debug banner in debug mode
+      // This indicates it's a debug build and data is separate from release
+      debugShowCheckedModeBanner: kDebugMode,
       // Custom scroll behavior enables mouse drag support on desktop platforms
       // (Linux, Windows, macOS). Without this, users cannot drag PageView or
       // other scrollable widgets with a mouse.
