@@ -93,6 +93,12 @@ class PreferencesService {
   static const String _keySettingsAdvancedExpanded =
       'settings_advanced_expanded';
   static const String _keySettingsAboutExpanded = 'settings_about_expanded';
+  
+  // Auto-backup preferences
+  static const String _keyAutoBackupEnabled = 'auto_backup_enabled';
+  static const String _keyAutoBackupRetentionCount = 'auto_backup_retention_count';
+  static const String _keyAutoBackupUserDirectory = 'auto_backup_user_directory';
+  static const String _keyAutoBackupLastBackup = 'auto_backup_last_backup';
 
   static SharedPreferences? _prefs;
 
@@ -599,6 +605,41 @@ class PreferencesService {
       prefs.getBool(_keySettingsAboutExpanded) ?? false;
   static Future<bool> setSettingsAboutExpanded(bool value) =>
       prefs.setBool(_keySettingsAboutExpanded, value);
+
+  // Auto-backup preferences
+  static bool getAutoBackupEnabled() =>
+      prefs.getBool(_keyAutoBackupEnabled) ?? false;
+  static Future<bool> setAutoBackupEnabled(bool enabled) {
+    Log.info('setAutoBackupEnabled(enabled=$enabled)');
+    return prefs.setBool(_keyAutoBackupEnabled, enabled);
+  }
+
+  static int getAutoBackupRetentionCount() =>
+      prefs.getInt(_keyAutoBackupRetentionCount) ?? 10;
+  static Future<bool> setAutoBackupRetentionCount(int count) {
+    Log.info('setAutoBackupRetentionCount(count=$count)');
+    return prefs.setInt(_keyAutoBackupRetentionCount, count);
+  }
+
+  static String? getAutoBackupUserDirectory() =>
+      prefs.getString(_keyAutoBackupUserDirectory);
+  static Future<bool> setAutoBackupUserDirectory(String? directory) {
+    Log.info('setAutoBackupUserDirectory(directory=$directory)');
+    if (directory == null || directory.isEmpty) {
+      return prefs.remove(_keyAutoBackupUserDirectory);
+    }
+    return prefs.setString(_keyAutoBackupUserDirectory, directory);
+  }
+
+  static String? getAutoBackupLastBackup() =>
+      prefs.getString(_keyAutoBackupLastBackup);
+  static Future<bool> setAutoBackupLastBackup(String? iso8601String) {
+    Log.info('setAutoBackupLastBackup(iso8601String=$iso8601String)');
+    if (iso8601String == null || iso8601String.isEmpty) {
+      return prefs.remove(_keyAutoBackupLastBackup);
+    }
+    return prefs.setString(_keyAutoBackupLastBackup, iso8601String);
+  }
 
   // Clear all preferences
   static Future<bool> clear() => prefs.clear();
