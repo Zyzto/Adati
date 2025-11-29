@@ -373,6 +373,7 @@
   "warnings": "تحذيرات",
   "errors": "أخطاء",
   "file_not_found": "الملف غير موجود",
+  "invalid_json_file": "تنسيق ملف JSON غير صحيح",
   "invalid_habits_file": "تنسيق ملف العادات غير صحيح",
   "invalid_settings_file": "تنسيق ملف الإعدادات غير صحيح",
   "no_habits_in_file": "لم يتم العثور على عادات في الملف",
@@ -528,6 +529,22 @@
   },
   "habit_reminders": "تذكيرات العادات",
   "habit_reminders_description": "إشعارات لتذكيرات العادات",
+  "reminder_title": "تذكير العادة: {habit}",
+  "@reminder_title": {
+    "placeholders": {
+      "habit": {
+        "type": "String"
+      }
+    }
+  },
+  "reminder_body": "لا تنس إكمال عادتك: {habit}",
+  "@reminder_body": {
+    "placeholders": {
+      "habit": {
+        "type": "String"
+      }
+    }
+  },
   "csv_header": "اسم العادة,التاريخ,مكتمل,ملاحظات,السلسلة الحالية,أطول سلسلة",
   "yes": "نعم",
   "no": "لا",
