@@ -150,6 +150,11 @@ Adati is a Flutter habit tracking app with timeline visualization. It uses River
 
 ## Development Workflow
 
+### Documentation & Planning
+- All plans, design documents, and planning documents should be written in the `plans/` folder
+- Keep plans organized by topic or feature
+- Use markdown format for plans
+
 ### Before Committing
 - Run `flutter analyze` to check for linting errors
 - Run `flutter test` to ensure tests pass
