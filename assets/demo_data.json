@@ -1,0 +1,130 @@
+{
+  "tag": {
+    "name": "demo",
+    "color": 4288423856,
+    "icon": "58760"
+  },
+  "habits": [
+    {
+      "name": "Morning Exercise",
+      "description": "Start the day with physical activity",
+      "color": 4280391411,
+      "icon": "58752",
+      "habitType": "good",
+      "trackingType": "completed",
+      "entries": 60,
+      "completionRate": 0.85,
+      "pattern": "streak_with_breaks",
+      "reminderEnabled": true,
+      "reminderTime": "07:00"
+    },
+    {
+      "name": "Daily Reading",
+      "description": "Read at least 20 pages every day",
+      "color": 4283215696,
+      "icon": "57669",
+      "habitType": "good",
+      "trackingType": "measurable",
+      "unit": "pages",
+      "goalValue": 20.0,
+      "goalPeriod": "daily",
+      "entries": 75,
+      "completionRate": 0.80,
+      "pattern": "gradual_improvement"
+    },
+    {
+      "name": "Weekly Workout",
+      "description": "Exercise at least 3 hours per week",
+      "color": 4283215696,
+      "icon": "58752",
+      "habitType": "good",
+      "trackingType": "measurable",
+      "unit": "hours",
+      "goalValue": 3.0,
+      "goalPeriod": "weekly",
+      "entries": 90,
+      "completionRate": 0.75,
+      "pattern": "weekly_aggregation"
+    },
+    {
+      "name": "Monthly Savings",
+      "description": "Save money for future goals",
+      "color": 4283215696,
+      "icon": "58048",
+      "habitType": "good",
+      "trackingType": "measurable",
+      "unit": "count",
+      "goalValue": 500.0,
+      "goalPeriod": "monthly",
+      "entries": 120,
+      "completionRate": 0.70,
+      "pattern": "monthly_aggregation"
+    },
+    {
+      "name": "Meditation",
+      "description": "Practice mindfulness morning and evening",
+      "color": 4288423856,
+      "icon": "58049",
+      "habitType": "good",
+      "trackingType": "occurrences",
+      "occurrenceNames": ["morning", "evening"],
+      "entries": 65,
+      "completionRate": 0.75,
+      "pattern": "varied_occurrences"
+    },
+    {
+      "name": "Water Intake",
+      "description": "Drink enough water throughout the day",
+      "color": 4280391411,
+      "icon": "58751",
+      "habitType": "good",
+      "trackingType": "measurable",
+      "unit": "glasses",
+      "goalValue": 8.0,
+      "goalPeriod": "daily",
+      "entries": 70,
+      "completionRate": 0.90,
+      "pattern": "consistent",
+      "reminderEnabled": true,
+      "reminderTime": "09:00"
+    },
+    {
+      "name": "Social Media",
+      "description": "Reduce time spent on social platforms",
+      "color": 4284927402,
+      "icon": "58753",
+      "habitType": "bad",
+      "trackingType": "completed",
+      "entries": 80,
+      "completionRate": 0.65,
+      "pattern": "reduction_tracking"
+    },
+    {
+      "name": "Junk Food",
+      "description": "Avoid unhealthy snacks and fast food",
+      "color": 4284927402,
+      "icon": "57675",
+      "habitType": "bad",
+      "trackingType": "occurrences",
+      "occurrenceNames": ["breakfast", "lunch", "dinner", "snack"],
+      "entries": 70,
+      "completionRate": 0.70,
+      "pattern": "varied_occurrences"
+    },
+    {
+      "name": "Smoking",
+      "description": "Track and reduce cigarette consumption",
+      "color": 4284927402,
+      "icon": "58050",
+      "habitType": "bad",
+      "trackingType": "measurable",
+      "unit": "count",
+      "goalValue": 0.0,
+      "goalPeriod": "daily",
+      "entries": 100,
+      "completionRate": 0.85,
+      "pattern": "reduction_tracking"
+    }
+  ]
+}
+

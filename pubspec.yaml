@@ -76,6 +76,7 @@ flutter:
   assets:
     - assets/translations/
     - assets/icon.png
+    - assets/demo_data.json
   
   fonts:
     - family: Almarai
