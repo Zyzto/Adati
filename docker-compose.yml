@@ -1,0 +1,12 @@
+services:
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: adati-builder
+    volumes:
+      - ./output:/output
+    command: sh -c "/usr/local/bin/build-appimage.sh && sudo cp adati-x86_64.AppImage /output/ && sudo chmod 755 /output/adati-x86_64.AppImage"
+    # Remove the container after it exits
+    container_name: adati-appimage-builder
+

@@ -140,6 +140,9 @@ firebase_options.dart
 # Plans directory (internal planning documents)
 plans/
 
+# Build output directory
+output/
+
 # Temporary files
 *.tmp
 *.temp

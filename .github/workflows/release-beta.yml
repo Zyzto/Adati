@@ -242,7 +242,7 @@ jobs:
           Type=Application
           Name=Adati
           Comment=A habit tracker app
-          Exec=adati
+          Exec=usr/bin/adati
           Icon=adati
           Categories=Utility;
           EOF

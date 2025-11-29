@@ -1,0 +1,48 @@
+# Build outputs
+build/
+*.appimage
+AppDir/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Dependencies
+.dart_tool/
+.packages
+.pub-cache/
+
+# Test files
+test/
+integration_test/
+
+# Documentation
+*.md
+!README.md
+plans/
+
+# CI/CD
+.github/
+
+# Android/iOS specific (not needed for Linux build)
+android/
+ios/
+macos/
+windows/
+web/
+
+# Other
+*.log
+*.swp
+*.swo
+*~
+
