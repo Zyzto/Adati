@@ -513,68 +513,143 @@ class HabitRepository with Loggable {
       final today = DateTime(now.year, now.month, now.day);
       
       if (frequency == 'daily') {
-        // Schedule daily notification
+        // Schedule next 90 daily occurrences
         var scheduledDate = DateTime(today.year, today.month, today.day, hour, minute);
-        // If time has passed today, schedule for tomorrow
+        // If time has passed today, start from tomorrow
         if (scheduledDate.isBefore(now)) {
           scheduledDate = scheduledDate.add(const Duration(days: 1));
         }
         
-        await NotificationService.scheduleNotification(
-          id: habitId,
-          title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
-          body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
-          scheduledDate: scheduledDate,
-          payload: habitId.toString(),
-        );
-        logInfo('Scheduled daily reminder for habit $habitId at $timeStr');
-      } else if (frequency == 'weekly' && days.isNotEmpty) {
-        // Schedule weekly notifications for specified days
-        for (final dayOfWeek in days) {
-          // dayOfWeek: 1=Monday, 7=Sunday
-          final daysUntilNext = (dayOfWeek - now.weekday) % 7;
-          final scheduledDate = today.add(Duration(days: daysUntilNext == 0 ? 7 : daysUntilNext));
-          final scheduledDateTime = DateTime(
-            scheduledDate.year,
-            scheduledDate.month,
-            scheduledDate.day,
-            hour,
-            minute,
-          );
+        int scheduledCount = 0;
+        for (int i = 0; i < 90; i++) {
+          final occurrenceDate = scheduledDate.add(Duration(days: i));
+          // Use habitId * 10000 + dayOffset as unique notification ID for multiple occurrences
+          final notificationId = habitId * 10000 + i;
           
-          // Use habitId * 100 + dayOfWeek as unique notification ID
-          await NotificationService.scheduleNotification(
-            id: habitId * 100 + dayOfWeek,
-            title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
-            body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
-            scheduledDate: scheduledDateTime,
-            payload: habitId.toString(),
-          );
-        }
-        logInfo('Scheduled weekly reminders for habit $habitId on days $days at $timeStr');
-      } else if (frequency == 'monthly' && days.isNotEmpty) {
-        // Schedule monthly notifications for specified days
-        for (final dayOfMonth in days) {
-          final currentMonth = DateTime(now.year, now.month, dayOfMonth, hour, minute);
-          DateTime scheduledDate;
-          
-          if (currentMonth.isBefore(now)) {
-            // If day has passed this month, schedule for next month
-            scheduledDate = DateTime(now.year, now.month + 1, dayOfMonth, hour, minute);
-          } else {
-            scheduledDate = currentMonth;
+          try {
+            await NotificationService.scheduleNotification(
+              id: notificationId,
+              title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
+              body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
+              scheduledDate: occurrenceDate,
+              payload: habitId.toString(),
+            );
+            scheduledCount++;
+          } catch (e, stackTrace) {
+            logError(
+              'Failed to schedule daily reminder occurrence $i for habit $habitId',
+              error: e,
+              stackTrace: stackTrace,
+            );
+            // Continue with next occurrence even if one fails
           }
-          
-          // Use habitId * 1000 + dayOfMonth as unique notification ID
-          await NotificationService.scheduleNotification(
-            id: habitId * 1000 + dayOfMonth,
-            title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
-            body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
-            scheduledDate: scheduledDate,
-            payload: habitId.toString(),
-          );
         }
-        logInfo('Scheduled monthly reminders for habit $habitId on days $days at $timeStr');
+        logInfo('Scheduled $scheduledCount daily reminders for habit $habitId at $timeStr');
+      } else if (frequency == 'weekly' && days.isNotEmpty) {
+        // Schedule next 12-13 weekly occurrences (approximately 3 months)
+        int scheduledCount = 0;
+        int occurrenceIndex = 0;
+        
+        for (int week = 0; week < 13; week++) {
+          for (final dayOfWeek in days) {
+            // dayOfWeek: 1=Monday, 7=Sunday
+            final targetDate = today.add(Duration(days: week * 7));
+            final currentWeekday = targetDate.weekday;
+            final daysUntilTarget = (dayOfWeek - currentWeekday) % 7;
+            final scheduledDate = targetDate.add(
+              Duration(days: daysUntilTarget == 0 && week == 0 
+                ? (now.hour * 60 + now.minute >= hour * 60 + minute ? 7 : 0)
+                : (daysUntilTarget == 0 ? 7 : daysUntilTarget))
+            );
+            
+            final scheduledDateTime = DateTime(
+              scheduledDate.year,
+              scheduledDate.month,
+              scheduledDate.day,
+              hour,
+              minute,
+            );
+            
+            // Skip if this date is in the past
+            if (scheduledDateTime.isBefore(now)) {
+              continue;
+            }
+            
+            // Use habitId * 10000 + occurrenceIndex as unique notification ID
+            final notificationId = habitId * 10000 + occurrenceIndex;
+            occurrenceIndex++;
+            
+            try {
+              await NotificationService.scheduleNotification(
+                id: notificationId,
+                title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
+                body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
+                scheduledDate: scheduledDateTime,
+                payload: habitId.toString(),
+              );
+              scheduledCount++;
+            } catch (e, stackTrace) {
+              logError(
+                'Failed to schedule weekly reminder occurrence for habit $habitId',
+                error: e,
+                stackTrace: stackTrace,
+              );
+              // Continue with next occurrence even if one fails
+            }
+          }
+        }
+        logInfo('Scheduled $scheduledCount weekly reminders for habit $habitId on days $days at $timeStr');
+      } else if (frequency == 'monthly' && days.isNotEmpty) {
+        // Schedule next 12 monthly occurrences (1 year)
+        int scheduledCount = 0;
+        int occurrenceIndex = 0;
+        
+        for (int monthOffset = 0; monthOffset < 12; monthOffset++) {
+          for (final dayOfMonth in days) {
+            try {
+              // Calculate target month
+              final targetMonth = now.month + monthOffset;
+              final targetYear = now.year + (targetMonth > 12 ? 1 : 0);
+              final adjustedMonth = targetMonth > 12 ? targetMonth - 12 : targetMonth;
+              
+              // Handle invalid dates (e.g., Feb 30)
+              DateTime scheduledDate;
+              try {
+                scheduledDate = DateTime(targetYear, adjustedMonth, dayOfMonth, hour, minute);
+              } catch (e) {
+                // Invalid date (e.g., Feb 30), skip to last day of month
+                final lastDay = DateTime(targetYear, adjustedMonth + 1, 0).day;
+                scheduledDate = DateTime(targetYear, adjustedMonth, lastDay, hour, minute);
+              }
+              
+              // Skip if this date is in the past (for current month)
+              if (monthOffset == 0 && scheduledDate.isBefore(now)) {
+                continue;
+              }
+              
+              // Use habitId * 10000 + occurrenceIndex as unique notification ID
+              final notificationId = habitId * 10000 + occurrenceIndex;
+              occurrenceIndex++;
+              
+              await NotificationService.scheduleNotification(
+                id: notificationId,
+                title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
+                body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
+                scheduledDate: scheduledDate,
+                payload: habitId.toString(),
+              );
+              scheduledCount++;
+            } catch (e, stackTrace) {
+              logError(
+                'Failed to schedule monthly reminder occurrence for habit $habitId',
+                error: e,
+                stackTrace: stackTrace,
+              );
+              // Continue with next occurrence even if one fails
+            }
+          }
+        }
+        logInfo('Scheduled $scheduledCount monthly reminders for habit $habitId on days $days at $timeStr');
       }
     } catch (e, stackTrace) {
       logError(
@@ -588,20 +663,27 @@ class HabitRepository with Loggable {
 
   Future<void> _cancelReminders(int habitId) async {
     try {
-      // Cancel daily reminder (uses habitId as notification ID)
-      await NotificationService.cancelNotification(habitId);
+      // Cancel all reminders for this habit
+      // Since we use habitId * 10000 + occurrenceIndex, we need to cancel a range
+      // Cancel up to 10000 occurrences (should be more than enough)
+      for (int i = 0; i < 10000; i++) {
+        try {
+          await NotificationService.cancelNotification(habitId * 10000 + i);
+        } catch (e) {
+          // Some IDs might not exist, continue
+        }
+      }
       
-      // Cancel weekly reminders (habitId * 100 + dayOfWeek, where dayOfWeek is 1-7)
+      // Also cancel old format IDs for backward compatibility
+      await NotificationService.cancelNotification(habitId);
       for (int dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek++) {
         await NotificationService.cancelNotification(habitId * 100 + dayOfWeek);
       }
-      
-      // Cancel monthly reminders (habitId * 1000 + dayOfMonth, where dayOfMonth is 1-31)
       for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
         await NotificationService.cancelNotification(habitId * 1000 + dayOfMonth);
       }
       
-      logInfo('Cancelled all reminders for habit $habitId');
+      logInfo('Cancelled reminders for habit $habitId');
     } catch (e, stackTrace) {
       logError(
         'Failed to cancel reminders for habit $habitId',
