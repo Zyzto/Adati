@@ -65,6 +65,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Use different package ID for debug builds to prevent data conflicts
+            // Debug builds will use: com.shenepoy.adati.debug
+            applicationIdSuffix = ".debug"
+            
+            // Optional: Use different app name for debug builds
+            resValue("string", "app_name", "Adati Debug")
+        }
         release {
             // Use release signing config if it exists, otherwise fall back to debug
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
