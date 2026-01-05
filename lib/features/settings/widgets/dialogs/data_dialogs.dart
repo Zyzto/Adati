@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/app_database.dart' as db;
+import '../../../../core/services/auto_backup_service.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/import_service.dart';
 import '../../../habits/providers/habit_providers.dart';
@@ -555,6 +556,222 @@ class DataDialogs {
         ],
       ),
     );
+  }
+
+  /// Trigger a manual backup
+  static Future<void> triggerManualBackup(BuildContext context) async {
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final backupPath = await AutoBackupService.createBackup();
+      if (context.mounted) {
+        Navigator.pop(context);
+        if (backupPath != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('auto_backup_success'.tr()),
+              action: SnackBarAction(label: 'ok'.tr(), onPressed: () {}),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('auto_backup_failed'.tr()),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'auto_backup_failed'.tr()}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show restore from backup dialog
+  static Future<void> showRestoreDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final backups = await AutoBackupService.listBackups();
+      if (!context.mounted) return;
+
+      Navigator.pop(context);
+
+      if (backups.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('no_backups_found'.tr())),
+        );
+        return;
+      }
+
+      final selectedBackup = await showDialog<BackupInfo>(
+        context: context,
+        builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+          context: context,
+          title: Text('restore_from_backup'.tr()),
+          scrollable: true,
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: backups.length,
+              itemBuilder: (context, index) {
+                final backup = backups[index];
+                final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
+                return ListTile(
+                  leading: const Icon(Icons.backup),
+                  title: Text(dateFormat.format(backup.date)),
+                  subtitle: Text(
+                    '${backup.habitsCount} ${'habits'.tr()}, '
+                    '${backup.entriesCount} ${'entries'.tr()}, '
+                    '${backup.streaksCount} ${'streaks'.tr()}\n'
+                    '${(backup.size / 1024).toStringAsFixed(1)} KB',
+                  ),
+                  onTap: () => Navigator.pop(context, backup),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('cancel'.tr()),
+            ),
+          ],
+        ),
+      );
+
+      if (selectedBackup == null || !context.mounted) return;
+
+      // Confirm restore
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => ResponsiveDialog.responsiveAlertDialog(
+          context: context,
+          title: Text('restore_confirmation'.tr()),
+          content: Text('restore_confirmation_message'.tr()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('cancel'.tr()),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('restore'.tr()),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true || !context.mounted) return;
+
+      // Show progress
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final repository = ref.read(habitRepositoryProvider);
+      final result = await AutoBackupService.restoreFromBackup(
+        selectedBackup.path,
+        repository,
+      );
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        
+        if (result.success) {
+          ref.invalidate(habitRepositoryProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('restore_success'.tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.errors.join(', ')),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'restore_failed'.tr()}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Optimize database (vacuum)
+  static Future<void> optimizeDatabase(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final repository = ref.read(habitRepositoryProvider);
+      await repository.vacuumDatabase();
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('database_optimized'.tr()),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${'error'.tr()}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

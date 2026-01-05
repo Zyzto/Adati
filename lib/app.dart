@@ -8,8 +8,9 @@ import 'core/theme/app_scroll_behavior.dart';
 import 'core/services/preferences_service.dart';
 import 'core/services/log_helper.dart';
 import 'features/timeline/pages/day_detail_page.dart';
-import 'features/settings/pages/settings_page.dart';
-import 'features/settings/providers/settings_providers.dart';
+import 'features/settings/pages/settings_page_v2.dart';
+import 'features/settings/providers/settings_framework_providers.dart';
+import 'features/settings/settings_definitions.dart';
 import 'features/timeline/pages/main_timeline_page.dart';
 import 'features/onboarding/pages/onboarding_page.dart';
 
@@ -67,7 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/settings',
-        builder: (context, state) => const SettingsPage(),
+        builder: (context, state) => const SettingsPageV2(),
       ),
     ],
   );
@@ -79,11 +80,31 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeModeProvider);
-    final themeColor = ref.watch(themeColorProvider);
-    final cardElevation = ref.watch(cardElevationProvider);
-    final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
-    final fontSizeScale = ref.watch(fontSizeScaleProvider);
+
+    // Try to get settings from new framework, fall back to PreferencesService
+    ThemeMode themeMode;
+    int themeColor;
+    double cardElevation;
+    double cardBorderRadius;
+    String fontSizeScale;
+
+    try {
+      final settings = ref.watch(adatiSettingsProvider);
+      final themeModeStr = ref.watch(settings.provider(themeModeSettingDef));
+      themeMode = _parseThemeMode(themeModeStr);
+      themeColor = ref.watch(settings.provider(themeColorSettingDef));
+      cardElevation = ref.watch(settings.provider(cardElevationSettingDef));
+      cardBorderRadius = ref.watch(settings.provider(cardBorderRadiusSettingDef));
+      fontSizeScale = ref.watch(settings.provider(fontSizeScaleSettingDef));
+    } catch (e) {
+      // Framework not initialized, use PreferencesService fallback
+      Log.warning('Settings framework not initialized, using PreferencesService fallback');
+      themeMode = _getThemeModeFromPrefs();
+      themeColor = PreferencesService.getThemeColor();
+      cardElevation = PreferencesService.getCardElevation();
+      cardBorderRadius = PreferencesService.getCardBorderRadius();
+      fontSizeScale = PreferencesService.getFontSizeScale();
+    }
 
     Log.debug(
       'App build: themeMode=$themeMode, themeColor=$themeColor, cardElevation=$cardElevation, cardBorderRadius=$cardBorderRadius, fontSizeScale=$fontSizeScale',
@@ -118,5 +139,23 @@ class App extends ConsumerWidget {
       locale: context.locale,
       routerConfig: router,
     );
+  }
+
+  ThemeMode _parseThemeMode(String themeModeStr) {
+    switch (themeModeStr) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  ThemeMode _getThemeModeFromPrefs() {
+    final savedMode = PreferencesService.getThemeMode();
+    if (savedMode == null) return ThemeMode.system;
+    return _parseThemeMode(savedMode);
   }
 }

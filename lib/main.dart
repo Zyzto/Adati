@@ -9,8 +9,10 @@ import 'core/services/reminder_service.dart';
 import 'core/services/logging_service.dart';
 import 'core/services/log_helper.dart';
 import 'core/services/auto_backup_service.dart';
-import 'core/database/app_database.dart' as db;
 import 'features/habits/habit_repository.dart';
+import 'features/habits/providers/habit_providers.dart';
+import 'features/settings/providers/settings_framework_providers.dart';
+import 'packages/flutter_settings_framework/flutter_settings_framework.dart';
 import 'app.dart';
 
 void main() async {
@@ -110,7 +112,8 @@ void main() async {
   // This ensures reminders are up-to-date after app updates or timezone changes
   HabitRepository? habitRepository;
   try {
-    final database = db.AppDatabase();
+    // Use shared database instance to avoid multiple database warnings
+    final database = getDatabase();
     habitRepository = HabitRepository(database);
     ReminderService.init(habitRepository);
 
@@ -181,13 +184,40 @@ void main() async {
     Log.info('Using default locale: en (fallback due to preferences error)');
   }
 
+  // Initialize settings framework
+  SettingsProviders? settingsProviders;
+  try {
+    settingsProviders = await initializeAdatiSettings();
+    Log.debug('Settings framework initialized successfully');
+  } catch (e, stackTrace) {
+    Log.error(
+      'Failed to initialize settings framework. Error: $e',
+      error: e,
+      stackTrace: stackTrace,
+    );
+    // Continue - settings page will show error but app can function
+  }
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'), Locale('ar')],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
       startLocale: startLocale,
-      child: const ProviderScope(child: App()),
+      child: ProviderScope(
+        overrides: [
+          if (settingsProviders != null) ...[
+            adatiSettingsControllerProvider.overrideWithValue(
+              settingsProviders.controller,
+            ),
+            adatiSettingsSearchIndexProvider.overrideWithValue(
+              settingsProviders.searchIndex,
+            ),
+            adatiSettingsProvider.overrideWithValue(settingsProviders),
+          ],
+        ],
+        child: const App(),
+      ),
     ),
   );
 }

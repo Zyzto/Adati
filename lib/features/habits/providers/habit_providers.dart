@@ -7,8 +7,17 @@ import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/demo_data_service.dart';
 import '../../../../core/services/log_helper.dart';
 
+/// Singleton database instance to avoid multiple database warnings.
+/// This ensures all parts of the app use the same database connection.
+db.AppDatabase? _databaseInstance;
+
+db.AppDatabase getDatabase() {
+  _databaseInstance ??= db.AppDatabase();
+  return _databaseInstance!;
+}
+
 final databaseProvider = Provider<db.AppDatabase>((ref) {
-  return db.AppDatabase();
+  return getDatabase();
 });
 
 final habitRepositoryProvider = Provider<HabitRepository>((ref) {

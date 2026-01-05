@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/services/auto_backup_service.dart';
 import '../../../../core/services/preferences_service.dart';
