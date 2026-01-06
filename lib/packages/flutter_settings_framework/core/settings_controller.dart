@@ -11,11 +11,8 @@ import 'settings_registry.dart';
 import 'settings_storage.dart';
 
 /// Callback type for setting change notifications.
-typedef SettingChangeCallback<T> = void Function(
-  SettingDefinition<T> setting,
-  T oldValue,
-  T newValue,
-);
+typedef SettingChangeCallback<T> =
+    void Function(SettingDefinition<T> setting, T oldValue, T newValue);
 
 /// Event emitted when a setting value changes.
 class SettingChangeEvent<T> {
@@ -93,11 +90,18 @@ class SettingsController {
   /// Whether the controller has been initialized.
   bool _initialized = false;
 
+  /// Undo stack for recent changes.
+  final List<_UndoEntry> _undoStack = [];
+
+  /// Maximum number of undo entries to keep.
+  static const int maxUndoHistory = 10;
+
+  /// Stream controller for undo availability.
+  final StreamController<bool> _canUndoController =
+      StreamController<bool>.broadcast();
+
   /// Create a new settings controller.
-  SettingsController({
-    required this.registry,
-    required this.storage,
-  });
+  SettingsController({required this.registry, required this.storage});
 
   /// Whether the controller has been initialized.
   bool get isInitialized => _initialized;
@@ -163,7 +167,9 @@ class SettingsController {
 
   void _ensureInitialized() {
     if (!_initialized) {
-      throw StateError('SettingsController not initialized. Call init() first.');
+      throw StateError(
+        'SettingsController not initialized. Call init() first.',
+      );
     }
   }
 
@@ -197,10 +203,12 @@ class SettingsController {
   /// Returns false if validation fails or storage fails.
   ///
   /// If [notify] is true (default), listeners and streams will be notified.
+  /// If [trackUndo] is true (default), the change will be added to the undo stack.
   Future<bool> set<T>(
     SettingDefinition<T> setting,
     T value, {
     bool notify = true,
+    bool trackUndo = true,
   }) async {
     _ensureInitialized();
 
@@ -221,6 +229,11 @@ class SettingsController {
     final success = await _writeToStorage(setting, storable);
     if (!success) return false;
 
+    // Track for undo
+    if (trackUndo) {
+      _addUndoEntry(setting, oldValue);
+    }
+
     // Update cache
     _cache[setting.key] = storable;
 
@@ -230,6 +243,93 @@ class SettingsController {
     }
 
     return true;
+  }
+
+  void _addUndoEntry<T>(SettingDefinition<T> setting, T oldValue) {
+    _undoStack.add(
+      _UndoEntry(
+        settingKey: setting.key,
+        previousValue: oldValue,
+        timestamp: DateTime.now(),
+      ),
+    );
+
+    // Trim stack if too large
+    while (_undoStack.length > maxUndoHistory) {
+      _undoStack.removeAt(0);
+    }
+
+    _canUndoController.add(true);
+  }
+
+  /// Whether there are changes that can be undone.
+  bool get canUndo => _undoStack.isNotEmpty;
+
+  /// Stream that emits when undo availability changes.
+  Stream<bool> get canUndoStream => _canUndoController.stream;
+
+  /// Get the last change that can be undone.
+  _UndoEntry? get lastUndoEntry =>
+      _undoStack.isNotEmpty ? _undoStack.last : null;
+
+  /// Undo the last setting change.
+  ///
+  /// Returns true if undo was successful, false if there's nothing to undo.
+  Future<bool> undo() async {
+    if (_undoStack.isEmpty) return false;
+
+    final entry = _undoStack.removeLast();
+    final setting = registry.get(entry.settingKey);
+    if (setting == null) {
+      _canUndoController.add(_undoStack.isNotEmpty);
+      return false;
+    }
+
+    // Restore the old value without adding to undo stack
+    final success = await _restoreUndoValue(setting, entry.previousValue);
+    _canUndoController.add(_undoStack.isNotEmpty);
+    return success;
+  }
+
+  /// Restore a value from the undo stack (handles type conversion).
+  Future<bool> _restoreUndoValue(
+    SettingDefinition setting,
+    Object? previousValue,
+  ) async {
+    // The previous value was stored as the typed value, so we need to
+    // convert it back to storable format using the setting's method
+    final storable = _convertToStorable(setting, previousValue);
+    final success = await _writeToStorage(setting, storable);
+    if (!success) return false;
+
+    final oldValue = _cache[setting.key];
+    _cache[setting.key] = storable;
+    _notifyChangeUntyped(setting, oldValue, previousValue);
+    return true;
+  }
+
+  /// Convert a value to storable format (type-safe helper).
+  Object? _convertToStorable(SettingDefinition setting, Object? value) {
+    // Use dynamic dispatch to handle the type conversion
+    if (setting is SettingDefinition<String>) {
+      return setting.toStorable(value as String);
+    } else if (setting is SettingDefinition<int>) {
+      return setting.toStorable(value as int);
+    } else if (setting is SettingDefinition<double>) {
+      return setting.toStorable(value as double);
+    } else if (setting is SettingDefinition<bool>) {
+      return setting.toStorable(value as bool);
+    } else if (setting is SettingDefinition<List<String>>) {
+      return setting.toStorable(value as List<String>);
+    }
+    // Fallback: return as-is (for custom types)
+    return value;
+  }
+
+  /// Clear the undo history.
+  void clearUndoHistory() {
+    _undoStack.clear();
+    _canUndoController.add(false);
   }
 
   /// Set the value of a setting by key.
@@ -243,7 +343,10 @@ class SettingsController {
   }
 
   /// Reset a setting to its default value.
-  Future<bool> reset<T>(SettingDefinition<T> setting, {bool notify = true}) async {
+  Future<bool> reset<T>(
+    SettingDefinition<T> setting, {
+    bool notify = true,
+  }) async {
     return set(setting, setting.defaultValue, notify: notify);
   }
 
@@ -254,7 +357,10 @@ class SettingsController {
     }
   }
 
-  Future<void> _resetSetting(SettingDefinition setting, {bool notify = true}) async {
+  Future<void> _resetSetting(
+    SettingDefinition setting, {
+    bool notify = true,
+  }) async {
     final oldValue = _cache[setting.key];
     final defaultValue = setting.defaultValue;
 
@@ -271,11 +377,13 @@ class SettingsController {
     _streamControllers[setting.key]?.add(newValue);
 
     // Emit to global change stream
-    _globalChangeController.add(SettingChangeEvent(
-      setting: setting,
-      oldValue: oldValue,
-      newValue: newValue,
-    ));
+    _globalChangeController.add(
+      SettingChangeEvent(
+        setting: setting,
+        oldValue: oldValue,
+        newValue: newValue,
+      ),
+    );
 
     // Call registered listeners
     final listeners = _listeners[setting.key];
@@ -288,7 +396,11 @@ class SettingsController {
     }
   }
 
-  void _notifyChangeUntyped(SettingDefinition setting, Object? oldValue, Object? newValue) {
+  void _notifyChangeUntyped(
+    SettingDefinition setting,
+    Object? oldValue,
+    Object? newValue,
+  ) {
     // Emit to setting-specific stream
     _streamControllers[setting.key]?.add(newValue);
 
@@ -308,7 +420,9 @@ class SettingsController {
       () => StreamController<Object?>.broadcast(),
     );
 
-    return controller.stream.map((value) => setting.fromStorable(value)).cast<T>();
+    return controller.stream
+        .map((value) => setting.fromStorable(value))
+        .cast<T>();
   }
 
   /// Get a stream of values for a setting, starting with the current value.
@@ -391,12 +505,31 @@ class SettingsController {
     }
     _streamControllers.clear();
     _globalChangeController.close();
+    _canUndoController.close();
     _listeners.clear();
     _cache.clear();
+    _undoStack.clear();
     _initialized = false;
   }
 }
 
+/// Entry in the undo stack.
+class _UndoEntry {
+  /// Key of the setting that was changed.
+  final String settingKey;
+
+  /// The previous value before the change.
+  final Object? previousValue;
+
+  /// When the change occurred.
+  final DateTime timestamp;
+
+  const _UndoEntry({
+    required this.settingKey,
+    required this.previousValue,
+    required this.timestamp,
+  });
+}
+
 /// Typedef for void callback (for listener removal).
 typedef VoidCallback = void Function();
-

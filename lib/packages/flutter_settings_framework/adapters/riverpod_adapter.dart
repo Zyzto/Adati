@@ -47,10 +47,7 @@ class SettingNotifier<T> extends Notifier<T> {
   final SettingsController Function() getController;
   StreamSubscription? _subscription;
 
-  SettingNotifier({
-    required this.setting,
-    required this.getController,
-  });
+  SettingNotifier({required this.setting, required this.getController});
 
   @override
   T build() {
@@ -101,10 +98,7 @@ NotifierProvider<SettingNotifier<T>, T> createSettingProvider<T>(
   SettingsController Function() getController,
 ) {
   return NotifierProvider<SettingNotifier<T>, T>(() {
-    return SettingNotifier<T>(
-      setting: setting,
-      getController: getController,
-    );
+    return SettingNotifier<T>(setting: setting, getController: getController);
   });
 }
 
@@ -118,20 +112,39 @@ class SettingsProviders {
   final SearchIndex searchIndex;
   final Map<String, Object> _providers = {};
 
+  /// Provider for undo availability.
+  late final StreamProvider<bool> canUndoProvider;
+
   SettingsProviders._({
     required this.controller,
     required this.registry,
     required this.searchIndex,
-  });
+  }) {
+    canUndoProvider = StreamProvider<bool>((ref) {
+      // Create a stream that emits initial value then continues with updates
+      return _createUndoStream();
+    });
+  }
+
+  /// Create a stream that starts with current canUndo value.
+  Stream<bool> _createUndoStream() async* {
+    // Emit initial value
+    yield controller.canUndo;
+    // Then forward all stream updates
+    await for (final value in controller.canUndoStream) {
+      yield value;
+    }
+  }
 
   /// Get or create a provider for a setting.
   NotifierProvider<SettingNotifier<T>, T> provider<T>(
     SettingDefinition<T> setting,
   ) {
     return _providers.putIfAbsent(
-      setting.key,
-      () => createSettingProvider(setting, () => controller),
-    ) as NotifierProvider<SettingNotifier<T>, T>;
+          setting.key,
+          () => createSettingProvider(setting, () => controller),
+        )
+        as NotifierProvider<SettingNotifier<T>, T>;
   }
 
   /// Get a provider by key.
@@ -139,6 +152,15 @@ class SettingsProviders {
 
   /// Check if a provider exists for a setting.
   bool hasProvider(String key) => _providers.containsKey(key);
+
+  /// Whether there are changes that can be undone.
+  bool get canUndo => controller.canUndo;
+
+  /// Undo the last setting change.
+  Future<bool> undo() => controller.undo();
+
+  /// Clear the undo history.
+  void clearUndoHistory() => controller.clearUndoHistory();
 }
 
 /// Initialize the settings framework for Riverpod.
@@ -175,10 +197,7 @@ Future<SettingsProviders> initializeSettings({
   await storage.init();
 
   // Create controller
-  final controller = SettingsController(
-    registry: registry,
-    storage: storage,
-  );
+  final controller = SettingsController(registry: registry, storage: storage);
   await controller.init();
 
   // Create search index
@@ -198,18 +217,12 @@ Future<SettingsProviders> initializeSettings({
 /// Extension methods for convenient access to settings in widgets.
 extension SettingsRefExtension on WidgetRef {
   /// Watch a setting value.
-  T watchSetting<T>(
-    SettingsProviders settings,
-    SettingDefinition<T> setting,
-  ) {
+  T watchSetting<T>(SettingsProviders settings, SettingDefinition<T> setting) {
     return watch(settings.provider(setting));
   }
 
   /// Read a setting value (without watching).
-  T readSetting<T>(
-    SettingsProviders settings,
-    SettingDefinition<T> setting,
-  ) {
+  T readSetting<T>(SettingsProviders settings, SettingDefinition<T> setting) {
     return read(settings.provider(setting));
   }
 
@@ -270,7 +283,7 @@ NotifierProvider<SettingNotifier<T>, T> createAutoDisposeSettingProvider<T>(
 /// for all of them at once:
 /// ```dart
 /// final providers = SettingsProviderFactory(controller);
-/// 
+///
 /// // Create providers for specific settings
 /// final themeProvider = providers.create(themeModeSetting);
 /// final languageProvider = providers.create(languageSetting);
@@ -286,9 +299,10 @@ class SettingsProviderFactory {
     SettingDefinition<T> setting,
   ) {
     return _cache.putIfAbsent(
-      setting.key,
-      () => createSettingProvider(setting, () => controller),
-    ) as NotifierProvider<SettingNotifier<T>, T>;
+          setting.key,
+          () => createSettingProvider(setting, () => controller),
+        )
+        as NotifierProvider<SettingNotifier<T>, T>;
   }
 
   /// Create an auto-dispose provider for a setting.
@@ -298,4 +312,3 @@ class SettingsProviderFactory {
     return createAutoDisposeSettingProvider(setting, () => controller);
   }
 }
-

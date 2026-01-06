@@ -8,13 +8,15 @@ library;
 import 'package:flutter/material.dart';
 
 /// The type of a setting value for serialization purposes.
-enum SettingType {
-  string,
-  int,
-  double,
-  bool,
-  stringList,
-  color,
+enum SettingType { string, int, double, bool, stringList, color }
+
+/// Edit mode for settings - determines how the setting value is changed.
+enum SettingEditMode {
+  /// Edit value inline in the tile (stepper buttons, dropdown, etc.)
+  inline,
+
+  /// Open a modal dialog to edit the value
+  modal,
 }
 
 /// Validator function type for setting values.
@@ -80,6 +82,14 @@ abstract class SettingDefinition<T> {
   /// Whether this setting is visible in the UI.
   final bool visible;
 
+  /// Key of another setting this one depends on.
+  /// When set, this setting will be disabled unless the dependency is met.
+  final String? dependsOn;
+
+  /// Value that the dependency setting must have for this setting to be enabled.
+  /// Used with [dependsOn] to create conditional settings.
+  final Object? enabledWhen;
+
   const SettingDefinition({
     required this.key,
     required this.defaultValue,
@@ -95,6 +105,8 @@ abstract class SettingDefinition<T> {
     this.order = 0,
     this.persist = true,
     this.visible = true,
+    this.dependsOn,
+    this.enabledWhen,
   });
 
   /// Validate a value for this setting.
@@ -117,7 +129,9 @@ abstract class SettingDefinition<T> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SettingDefinition && runtimeType == other.runtimeType && key == other.key;
+      other is SettingDefinition &&
+          runtimeType == other.runtimeType &&
+          key == other.key;
 
   @override
   int get hashCode => key.hashCode;
@@ -151,13 +165,12 @@ class StringSetting extends SettingDefinition<String> {
     super.order,
     super.persist,
     super.visible,
+    super.dependsOn,
+    super.enabledWhen,
     this.options,
     this.maxLength,
     this.minLength,
-  }) : super(
-          key: key,
-          type: SettingType.string,
-        );
+  }) : super(key: key, type: SettingType.string);
 
   @override
   bool validate(String value) {
@@ -188,6 +201,9 @@ class IntSetting extends SettingDefinition<int> {
   /// Step value for increments.
   final int step;
 
+  /// How the setting value should be edited (inline or modal).
+  final SettingEditMode editMode;
+
   const IntSetting(
     String key, {
     required super.defaultValue,
@@ -202,13 +218,13 @@ class IntSetting extends SettingDefinition<int> {
     super.order,
     super.persist,
     super.visible,
+    super.dependsOn,
+    super.enabledWhen,
     this.min,
     this.max,
     this.step = 1,
-  }) : super(
-          key: key,
-          type: SettingType.int,
-        );
+    this.editMode = SettingEditMode.modal,
+  }) : super(key: key, type: SettingType.int);
 
   @override
   bool validate(int value) {
@@ -256,14 +272,13 @@ class DoubleSetting extends SettingDefinition<double> {
     super.order,
     super.persist,
     super.visible,
+    super.dependsOn,
+    super.enabledWhen,
     this.min,
     this.max,
     this.step = 1.0,
     this.decimalPlaces = 1,
-  }) : super(
-          key: key,
-          type: SettingType.double,
-        );
+  }) : super(key: key, type: SettingType.double);
 
   @override
   bool validate(double value) {
@@ -300,10 +315,9 @@ class BoolSetting extends SettingDefinition<bool> {
     super.order,
     super.persist,
     super.visible,
-  }) : super(
-          key: key,
-          type: SettingType.bool,
-        );
+    super.dependsOn,
+    super.enabledWhen,
+  }) : super(key: key, type: SettingType.bool);
 
   @override
   Object? toStorable(bool value) => value;
@@ -333,10 +347,9 @@ class StringListSetting extends SettingDefinition<List<String>> {
     super.order,
     super.persist,
     super.visible,
-  }) : super(
-          key: key,
-          type: SettingType.stringList,
-        );
+    super.dependsOn,
+    super.enabledWhen,
+  }) : super(key: key, type: SettingType.stringList);
 
   @override
   Object? toStorable(List<String> value) => value;
@@ -371,12 +384,11 @@ class ColorSetting extends SettingDefinition<int> {
     super.order,
     super.persist,
     super.visible,
+    super.dependsOn,
+    super.enabledWhen,
     this.colorOptions,
     this.allowCustom = true,
-  }) : super(
-          key: key,
-          type: SettingType.color,
-        );
+  }) : super(key: key, type: SettingType.color);
 
   @override
   Object? toStorable(int value) => value;
@@ -404,6 +416,10 @@ class EnumSetting extends StringSetting {
   /// Useful for date formats, technical values, etc.
   final bool useRawLabels;
 
+  /// How the setting value should be edited (inline or modal).
+  /// Inline uses SegmentedButton for <=4 options, or chips for more.
+  final SettingEditMode editMode;
+
   const EnumSetting(
     super.key, {
     required super.defaultValue,
@@ -419,9 +435,12 @@ class EnumSetting extends StringSetting {
     super.order,
     super.persist,
     super.visible,
+    super.dependsOn,
+    super.enabledWhen,
     this.optionLabels,
     this.optionIcons,
     this.useRawLabels = false,
+    this.editMode = SettingEditMode.modal,
   }) : super(options: options);
 
   /// Get the label for an option value.
@@ -463,9 +482,10 @@ class SettingSection {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is SettingSection && runtimeType == other.runtimeType && key == other.key;
+      other is SettingSection &&
+          runtimeType == other.runtimeType &&
+          key == other.key;
 
   @override
   int get hashCode => key.hashCode;
 }
-
