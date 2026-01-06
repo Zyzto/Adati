@@ -94,7 +94,6 @@
   "settings_section_display_main_timeline": "Main Timeline",
   "settings_section_display_habits": "Habits",
   "settings_section_display_habit_card": "Habit Card",
-  "settings_section_appearance_card_style": "Card Style",
   "settings_section_appearance_completion_colors_positive": "Positive Habits",
   "settings_section_appearance_completion_colors_negative": "Negative Habits",
   "settings_section_data_export": "Export",
@@ -227,13 +226,11 @@
   "select_time": "Select Time",
   "select_days": "Select Days",
   "reminder_time": "Reminder Time",
-  "monday": "Monday",
   "tuesday": "Tuesday",
   "wednesday": "Wednesday",
   "thursday": "Thursday",
   "friday": "Friday",
   "saturday": "Saturday",
-  "sunday": "Sunday",
   "habit_type": "Habit Type",
   "good_habit": "Good Habit",
   "bad_habit": "Bad Habit",
@@ -459,9 +456,7 @@
   "database_optimized_success": "Database has been optimized successfully",
   "reset": "Reset",
   "refresh": "Refresh",
-  "clear": "Clear",
   "optimize": "Optimize",
-  "error": "Error",
   "about": "About",
   "app_name_label": "App Name",
   "version": "Version",
@@ -519,7 +514,6 @@
   "hide_tags": "Hide Tags",
   "show_tag_filter": "Show Tag Filter",
   "hide_tag_filter": "Hide Tag Filter",
-  "show_descriptions": "Show Descriptions",
   "hide_descriptions": "Hide Descriptions",
   "normal_cards": "Normal Cards",
   "skip": "Skip",
@@ -532,7 +526,6 @@
   "onboarding_get_started_title": "Get Started",
   "onboarding_get_started_description": "Try demo data to explore the app, import your existing data, or start fresh with a new habit.",
   "try_demo_data": "Try Demo Data",
-  "import_data": "Import Data",
   "start_new": "Start New",
   "no_habits_title": "No Habits Yet",
   "no_habits_message": "Create your first habit to start tracking your progress, or try demo data to see how the app works.",
@@ -655,266 +648,1537 @@
   "logs_rotated_and_cleaned_successfully": "Logs rotated and cleaned successfully",
   "failed_to_rotate_logs": "Failed to rotate logs",
   "close": "Close",
-  "clear": "Clear",
-  "icon_label_keywords": ["label", "tag", "mark"],
-  "icon_category_keywords": ["category", "categories", "group"],
-  "icon_star_keywords": ["star", "favorite", "favourite", "rating"],
-  "icon_favorite_keywords": ["favorite", "favourite", "heart", "like", "love"],
-  "icon_home_keywords": ["home", "house", "residence", "dwelling"],
-  "icon_work_keywords": ["work", "job", "office", "career", "business"],
-  "icon_school_keywords": ["school", "education", "learn", "study", "university"],
-  "icon_business_keywords": ["business", "company", "corporate", "enterprise"],
-  "icon_apartment_keywords": ["apartment", "flat", "residence", "housing"],
-  "icon_fitness_center_keywords": ["fitness", "gym", "exercise", "workout", "training"],
-  "icon_directions_walk_keywords": ["walk", "walking", "pedestrian", "stroll"],
-  "icon_directions_run_keywords": ["run", "running", "jog", "jogging"],
-  "icon_bike_scooter_keywords": ["bike", "bicycle", "scooter", "cycling"],
-  "icon_directions_bike_keywords": ["bike", "bicycle", "cycling", "cycle"],
-  "icon_pool_keywords": ["pool", "swimming", "swim", "water"],
-  "icon_self_improvement_keywords": ["meditation", "yoga", "mindfulness", "wellness"],
-  "icon_airline_seat_flat_keywords": ["sleep", "rest", "bed", "relax"],
-  "icon_health_and_safety_keywords": ["health", "safety", "medical", "care"],
-  "icon_spa_keywords": ["spa", "relaxation", "wellness", "massage"],
-  "icon_sports_soccer_keywords": ["soccer", "football", "sport", "ball"],
-  "icon_surfing_keywords": ["surf", "surfing", "wave", "ocean"],
-  "icon_skateboarding_keywords": ["skateboard", "skating", "skate"],
-  "icon_snowboarding_keywords": ["snowboard", "snow", "winter"],
-  "icon_sailing_keywords": ["sail", "sailing", "boat", "yacht"],
-  "icon_kayaking_keywords": ["kayak", "kayaking", "paddle"],
-  "icon_hiking_keywords": ["hike", "hiking", "trail", "mountain"],
-  "icon_forest_keywords": ["forest", "tree", "nature", "wood"],
-  "icon_terrain_keywords": ["terrain", "mountain", "landscape"],
-  "icon_rocket_launch_keywords": ["rocket", "space", "launch", "travel"],
-  "icon_local_dining_keywords": ["dining", "restaurant", "food", "eat", "meal"],
-  "icon_restaurant_keywords": ["restaurant", "dining", "food", "eat"],
-  "icon_local_cafe_keywords": ["cafe", "coffee", "cafe", "drink"],
-  "icon_local_bar_keywords": ["bar", "drink", "alcohol", "pub"],
-  "icon_coffee_keywords": ["coffee", "drink", "caffeine", "brew"],
-  "icon_music_note_keywords": ["music", "song", "audio", "sound"],
-  "icon_movie_keywords": ["movie", "film", "cinema", "video"],
-  "icon_games_keywords": ["game", "games", "play", "gaming"],
-  "icon_book_keywords": ["book", "read", "reading", "literature"],
-  "icon_library_books_keywords": ["library", "books", "reading"],
-  "icon_library_music_keywords": ["library", "music", "audio"],
-  "icon_theater_comedy_keywords": ["theater", "theatre", "comedy", "show"],
-  "icon_video_library_keywords": ["video", "library", "movies"],
-  "icon_menu_book_keywords": ["book", "menu", "reading"],
-  "icon_auto_stories_keywords": ["story", "stories", "book", "read"],
-  "icon_newspaper_keywords": ["newspaper", "news", "article"],
-  "icon_article_keywords": ["article", "text", "document"],
-  "icon_nature_keywords": ["nature", "outdoor", "environment"],
-  "icon_pets_keywords": ["pet", "pets", "animal", "dog", "cat"],
-  "icon_beach_access_keywords": ["beach", "ocean", "sea", "sand"],
-  "icon_bedtime_keywords": ["bedtime", "sleep", "night", "bed"],
-  "icon_water_drop_keywords": ["water", "drink", "hydration", "drop"],
-  "icon_shopping_cart_keywords": ["shopping", "cart", "buy", "purchase"],
-  "icon_shopping_bag_keywords": ["shopping", "bag", "buy", "purchase"],
-  "icon_shopping_basket_keywords": ["shopping", "basket", "buy", "purchase"],
-  "icon_directions_car_keywords": ["car", "vehicle", "drive", "automobile"],
-  "icon_flight_keywords": ["flight", "plane", "airplane", "travel"],
-  "icon_flight_takeoff_keywords": ["takeoff", "plane", "flight", "departure"],
-  "icon_flight_land_keywords": ["land", "plane", "flight", "arrival"],
-  "icon_hotel_keywords": ["hotel", "accommodation", "stay"],
-  "icon_train_keywords": ["train", "railway", "transport"],
-  "icon_directions_bus_keywords": ["bus", "transport", "public"],
-  "icon_directions_subway_keywords": ["subway", "metro", "underground", "train"],
-  "icon_directions_boat_keywords": ["boat", "ship", "water", "travel"],
-  "icon_local_taxi_keywords": ["taxi", "cab", "ride"],
-  "icon_map_keywords": ["map", "location", "navigation"],
-  "icon_place_keywords": ["place", "location", "pin", "marker"],
-  "icon_location_on_keywords": ["location", "place", "pin", "gps"],
-  "icon_navigation_keywords": ["navigation", "compass", "direction"],
-  "icon_explore_keywords": ["explore", "discover", "travel"],
-  "icon_travel_explore_keywords": ["travel", "explore", "trip", "journey"],
-  "icon_account_balance_keywords": ["bank", "finance", "money", "account"],
-  "icon_account_balance_wallet_keywords": ["wallet", "money", "finance", "account"],
-  "icon_savings_keywords": ["savings", "money", "save", "bank"],
-  "icon_payments_keywords": ["payment", "pay", "money", "transaction"],
-  "icon_credit_card_keywords": ["card", "credit", "payment", "money"],
-  "icon_receipt_keywords": ["receipt", "bill", "payment"],
-  "icon_attach_money_keywords": ["money", "dollar", "currency", "cash"],
-  "icon_trending_up_keywords": ["trend", "up", "growth", "increase"],
-  "icon_trending_down_keywords": ["trend", "down", "decrease", "fall"],
-  "icon_bar_chart_keywords": ["chart", "graph", "data", "statistics"],
-  "icon_pie_chart_keywords": ["chart", "pie", "graph", "data"],
-  "icon_show_chart_keywords": ["chart", "graph", "data", "analytics"],
-  "icon_analytics_keywords": ["analytics", "data", "statistics", "analysis"],
-  "icon_computer_keywords": ["computer", "pc", "desktop", "tech"],
-  "icon_laptop_keywords": ["laptop", "computer", "notebook"],
-  "icon_phone_android_keywords": ["phone", "android", "mobile", "smartphone"],
-  "icon_phone_iphone_keywords": ["phone", "iphone", "mobile", "smartphone"],
-  "icon_tablet_keywords": ["tablet", "ipad", "device"],
-  "icon_watch_keywords": ["watch", "time", "clock", "wearable"],
-  "icon_headphones_keywords": ["headphone", "headphones", "audio", "music"],
-  "icon_speaker_keywords": ["speaker", "sound", "audio", "music"],
-  "icon_tv_keywords": ["tv", "television", "screen", "entertainment"],
-  "icon_camera_alt_keywords": ["camera", "photo", "picture", "photography"],
-  "icon_videocam_keywords": ["video", "camera", "record", "film"],
-  "icon_mic_keywords": ["mic", "microphone", "audio", "record"],
-  "icon_code_keywords": ["code", "programming", "develop", "software"],
-  "icon_calculate_keywords": ["calculate", "calculator", "math", "compute"],
-  "icon_palette_keywords": ["palette", "color", "art", "paint"],
-  "icon_brush_keywords": ["brush", "paint", "art", "draw"],
-  "icon_color_lens_keywords": ["color", "lens", "palette", "art"],
-  "icon_image_keywords": ["image", "picture", "photo", "graphic"],
-  "icon_photo_library_keywords": ["photo", "library", "gallery", "images"],
-  "icon_photo_camera_keywords": ["camera", "photo", "picture", "photography"],
-  "icon_description_keywords": ["description", "document", "file", "text"],
-  "icon_note_keywords": ["note", "notes", "text", "write"],
-  "icon_note_add_keywords": ["note", "add", "new", "create"],
-  "icon_edit_note_keywords": ["edit", "note", "write", "modify"],
-  "icon_draw_keywords": ["draw", "sketch", "art", "pencil"],
-  "icon_create_keywords": ["create", "new", "add", "make"],
-  "icon_edit_keywords": ["edit", "modify", "change", "update"],
-  "icon_border_color_keywords": ["color", "paint", "edit", "draw"],
-  "icon_format_paint_keywords": ["paint", "format", "style", "color"],
-  "icon_text_snippet_keywords": ["text", "snippet", "document", "note"],
-  "icon_sticky_note_2_keywords": ["note", "sticky", "reminder", "memo"],
-  "icon_attach_file_keywords": ["attach", "file", "document", "link"],
-  "icon_link_keywords": ["link", "url", "connect", "chain"],
-  "icon_insert_link_keywords": ["link", "insert", "url", "connect"],
-  "icon_build_keywords": ["build", "tool", "construct", "repair"],
-  "icon_construction_keywords": ["construction", "build", "tool", "work"],
-  "icon_handyman_keywords": ["handyman", "repair", "tool", "fix"],
-  "icon_auto_fix_high_keywords": ["fix", "repair", "tool", "auto"],
-  "icon_auto_fix_normal_keywords": ["fix", "repair", "tool", "auto"],
-  "icon_electric_bolt_keywords": ["electric", "bolt", "power", "energy"],
-  "icon_flash_on_keywords": ["flash", "light", "bright", "energy"],
-  "icon_lightbulb_keywords": ["light", "bulb", "idea", "bright"],
-  "icon_light_mode_keywords": ["light", "mode", "bright", "day"],
-  "icon_dark_mode_keywords": ["dark", "mode", "night", "theme"],
-  "icon_wb_sunny_keywords": ["sun", "sunny", "weather", "bright"],
-  "icon_nightlight_keywords": ["night", "light", "dark", "sleep"],
-  "icon_bed_keywords": ["bed", "sleep", "rest", "room"],
-  "icon_hotel_class_keywords": ["hotel", "class", "star", "rating"],
-  "icon_store_keywords": ["store", "shop", "retail", "buy"],
-  "icon_storefront_keywords": ["store", "shop", "front", "retail"],
-  "icon_local_gas_station_keywords": ["gas", "station", "fuel", "petrol"],
-  "icon_local_pharmacy_keywords": ["pharmacy", "drug", "medicine", "health"],
-  "icon_local_hospital_keywords": ["hospital", "medical", "health", "care"],
-  "icon_local_police_keywords": ["police", "law", "security", "safety"],
-  "icon_local_fire_department_keywords": ["fire", "department", "emergency", "safety"],
-  "icon_local_library_keywords": ["library", "book", "read", "study"],
-  "icon_local_post_office_keywords": ["post", "office", "mail", "letter"],
-  "icon_local_parking_keywords": ["parking", "car", "vehicle", "space"],
-  "icon_local_atm_keywords": ["atm", "bank", "money", "cash"],
-  "icon_account_circle_keywords": ["account", "user", "person", "profile"],
-  "icon_person_keywords": ["person", "user", "people", "human"],
-  "icon_person_add_keywords": ["person", "add", "user", "friend"],
-  "icon_group_keywords": ["group", "people", "team", "community"],
-  "icon_groups_keywords": ["groups", "people", "team", "community"],
-  "icon_people_keywords": ["people", "persons", "users", "group"],
-  "icon_people_outline_keywords": ["people", "outline", "group", "team"],
-  "icon_supervisor_account_keywords": ["supervisor", "account", "admin", "manager"],
-  "icon_family_restroom_keywords": ["family", "restroom", "bathroom", "toilet"],
-  "icon_volunteer_activism_keywords": ["volunteer", "activism", "help", "charity"],
-  "icon_celebration_keywords": ["celebration", "party", "event", "festival"],
-  "icon_badge_keywords": ["badge", "achievement", "award", "reward"],
-  "icon_workspace_premium_keywords": ["premium", "workspace", "award", "achievement"],
-  "icon_emoji_events_keywords": ["event", "trophy", "award", "achievement"],
-  "icon_military_tech_keywords": ["military", "tech", "medal", "award"],
-  "icon_stars_keywords": ["stars", "star", "rating", "favorite"],
-  "icon_workspace_premium_outlined_keywords": ["premium", "workspace", "award"],
-  "icon_card_giftcard_keywords": ["gift", "card", "present", "reward"],
-  "icon_card_membership_keywords": ["membership", "card", "loyalty"],
-  "icon_loyalty_keywords": ["loyalty", "reward", "points"],
-  "icon_redeem_keywords": ["redeem", "reward", "claim", "exchange"],
-  "icon_local_offer_keywords": ["offer", "deal", "discount", "sale"],
-  "icon_local_activity_keywords": ["activity", "event", "ticket", "entertainment"],
-  "icon_qr_code_keywords": ["qr", "code", "scan", "barcode"],
-  "icon_qr_code_scanner_keywords": ["qr", "scanner", "scan", "code"],
-  "icon_qr_code_2_keywords": ["qr", "code", "scan"],
-  "icon_nfc_keywords": ["nfc", "wireless", "connect", "tap"],
-  "icon_bluetooth_keywords": ["bluetooth", "wireless", "connect"],
-  "icon_wifi_keywords": ["wifi", "wireless", "internet", "network"],
-  "icon_signal_wifi_4_bar_keywords": ["wifi", "signal", "network", "internet"],
-  "icon_signal_cellular_4_bar_keywords": ["cellular", "signal", "phone", "network"],
-  "icon_battery_full_keywords": ["battery", "power", "charge", "energy"],
-  "icon_power_keywords": ["power", "on", "energy", "electric"],
-  "icon_power_off_keywords": ["power", "off", "shutdown", "turn"],
-  "icon_power_settings_new_keywords": ["power", "settings", "control"],
-  "icon_settings_keywords": ["settings", "config", "preferences", "options"],
-  "icon_settings_applications_keywords": ["settings", "app", "config", "preferences"],
-  "icon_tune_keywords": ["tune", "adjust", "settings", "config"],
-  "icon_build_circle_keywords": ["build", "circle", "tool", "settings"],
-  "icon_admin_panel_settings_keywords": ["admin", "panel", "settings", "control"],
-  "icon_security_keywords": ["security", "safe", "protect", "shield"],
-  "icon_lock_keywords": ["lock", "secure", "protected", "locked"],
-  "icon_lock_open_keywords": ["lock", "open", "unlock", "unlocked"],
-  "icon_vpn_key_keywords": ["key", "vpn", "password", "access"],
-  "icon_password_keywords": ["password", "key", "secure", "lock"],
-  "icon_fingerprint_keywords": ["fingerprint", "biometric", "security", "auth"],
-  "icon_face_keywords": ["face", "person", "profile", "avatar"],
-  "icon_face_retouching_natural_keywords": ["face", "retouch", "natural", "beauty"],
-  "icon_verified_keywords": ["verified", "check", "confirm", "valid"],
-  "icon_verified_user_keywords": ["verified", "user", "trusted", "confirmed"],
-  "icon_shield_keywords": ["shield", "protect", "security", "defense"],
-  "icon_privacy_tip_keywords": ["privacy", "tip", "security", "protect"],
-  "icon_check_circle_keywords": ["check", "circle", "done", "complete"],
-  "icon_check_keywords": ["check", "done", "complete", "tick"],
-  "icon_add_circle_keywords": ["add", "circle", "new", "create"],
-  "icon_add_keywords": ["add", "plus", "new", "create"],
-  "icon_remove_circle_keywords": ["remove", "circle", "delete", "minus"],
-  "icon_remove_keywords": ["remove", "delete", "minus", "subtract"],
-  "icon_delete_keywords": ["delete", "remove", "trash", "bin"],
-  "icon_delete_forever_keywords": ["delete", "forever", "remove", "permanent"],
-  "icon_restore_keywords": ["restore", "recover", "undo", "bring"],
-  "icon_restore_from_trash_keywords": ["restore", "trash", "recover", "undo"],
-  "icon_archive_keywords": ["archive", "store", "save", "keep"],
-  "icon_unarchive_keywords": ["unarchive", "restore", "bring", "back"],
-  "icon_download_keywords": ["download", "save", "get", "fetch"],
-  "icon_upload_keywords": ["upload", "send", "share", "post"],
-  "icon_report_keywords": ["report", "flag", "alert", "issue"],
-  "icon_flag_keywords": ["flag", "mark", "report", "signal"],
-  "icon_block_keywords": ["block", "stop", "ban", "prevent"],
-  "icon_cancel_keywords": ["cancel", "close", "stop", "abort"],
-  "icon_close_keywords": ["close", "exit", "cancel", "dismiss"],
-  "icon_cloud_upload_keywords": ["cloud", "upload", "sync", "backup"],
-  "icon_cloud_download_keywords": ["cloud", "download", "sync", "get"],
-  "icon_cloud_keywords": ["cloud", "storage", "online", "server"],
-  "icon_cloud_done_keywords": ["cloud", "done", "complete", "synced"],
-  "icon_cloud_off_keywords": ["cloud", "off", "offline", "disconnected"],
-  "icon_cloud_sync_keywords": ["cloud", "sync", "synchronize", "update"],
-  "icon_backup_keywords": ["backup", "save", "copy", "protect"],
-  "icon_sync_keywords": ["sync", "synchronize", "update", "refresh"],
-  "icon_sync_alt_keywords": ["sync", "alt", "synchronize", "alternate"],
-  "icon_refresh_keywords": ["refresh", "reload", "update", "renew"],
-  "icon_autorenew_keywords": ["auto", "renew", "refresh", "update"],
-  "icon_cached_keywords": ["cache", "cached", "stored", "saved"],
-  "icon_update_keywords": ["update", "refresh", "upgrade", "new"],
-  "icon_system_update_keywords": ["system", "update", "upgrade", "refresh"],
-  "icon_install_mobile_keywords": ["install", "mobile", "app", "download"],
-  "icon_install_desktop_keywords": ["install", "desktop", "app", "download"],
-  "icon_get_app_keywords": ["get", "app", "download", "install"],
-  "icon_publish_keywords": ["publish", "share", "post", "upload"],
-  "icon_file_upload_keywords": ["file", "upload", "send", "share"],
-  "icon_file_download_keywords": ["file", "download", "get", "save"],
-  "icon_folder_keywords": ["folder", "directory", "file", "organize"],
-  "icon_folder_open_keywords": ["folder", "open", "directory"],
-  "icon_folder_shared_keywords": ["folder", "shared", "share", "collaborate"],
-  "icon_insert_drive_file_keywords": ["file", "document", "drive"],
-  "icon_drive_file_rename_outline_keywords": ["file", "rename", "edit", "name"],
-  "icon_drive_file_move_keywords": ["file", "move", "transfer", "relocate"],
-  "icon_drive_file_move_outline_keywords": ["file", "move", "outline"],
-  "icon_drive_file_move_rtl_keywords": ["file", "move", "rtl", "right"],
-  "icon_create_new_folder_keywords": ["folder", "new", "create", "add"],
-  "icon_folder_copy_keywords": ["folder", "copy", "duplicate"],
-  "icon_folder_delete_keywords": ["folder", "delete", "remove", "trash"],
-  "icon_folder_zip_keywords": ["folder", "zip", "archive", "compress"],
-  "icon_folder_special_keywords": ["folder", "special", "important", "star"],
-  "icon_folder_off_keywords": ["folder", "off", "disabled", "unavailable"],
-  "icon_content_copy_keywords": ["copy", "duplicate", "clone"],
-  "icon_content_cut_keywords": ["cut", "move", "remove"],
-  "icon_content_paste_keywords": ["paste", "insert", "add"],
-  "icon_copy_all_keywords": ["copy", "all", "duplicate", "everything"],
-  "icon_cut_keywords": ["cut", "move", "remove"],
-  "icon_paste_keywords": ["paste", "insert", "add"],
-  "icon_public_keywords": ["public", "world", "global", "internet"],
-  "icon_language_keywords": ["language", "translate", "locale", "tongue"],
-  "icon_translate_keywords": ["translate", "language", "convert", "interpret"],
-  "icon_g_translate_keywords": ["translate", "google", "language"],
-  "icon_currency_exchange_keywords": ["currency", "exchange", "money", "convert"],
-  "icon_confirmation_number_keywords": ["confirmation", "number", "ticket", "code"],
-  "icon_compass_calibration_keywords": ["compass", "calibration", "navigation", "direction"],
-  "icon_explore_off_keywords": ["explore", "off", "disabled", "unavailable"]
+  "icon_label_keywords": [
+    "label",
+    "tag",
+    "mark"
+  ],
+  "icon_category_keywords": [
+    "category",
+    "categories",
+    "group"
+  ],
+  "icon_star_keywords": [
+    "star",
+    "favorite",
+    "favourite",
+    "rating"
+  ],
+  "icon_favorite_keywords": [
+    "favorite",
+    "favourite",
+    "heart",
+    "like",
+    "love"
+  ],
+  "icon_home_keywords": [
+    "home",
+    "house",
+    "residence",
+    "dwelling"
+  ],
+  "icon_work_keywords": [
+    "work",
+    "job",
+    "office",
+    "career",
+    "business"
+  ],
+  "icon_school_keywords": [
+    "school",
+    "education",
+    "learn",
+    "study",
+    "university"
+  ],
+  "icon_business_keywords": [
+    "business",
+    "company",
+    "corporate",
+    "enterprise"
+  ],
+  "icon_apartment_keywords": [
+    "apartment",
+    "flat",
+    "residence",
+    "housing"
+  ],
+  "icon_fitness_center_keywords": [
+    "fitness",
+    "gym",
+    "exercise",
+    "workout",
+    "training"
+  ],
+  "icon_directions_walk_keywords": [
+    "walk",
+    "walking",
+    "pedestrian",
+    "stroll"
+  ],
+  "icon_directions_run_keywords": [
+    "run",
+    "running",
+    "jog",
+    "jogging"
+  ],
+  "icon_bike_scooter_keywords": [
+    "bike",
+    "bicycle",
+    "scooter",
+    "cycling"
+  ],
+  "icon_directions_bike_keywords": [
+    "bike",
+    "bicycle",
+    "cycling",
+    "cycle"
+  ],
+  "icon_pool_keywords": [
+    "pool",
+    "swimming",
+    "swim",
+    "water"
+  ],
+  "icon_self_improvement_keywords": [
+    "meditation",
+    "yoga",
+    "mindfulness",
+    "wellness"
+  ],
+  "icon_airline_seat_flat_keywords": [
+    "sleep",
+    "rest",
+    "bed",
+    "relax"
+  ],
+  "icon_health_and_safety_keywords": [
+    "health",
+    "safety",
+    "medical",
+    "care"
+  ],
+  "icon_spa_keywords": [
+    "spa",
+    "relaxation",
+    "wellness",
+    "massage"
+  ],
+  "icon_sports_soccer_keywords": [
+    "soccer",
+    "football",
+    "sport",
+    "ball"
+  ],
+  "icon_surfing_keywords": [
+    "surf",
+    "surfing",
+    "wave",
+    "ocean"
+  ],
+  "icon_skateboarding_keywords": [
+    "skateboard",
+    "skating",
+    "skate"
+  ],
+  "icon_snowboarding_keywords": [
+    "snowboard",
+    "snow",
+    "winter"
+  ],
+  "icon_sailing_keywords": [
+    "sail",
+    "sailing",
+    "boat",
+    "yacht"
+  ],
+  "icon_kayaking_keywords": [
+    "kayak",
+    "kayaking",
+    "paddle"
+  ],
+  "icon_hiking_keywords": [
+    "hike",
+    "hiking",
+    "trail",
+    "mountain"
+  ],
+  "icon_forest_keywords": [
+    "forest",
+    "tree",
+    "nature",
+    "wood"
+  ],
+  "icon_terrain_keywords": [
+    "terrain",
+    "mountain",
+    "landscape"
+  ],
+  "icon_rocket_launch_keywords": [
+    "rocket",
+    "space",
+    "launch",
+    "travel"
+  ],
+  "icon_local_dining_keywords": [
+    "dining",
+    "restaurant",
+    "food",
+    "eat",
+    "meal"
+  ],
+  "icon_restaurant_keywords": [
+    "restaurant",
+    "dining",
+    "food",
+    "eat"
+  ],
+  "icon_local_cafe_keywords": [
+    "cafe",
+    "coffee",
+    "cafe",
+    "drink"
+  ],
+  "icon_local_bar_keywords": [
+    "bar",
+    "drink",
+    "alcohol",
+    "pub"
+  ],
+  "icon_coffee_keywords": [
+    "coffee",
+    "drink",
+    "caffeine",
+    "brew"
+  ],
+  "icon_music_note_keywords": [
+    "music",
+    "song",
+    "audio",
+    "sound"
+  ],
+  "icon_movie_keywords": [
+    "movie",
+    "film",
+    "cinema",
+    "video"
+  ],
+  "icon_games_keywords": [
+    "game",
+    "games",
+    "play",
+    "gaming"
+  ],
+  "icon_book_keywords": [
+    "book",
+    "read",
+    "reading",
+    "literature"
+  ],
+  "icon_library_books_keywords": [
+    "library",
+    "books",
+    "reading"
+  ],
+  "icon_library_music_keywords": [
+    "library",
+    "music",
+    "audio"
+  ],
+  "icon_theater_comedy_keywords": [
+    "theater",
+    "theatre",
+    "comedy",
+    "show"
+  ],
+  "icon_video_library_keywords": [
+    "video",
+    "library",
+    "movies"
+  ],
+  "icon_menu_book_keywords": [
+    "book",
+    "menu",
+    "reading"
+  ],
+  "icon_auto_stories_keywords": [
+    "story",
+    "stories",
+    "book",
+    "read"
+  ],
+  "icon_newspaper_keywords": [
+    "newspaper",
+    "news",
+    "article"
+  ],
+  "icon_article_keywords": [
+    "article",
+    "text",
+    "document"
+  ],
+  "icon_nature_keywords": [
+    "nature",
+    "outdoor",
+    "environment"
+  ],
+  "icon_pets_keywords": [
+    "pet",
+    "pets",
+    "animal",
+    "dog",
+    "cat"
+  ],
+  "icon_beach_access_keywords": [
+    "beach",
+    "ocean",
+    "sea",
+    "sand"
+  ],
+  "icon_bedtime_keywords": [
+    "bedtime",
+    "sleep",
+    "night",
+    "bed"
+  ],
+  "icon_water_drop_keywords": [
+    "water",
+    "drink",
+    "hydration",
+    "drop"
+  ],
+  "icon_shopping_cart_keywords": [
+    "shopping",
+    "cart",
+    "buy",
+    "purchase"
+  ],
+  "icon_shopping_bag_keywords": [
+    "shopping",
+    "bag",
+    "buy",
+    "purchase"
+  ],
+  "icon_shopping_basket_keywords": [
+    "shopping",
+    "basket",
+    "buy",
+    "purchase"
+  ],
+  "icon_directions_car_keywords": [
+    "car",
+    "vehicle",
+    "drive",
+    "automobile"
+  ],
+  "icon_flight_keywords": [
+    "flight",
+    "plane",
+    "airplane",
+    "travel"
+  ],
+  "icon_flight_takeoff_keywords": [
+    "takeoff",
+    "plane",
+    "flight",
+    "departure"
+  ],
+  "icon_flight_land_keywords": [
+    "land",
+    "plane",
+    "flight",
+    "arrival"
+  ],
+  "icon_hotel_keywords": [
+    "hotel",
+    "accommodation",
+    "stay"
+  ],
+  "icon_train_keywords": [
+    "train",
+    "railway",
+    "transport"
+  ],
+  "icon_directions_bus_keywords": [
+    "bus",
+    "transport",
+    "public"
+  ],
+  "icon_directions_subway_keywords": [
+    "subway",
+    "metro",
+    "underground",
+    "train"
+  ],
+  "icon_directions_boat_keywords": [
+    "boat",
+    "ship",
+    "water",
+    "travel"
+  ],
+  "icon_local_taxi_keywords": [
+    "taxi",
+    "cab",
+    "ride"
+  ],
+  "icon_map_keywords": [
+    "map",
+    "location",
+    "navigation"
+  ],
+  "icon_place_keywords": [
+    "place",
+    "location",
+    "pin",
+    "marker"
+  ],
+  "icon_location_on_keywords": [
+    "location",
+    "place",
+    "pin",
+    "gps"
+  ],
+  "icon_navigation_keywords": [
+    "navigation",
+    "compass",
+    "direction"
+  ],
+  "icon_explore_keywords": [
+    "explore",
+    "discover",
+    "travel"
+  ],
+  "icon_travel_explore_keywords": [
+    "travel",
+    "explore",
+    "trip",
+    "journey"
+  ],
+  "icon_account_balance_keywords": [
+    "bank",
+    "finance",
+    "money",
+    "account"
+  ],
+  "icon_account_balance_wallet_keywords": [
+    "wallet",
+    "money",
+    "finance",
+    "account"
+  ],
+  "icon_savings_keywords": [
+    "savings",
+    "money",
+    "save",
+    "bank"
+  ],
+  "icon_payments_keywords": [
+    "payment",
+    "pay",
+    "money",
+    "transaction"
+  ],
+  "icon_credit_card_keywords": [
+    "card",
+    "credit",
+    "payment",
+    "money"
+  ],
+  "icon_receipt_keywords": [
+    "receipt",
+    "bill",
+    "payment"
+  ],
+  "icon_attach_money_keywords": [
+    "money",
+    "dollar",
+    "currency",
+    "cash"
+  ],
+  "icon_trending_up_keywords": [
+    "trend",
+    "up",
+    "growth",
+    "increase"
+  ],
+  "icon_trending_down_keywords": [
+    "trend",
+    "down",
+    "decrease",
+    "fall"
+  ],
+  "icon_bar_chart_keywords": [
+    "chart",
+    "graph",
+    "data",
+    "statistics"
+  ],
+  "icon_pie_chart_keywords": [
+    "chart",
+    "pie",
+    "graph",
+    "data"
+  ],
+  "icon_show_chart_keywords": [
+    "chart",
+    "graph",
+    "data",
+    "analytics"
+  ],
+  "icon_analytics_keywords": [
+    "analytics",
+    "data",
+    "statistics",
+    "analysis"
+  ],
+  "icon_computer_keywords": [
+    "computer",
+    "pc",
+    "desktop",
+    "tech"
+  ],
+  "icon_laptop_keywords": [
+    "laptop",
+    "computer",
+    "notebook"
+  ],
+  "icon_phone_android_keywords": [
+    "phone",
+    "android",
+    "mobile",
+    "smartphone"
+  ],
+  "icon_phone_iphone_keywords": [
+    "phone",
+    "iphone",
+    "mobile",
+    "smartphone"
+  ],
+  "icon_tablet_keywords": [
+    "tablet",
+    "ipad",
+    "device"
+  ],
+  "icon_watch_keywords": [
+    "watch",
+    "time",
+    "clock",
+    "wearable"
+  ],
+  "icon_headphones_keywords": [
+    "headphone",
+    "headphones",
+    "audio",
+    "music"
+  ],
+  "icon_speaker_keywords": [
+    "speaker",
+    "sound",
+    "audio",
+    "music"
+  ],
+  "icon_tv_keywords": [
+    "tv",
+    "television",
+    "screen",
+    "entertainment"
+  ],
+  "icon_camera_alt_keywords": [
+    "camera",
+    "photo",
+    "picture",
+    "photography"
+  ],
+  "icon_videocam_keywords": [
+    "video",
+    "camera",
+    "record",
+    "film"
+  ],
+  "icon_mic_keywords": [
+    "mic",
+    "microphone",
+    "audio",
+    "record"
+  ],
+  "icon_code_keywords": [
+    "code",
+    "programming",
+    "develop",
+    "software"
+  ],
+  "icon_calculate_keywords": [
+    "calculate",
+    "calculator",
+    "math",
+    "compute"
+  ],
+  "icon_palette_keywords": [
+    "palette",
+    "color",
+    "art",
+    "paint"
+  ],
+  "icon_brush_keywords": [
+    "brush",
+    "paint",
+    "art",
+    "draw"
+  ],
+  "icon_color_lens_keywords": [
+    "color",
+    "lens",
+    "palette",
+    "art"
+  ],
+  "icon_image_keywords": [
+    "image",
+    "picture",
+    "photo",
+    "graphic"
+  ],
+  "icon_photo_library_keywords": [
+    "photo",
+    "library",
+    "gallery",
+    "images"
+  ],
+  "icon_photo_camera_keywords": [
+    "camera",
+    "photo",
+    "picture",
+    "photography"
+  ],
+  "icon_description_keywords": [
+    "description",
+    "document",
+    "file",
+    "text"
+  ],
+  "icon_note_keywords": [
+    "note",
+    "notes",
+    "text",
+    "write"
+  ],
+  "icon_note_add_keywords": [
+    "note",
+    "add",
+    "new",
+    "create"
+  ],
+  "icon_edit_note_keywords": [
+    "edit",
+    "note",
+    "write",
+    "modify"
+  ],
+  "icon_draw_keywords": [
+    "draw",
+    "sketch",
+    "art",
+    "pencil"
+  ],
+  "icon_create_keywords": [
+    "create",
+    "new",
+    "add",
+    "make"
+  ],
+  "icon_edit_keywords": [
+    "edit",
+    "modify",
+    "change",
+    "update"
+  ],
+  "icon_border_color_keywords": [
+    "color",
+    "paint",
+    "edit",
+    "draw"
+  ],
+  "icon_format_paint_keywords": [
+    "paint",
+    "format",
+    "style",
+    "color"
+  ],
+  "icon_text_snippet_keywords": [
+    "text",
+    "snippet",
+    "document",
+    "note"
+  ],
+  "icon_sticky_note_2_keywords": [
+    "note",
+    "sticky",
+    "reminder",
+    "memo"
+  ],
+  "icon_attach_file_keywords": [
+    "attach",
+    "file",
+    "document",
+    "link"
+  ],
+  "icon_link_keywords": [
+    "link",
+    "url",
+    "connect",
+    "chain"
+  ],
+  "icon_insert_link_keywords": [
+    "link",
+    "insert",
+    "url",
+    "connect"
+  ],
+  "icon_build_keywords": [
+    "build",
+    "tool",
+    "construct",
+    "repair"
+  ],
+  "icon_construction_keywords": [
+    "construction",
+    "build",
+    "tool",
+    "work"
+  ],
+  "icon_handyman_keywords": [
+    "handyman",
+    "repair",
+    "tool",
+    "fix"
+  ],
+  "icon_auto_fix_high_keywords": [
+    "fix",
+    "repair",
+    "tool",
+    "auto"
+  ],
+  "icon_auto_fix_normal_keywords": [
+    "fix",
+    "repair",
+    "tool",
+    "auto"
+  ],
+  "icon_electric_bolt_keywords": [
+    "electric",
+    "bolt",
+    "power",
+    "energy"
+  ],
+  "icon_flash_on_keywords": [
+    "flash",
+    "light",
+    "bright",
+    "energy"
+  ],
+  "icon_lightbulb_keywords": [
+    "light",
+    "bulb",
+    "idea",
+    "bright"
+  ],
+  "icon_light_mode_keywords": [
+    "light",
+    "mode",
+    "bright",
+    "day"
+  ],
+  "icon_dark_mode_keywords": [
+    "dark",
+    "mode",
+    "night",
+    "theme"
+  ],
+  "icon_wb_sunny_keywords": [
+    "sun",
+    "sunny",
+    "weather",
+    "bright"
+  ],
+  "icon_nightlight_keywords": [
+    "night",
+    "light",
+    "dark",
+    "sleep"
+  ],
+  "icon_bed_keywords": [
+    "bed",
+    "sleep",
+    "rest",
+    "room"
+  ],
+  "icon_hotel_class_keywords": [
+    "hotel",
+    "class",
+    "star",
+    "rating"
+  ],
+  "icon_store_keywords": [
+    "store",
+    "shop",
+    "retail",
+    "buy"
+  ],
+  "icon_storefront_keywords": [
+    "store",
+    "shop",
+    "front",
+    "retail"
+  ],
+  "icon_local_gas_station_keywords": [
+    "gas",
+    "station",
+    "fuel",
+    "petrol"
+  ],
+  "icon_local_pharmacy_keywords": [
+    "pharmacy",
+    "drug",
+    "medicine",
+    "health"
+  ],
+  "icon_local_hospital_keywords": [
+    "hospital",
+    "medical",
+    "health",
+    "care"
+  ],
+  "icon_local_police_keywords": [
+    "police",
+    "law",
+    "security",
+    "safety"
+  ],
+  "icon_local_fire_department_keywords": [
+    "fire",
+    "department",
+    "emergency",
+    "safety"
+  ],
+  "icon_local_library_keywords": [
+    "library",
+    "book",
+    "read",
+    "study"
+  ],
+  "icon_local_post_office_keywords": [
+    "post",
+    "office",
+    "mail",
+    "letter"
+  ],
+  "icon_local_parking_keywords": [
+    "parking",
+    "car",
+    "vehicle",
+    "space"
+  ],
+  "icon_local_atm_keywords": [
+    "atm",
+    "bank",
+    "money",
+    "cash"
+  ],
+  "icon_account_circle_keywords": [
+    "account",
+    "user",
+    "person",
+    "profile"
+  ],
+  "icon_person_keywords": [
+    "person",
+    "user",
+    "people",
+    "human"
+  ],
+  "icon_person_add_keywords": [
+    "person",
+    "add",
+    "user",
+    "friend"
+  ],
+  "icon_group_keywords": [
+    "group",
+    "people",
+    "team",
+    "community"
+  ],
+  "icon_groups_keywords": [
+    "groups",
+    "people",
+    "team",
+    "community"
+  ],
+  "icon_people_keywords": [
+    "people",
+    "persons",
+    "users",
+    "group"
+  ],
+  "icon_people_outline_keywords": [
+    "people",
+    "outline",
+    "group",
+    "team"
+  ],
+  "icon_supervisor_account_keywords": [
+    "supervisor",
+    "account",
+    "admin",
+    "manager"
+  ],
+  "icon_family_restroom_keywords": [
+    "family",
+    "restroom",
+    "bathroom",
+    "toilet"
+  ],
+  "icon_volunteer_activism_keywords": [
+    "volunteer",
+    "activism",
+    "help",
+    "charity"
+  ],
+  "icon_celebration_keywords": [
+    "celebration",
+    "party",
+    "event",
+    "festival"
+  ],
+  "icon_badge_keywords": [
+    "badge",
+    "achievement",
+    "award",
+    "reward"
+  ],
+  "icon_workspace_premium_keywords": [
+    "premium",
+    "workspace",
+    "award",
+    "achievement"
+  ],
+  "icon_emoji_events_keywords": [
+    "event",
+    "trophy",
+    "award",
+    "achievement"
+  ],
+  "icon_military_tech_keywords": [
+    "military",
+    "tech",
+    "medal",
+    "award"
+  ],
+  "icon_stars_keywords": [
+    "stars",
+    "star",
+    "rating",
+    "favorite"
+  ],
+  "icon_workspace_premium_outlined_keywords": [
+    "premium",
+    "workspace",
+    "award"
+  ],
+  "icon_card_giftcard_keywords": [
+    "gift",
+    "card",
+    "present",
+    "reward"
+  ],
+  "icon_card_membership_keywords": [
+    "membership",
+    "card",
+    "loyalty"
+  ],
+  "icon_loyalty_keywords": [
+    "loyalty",
+    "reward",
+    "points"
+  ],
+  "icon_redeem_keywords": [
+    "redeem",
+    "reward",
+    "claim",
+    "exchange"
+  ],
+  "icon_local_offer_keywords": [
+    "offer",
+    "deal",
+    "discount",
+    "sale"
+  ],
+  "icon_local_activity_keywords": [
+    "activity",
+    "event",
+    "ticket",
+    "entertainment"
+  ],
+  "icon_qr_code_keywords": [
+    "qr",
+    "code",
+    "scan",
+    "barcode"
+  ],
+  "icon_qr_code_scanner_keywords": [
+    "qr",
+    "scanner",
+    "scan",
+    "code"
+  ],
+  "icon_qr_code_2_keywords": [
+    "qr",
+    "code",
+    "scan"
+  ],
+  "icon_nfc_keywords": [
+    "nfc",
+    "wireless",
+    "connect",
+    "tap"
+  ],
+  "icon_bluetooth_keywords": [
+    "bluetooth",
+    "wireless",
+    "connect"
+  ],
+  "icon_wifi_keywords": [
+    "wifi",
+    "wireless",
+    "internet",
+    "network"
+  ],
+  "icon_signal_wifi_4_bar_keywords": [
+    "wifi",
+    "signal",
+    "network",
+    "internet"
+  ],
+  "icon_signal_cellular_4_bar_keywords": [
+    "cellular",
+    "signal",
+    "phone",
+    "network"
+  ],
+  "icon_battery_full_keywords": [
+    "battery",
+    "power",
+    "charge",
+    "energy"
+  ],
+  "icon_power_keywords": [
+    "power",
+    "on",
+    "energy",
+    "electric"
+  ],
+  "icon_power_off_keywords": [
+    "power",
+    "off",
+    "shutdown",
+    "turn"
+  ],
+  "icon_power_settings_new_keywords": [
+    "power",
+    "settings",
+    "control"
+  ],
+  "icon_settings_keywords": [
+    "settings",
+    "config",
+    "preferences",
+    "options"
+  ],
+  "icon_settings_applications_keywords": [
+    "settings",
+    "app",
+    "config",
+    "preferences"
+  ],
+  "icon_tune_keywords": [
+    "tune",
+    "adjust",
+    "settings",
+    "config"
+  ],
+  "icon_build_circle_keywords": [
+    "build",
+    "circle",
+    "tool",
+    "settings"
+  ],
+  "icon_admin_panel_settings_keywords": [
+    "admin",
+    "panel",
+    "settings",
+    "control"
+  ],
+  "icon_security_keywords": [
+    "security",
+    "safe",
+    "protect",
+    "shield"
+  ],
+  "icon_lock_keywords": [
+    "lock",
+    "secure",
+    "protected",
+    "locked"
+  ],
+  "icon_lock_open_keywords": [
+    "lock",
+    "open",
+    "unlock",
+    "unlocked"
+  ],
+  "icon_vpn_key_keywords": [
+    "key",
+    "vpn",
+    "password",
+    "access"
+  ],
+  "icon_password_keywords": [
+    "password",
+    "key",
+    "secure",
+    "lock"
+  ],
+  "icon_fingerprint_keywords": [
+    "fingerprint",
+    "biometric",
+    "security",
+    "auth"
+  ],
+  "icon_face_keywords": [
+    "face",
+    "person",
+    "profile",
+    "avatar"
+  ],
+  "icon_face_retouching_natural_keywords": [
+    "face",
+    "retouch",
+    "natural",
+    "beauty"
+  ],
+  "icon_verified_keywords": [
+    "verified",
+    "check",
+    "confirm",
+    "valid"
+  ],
+  "icon_verified_user_keywords": [
+    "verified",
+    "user",
+    "trusted",
+    "confirmed"
+  ],
+  "icon_shield_keywords": [
+    "shield",
+    "protect",
+    "security",
+    "defense"
+  ],
+  "icon_privacy_tip_keywords": [
+    "privacy",
+    "tip",
+    "security",
+    "protect"
+  ],
+  "icon_check_circle_keywords": [
+    "check",
+    "circle",
+    "done",
+    "complete"
+  ],
+  "icon_check_keywords": [
+    "check",
+    "done",
+    "complete",
+    "tick"
+  ],
+  "icon_add_circle_keywords": [
+    "add",
+    "circle",
+    "new",
+    "create"
+  ],
+  "icon_add_keywords": [
+    "add",
+    "plus",
+    "new",
+    "create"
+  ],
+  "icon_remove_circle_keywords": [
+    "remove",
+    "circle",
+    "delete",
+    "minus"
+  ],
+  "icon_remove_keywords": [
+    "remove",
+    "delete",
+    "minus",
+    "subtract"
+  ],
+  "icon_delete_keywords": [
+    "delete",
+    "remove",
+    "trash",
+    "bin"
+  ],
+  "icon_delete_forever_keywords": [
+    "delete",
+    "forever",
+    "remove",
+    "permanent"
+  ],
+  "icon_restore_keywords": [
+    "restore",
+    "recover",
+    "undo",
+    "bring"
+  ],
+  "icon_restore_from_trash_keywords": [
+    "restore",
+    "trash",
+    "recover",
+    "undo"
+  ],
+  "icon_archive_keywords": [
+    "archive",
+    "store",
+    "save",
+    "keep"
+  ],
+  "icon_unarchive_keywords": [
+    "unarchive",
+    "restore",
+    "bring",
+    "back"
+  ],
+  "icon_download_keywords": [
+    "download",
+    "save",
+    "get",
+    "fetch"
+  ],
+  "icon_upload_keywords": [
+    "upload",
+    "send",
+    "share",
+    "post"
+  ],
+  "icon_report_keywords": [
+    "report",
+    "flag",
+    "alert",
+    "issue"
+  ],
+  "icon_flag_keywords": [
+    "flag",
+    "mark",
+    "report",
+    "signal"
+  ],
+  "icon_block_keywords": [
+    "block",
+    "stop",
+    "ban",
+    "prevent"
+  ],
+  "icon_cancel_keywords": [
+    "cancel",
+    "close",
+    "stop",
+    "abort"
+  ],
+  "icon_close_keywords": [
+    "close",
+    "exit",
+    "cancel",
+    "dismiss"
+  ],
+  "icon_cloud_upload_keywords": [
+    "cloud",
+    "upload",
+    "sync",
+    "backup"
+  ],
+  "icon_cloud_download_keywords": [
+    "cloud",
+    "download",
+    "sync",
+    "get"
+  ],
+  "icon_cloud_keywords": [
+    "cloud",
+    "storage",
+    "online",
+    "server"
+  ],
+  "icon_cloud_done_keywords": [
+    "cloud",
+    "done",
+    "complete",
+    "synced"
+  ],
+  "icon_cloud_off_keywords": [
+    "cloud",
+    "off",
+    "offline",
+    "disconnected"
+  ],
+  "icon_cloud_sync_keywords": [
+    "cloud",
+    "sync",
+    "synchronize",
+    "update"
+  ],
+  "icon_backup_keywords": [
+    "backup",
+    "save",
+    "copy",
+    "protect"
+  ],
+  "icon_sync_keywords": [
+    "sync",
+    "synchronize",
+    "update",
+    "refresh"
+  ],
+  "icon_sync_alt_keywords": [
+    "sync",
+    "alt",
+    "synchronize",
+    "alternate"
+  ],
+  "icon_refresh_keywords": [
+    "refresh",
+    "reload",
+    "update",
+    "renew"
+  ],
+  "icon_autorenew_keywords": [
+    "auto",
+    "renew",
+    "refresh",
+    "update"
+  ],
+  "icon_cached_keywords": [
+    "cache",
+    "cached",
+    "stored",
+    "saved"
+  ],
+  "icon_update_keywords": [
+    "update",
+    "refresh",
+    "upgrade",
+    "new"
+  ],
+  "icon_system_update_keywords": [
+    "system",
+    "update",
+    "upgrade",
+    "refresh"
+  ],
+  "icon_install_mobile_keywords": [
+    "install",
+    "mobile",
+    "app",
+    "download"
+  ],
+  "icon_install_desktop_keywords": [
+    "install",
+    "desktop",
+    "app",
+    "download"
+  ],
+  "icon_get_app_keywords": [
+    "get",
+    "app",
+    "download",
+    "install"
+  ],
+  "icon_publish_keywords": [
+    "publish",
+    "share",
+    "post",
+    "upload"
+  ],
+  "icon_file_upload_keywords": [
+    "file",
+    "upload",
+    "send",
+    "share"
+  ],
+  "icon_file_download_keywords": [
+    "file",
+    "download",
+    "get",
+    "save"
+  ],
+  "icon_folder_keywords": [
+    "folder",
+    "directory",
+    "file",
+    "organize"
+  ],
+  "icon_folder_open_keywords": [
+    "folder",
+    "open",
+    "directory"
+  ],
+  "icon_folder_shared_keywords": [
+    "folder",
+    "shared",
+    "share",
+    "collaborate"
+  ],
+  "icon_insert_drive_file_keywords": [
+    "file",
+    "document",
+    "drive"
+  ],
+  "icon_drive_file_rename_outline_keywords": [
+    "file",
+    "rename",
+    "edit",
+    "name"
+  ],
+  "icon_drive_file_move_keywords": [
+    "file",
+    "move",
+    "transfer",
+    "relocate"
+  ],
+  "icon_drive_file_move_outline_keywords": [
+    "file",
+    "move",
+    "outline"
+  ],
+  "icon_drive_file_move_rtl_keywords": [
+    "file",
+    "move",
+    "rtl",
+    "right"
+  ],
+  "icon_create_new_folder_keywords": [
+    "folder",
+    "new",
+    "create",
+    "add"
+  ],
+  "icon_folder_copy_keywords": [
+    "folder",
+    "copy",
+    "duplicate"
+  ],
+  "icon_folder_delete_keywords": [
+    "folder",
+    "delete",
+    "remove",
+    "trash"
+  ],
+  "icon_folder_zip_keywords": [
+    "folder",
+    "zip",
+    "archive",
+    "compress"
+  ],
+  "icon_folder_special_keywords": [
+    "folder",
+    "special",
+    "important",
+    "star"
+  ],
+  "icon_folder_off_keywords": [
+    "folder",
+    "off",
+    "disabled",
+    "unavailable"
+  ],
+  "icon_content_copy_keywords": [
+    "copy",
+    "duplicate",
+    "clone"
+  ],
+  "icon_content_cut_keywords": [
+    "cut",
+    "move",
+    "remove"
+  ],
+  "icon_content_paste_keywords": [
+    "paste",
+    "insert",
+    "add"
+  ],
+  "icon_copy_all_keywords": [
+    "copy",
+    "all",
+    "duplicate",
+    "everything"
+  ],
+  "icon_cut_keywords": [
+    "cut",
+    "move",
+    "remove"
+  ],
+  "icon_paste_keywords": [
+    "paste",
+    "insert",
+    "add"
+  ],
+  "icon_public_keywords": [
+    "public",
+    "world",
+    "global",
+    "internet"
+  ],
+  "icon_language_keywords": [
+    "language",
+    "translate",
+    "locale",
+    "tongue"
+  ],
+  "icon_translate_keywords": [
+    "translate",
+    "language",
+    "convert",
+    "interpret"
+  ],
+  "icon_g_translate_keywords": [
+    "translate",
+    "google",
+    "language"
+  ],
+  "icon_currency_exchange_keywords": [
+    "currency",
+    "exchange",
+    "money",
+    "convert"
+  ],
+  "icon_confirmation_number_keywords": [
+    "confirmation",
+    "number",
+    "ticket",
+    "code"
+  ],
+  "icon_compass_calibration_keywords": [
+    "compass",
+    "calibration",
+    "navigation",
+    "direction"
+  ],
+  "icon_explore_off_keywords": [
+    "explore",
+    "off",
+    "disabled",
+    "unavailable"
+  ]
 }
