@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../providers/habit_providers.dart';
-import '../../../settings/providers/settings_providers.dart';
+import '../../../settings/providers/settings_framework_providers.dart';
+import '../../../settings/settings_definitions.dart';
 
 // Filter type constants
 const String _filterTypeGood = 'good';
@@ -13,8 +14,8 @@ class HabitsSortMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sortOrder = ref.watch(habitSortOrderProvider);
-    final notifier = ref.read(habitSortOrderNotifierProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final sortOrder = ref.watch(settings.provider(habitSortOrderSettingDef));
     final groupBy = ref.watch(habitGroupByProvider);
     final filterByType = ref.watch(habitFilterByTypeProvider);
     final groupByNotifier = ref.read(habitGroupByNotifierProvider);
@@ -54,8 +55,7 @@ class HabitsSortMenu extends ConsumerWidget {
       tooltip: tooltip,
       onSelected: (value) async {
         if (value.startsWith('sort:')) {
-          await notifier.setHabitSortOrder(value.substring(5));
-          ref.invalidate(habitSortOrderNotifierProvider);
+          await ref.read(settings.provider(habitSortOrderSettingDef).notifier).set(value.substring(5));
         } else if (value.startsWith('group:')) {
           final groupValue = value.substring(6);
           await groupByNotifier.setHabitGroupBy(

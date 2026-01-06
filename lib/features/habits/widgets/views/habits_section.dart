@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../providers/habit_providers.dart';
-import '../../../settings/providers/settings_providers.dart';
+import '../../../settings/providers/settings_framework_providers.dart';
+import '../../../settings/settings_definitions.dart';
 import '../cards/quick_actions.dart';
 import '../../../../../core/widgets/empty_state_widget.dart';
 import 'habits_section_header.dart';
@@ -39,10 +40,11 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
     super.initState();
     // Initialize card layout from provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _cardLayout = ref.read(habitsLayoutModeProvider);
+      final settings = ref.read(adatiSettingsProvider);
+      _cardLayout = ref.read(settings.provider(habitsLayoutModeSettingDef));
       // Show search if there's an active query
-      final filterQuery = ref.read(habitFilterQueryProvider);
-      if (filterQuery != null && filterQuery.isNotEmpty) {
+      final filterQuery = ref.read(settings.provider(habitFilterQuerySettingDef));
+      if (filterQuery.isNotEmpty) {
         _searchController.text = filterQuery;
         setState(() {
           _showSearch = true;
@@ -73,9 +75,8 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
     });
     if (!_showSearch) {
       // Clear search when hiding
-      final notifier = ref.read(habitFilterQueryNotifierProvider);
-      await notifier.setHabitFilterQuery(null);
-      ref.invalidate(habitFilterQueryNotifierProvider);
+      final settings = ref.read(adatiSettingsProvider);
+      await ref.read(settings.provider(habitFilterQuerySettingDef).notifier).set('');
       _searchController.clear();
     }
   }
@@ -83,12 +84,13 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
   @override
   Widget build(BuildContext context) {
     final habitsAsync = ref.watch(filteredSortedHabitsProvider);
-    final filterQuery = ref.watch(habitFilterQueryProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final filterQuery = ref.watch(settings.provider(habitFilterQuerySettingDef));
     // Watch the layout mode provider so it updates when changed in settings
-    final providerCardLayout = ref.watch(habitsLayoutModeProvider);
+    final providerCardLayout = ref.watch(settings.provider(habitsLayoutModeSettingDef));
     
     // Listen for provider changes and sync local state (e.g., when changed from settings page)
-    ref.listen<String>(habitsLayoutModeProvider, (previous, next) {
+    ref.listen<String>(settings.provider(habitsLayoutModeSettingDef), (previous, next) {
       if (previous != next && _cardLayout != next) {
         setState(() {
           _cardLayout = next;
@@ -100,7 +102,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
     final cardLayout = _cardLayout ?? providerCardLayout;
 
     // Auto-show search if there's an active query
-    if (filterQuery != null && filterQuery.isNotEmpty && !_showSearch) {
+    if (filterQuery.isNotEmpty && !_showSearch) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _searchController.text = filterQuery;
@@ -112,14 +114,14 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
     }
 
     // Sync controller when filter is cleared externally
-    if (filterQuery == null && _searchController.text.isNotEmpty) {
+    if (filterQuery.isEmpty && _searchController.text.isNotEmpty) {
       _searchController.clear();
     }
 
     return habitsAsync.when(
       data: (habits) {
         // Only show empty state for filtered results (when search has no matches)
-        if (habits.isEmpty && (filterQuery != null && filterQuery.isNotEmpty)) {
+        if (habits.isEmpty && filterQuery.isNotEmpty) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -140,10 +142,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                     _cardLayout = value;
                   });
                   // Persist in background
-                  final notifier = ref.read(habitsLayoutModeNotifierProvider);
-                  notifier.setHabitsLayoutMode(value).then(
-                    (_) => ref.invalidate(habitsLayoutModeNotifierProvider),
-                  );
+                  ref.read(settings.provider(habitsLayoutModeSettingDef).notifier).set(value);
                 },
                 onShowTagsChanged: (value) => setState(() => _showTags = value),
                 onShowDescriptionsChanged: (value) =>
@@ -198,10 +197,7 @@ class _HabitsSectionState extends ConsumerState<HabitsSection> {
                   _cardLayout = value;
                 });
                 // Persist in background
-                final notifier = ref.read(habitsLayoutModeNotifierProvider);
-                notifier.setHabitsLayoutMode(value).then(
-                  (_) => ref.invalidate(habitsLayoutModeNotifierProvider),
-                );
+                ref.read(settings.provider(habitsLayoutModeSettingDef).notifier).set(value);
               },
               onShowTagsChanged: (value) => setState(() => _showTags = value),
               onShowDescriptionsChanged: (value) =>
