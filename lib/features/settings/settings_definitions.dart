@@ -95,11 +95,7 @@ const themeModeSettingDef = EnumSetting(
   defaultValue: 'system',
   titleKey: 'theme',
   options: ['system', 'light', 'dark'],
-  optionLabels: {
-    'system': 'system',
-    'light': 'light',
-    'dark': 'dark',
-  },
+  optionLabels: {'system': 'system', 'light': 'light', 'dark': 'dark'},
   icon: Icons.dark_mode,
   section: 'general',
   order: 0,
@@ -115,10 +111,7 @@ const languageSettingDef = EnumSetting(
   defaultValue: 'en',
   titleKey: 'language',
   options: ['en', 'ar'],
-  optionLabels: {
-    'en': 'english',
-    'ar': 'arabic',
-  },
+  optionLabels: {'en': 'english', 'ar': 'arabic'},
   icon: Icons.language,
   section: 'general',
   order: 1,
@@ -253,7 +246,15 @@ const habitCheckboxStyleSettingDef = EnumSetting(
   'habit_checkbox_style',
   defaultValue: 'circle',
   titleKey: 'habit_checkbox_style',
-  options: ['square', 'bordered', 'circle', 'radio', 'task', 'verified', 'taskAlt'],
+  options: [
+    'square',
+    'bordered',
+    'circle',
+    'radio',
+    'task',
+    'verified',
+    'taskAlt',
+  ],
   icon: Icons.check_box,
   section: 'appearance',
   subSection: 'component_styles',
@@ -475,10 +476,7 @@ const habitsLayoutModeSettingDef = EnumSetting(
   defaultValue: 'list',
   titleKey: 'habits_layout_mode',
   options: ['list', 'grid'],
-  optionLabels: {
-    'list': 'habits_layout_list',
-    'grid': 'habits_layout_grid',
-  },
+  optionLabels: {'list': 'habits_layout_list', 'grid': 'habits_layout_grid'},
   icon: Icons.view_list,
   section: 'display_layout',
   subSection: 'habits_layout',
@@ -794,6 +792,7 @@ const habitCardTimelineLinesSettingDef = IntSetting(
   order: 11,
   min: 1,
   max: 10,
+  editMode: SettingEditMode.inline,
   searchTerms: {
     'en': ['habit', 'card', 'timeline', 'lines', 'rows'],
     'ar': ['عادة', 'بطاقة', 'جدول زمني', 'خطوط', 'صفوف'],
@@ -827,6 +826,7 @@ const mainTimelineLinesSettingDef = IntSetting(
   order: 13,
   min: 1,
   max: 10,
+  editMode: SettingEditMode.inline,
   searchTerms: {
     'en': ['main', 'timeline', 'lines', 'rows'],
     'ar': ['رئيسي', 'جدول زمني', 'خطوط', 'صفوف'],
@@ -1039,6 +1039,9 @@ const autoBackupRetentionCountSettingDef = IntSetting(
   order: 1,
   min: 1,
   max: 100,
+  editMode: SettingEditMode.inline,
+  dependsOn: 'auto_backup_enabled',
+  enabledWhen: true,
   searchTerms: {
     'en': ['backup', 'retention', 'count', 'keep'],
     'ar': ['نسخ احتياطي', 'احتفاظ', 'عدد', 'حفظ'],
@@ -1332,4 +1335,3 @@ SettingsRegistry createAdatiSettingsRegistry() {
     settings: allSettings,
   );
 }
-
