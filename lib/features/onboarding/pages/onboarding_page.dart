@@ -7,7 +7,8 @@ import '../../../core/services/preferences_service.dart';
 import '../../../core/services/demo_data_service.dart';
 import '../../../core/services/import_service.dart';
 import '../../habits/providers/habit_providers.dart';
-import '../../settings/providers/settings_providers.dart';
+import '../../settings/providers/settings_framework_providers.dart';
+import '../../settings/settings_definitions.dart';
 import '../widgets/onboarding_slide.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -198,17 +199,37 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
+  ThemeMode _parseThemeMode(String themeModeStr) {
+    switch (themeModeStr) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  ThemeMode _getCurrentThemeMode(WidgetRef ref) {
+    final settings = ref.watch(adatiSettingsProvider);
+    final themeModeStr = ref.watch(settings.provider(themeModeSettingDef));
+    return _parseThemeMode(themeModeStr);
+  }
+
   void _toggleTheme(WidgetRef ref) {
-    final notifier = ref.read(themeModeNotifierProvider);
-    final currentTheme = ref.read(themeModeProvider);
+    final settings = ref.read(adatiSettingsProvider);
+    final themeModeStr = ref.read(settings.provider(themeModeSettingDef));
+    final currentTheme = _parseThemeMode(themeModeStr);
 
     // Toggle between light and dark (skip system for simplicity in onboarding)
     final newTheme = currentTheme == ThemeMode.light
         ? ThemeMode.dark
         : ThemeMode.light;
 
-    notifier.setThemeMode(newTheme);
-    ref.invalidate(themeModeNotifierProvider);
+    // Convert ThemeMode to string for framework
+    final newThemeStr = newTheme == ThemeMode.light ? 'light' : 'dark';
+    ref.read(settings.provider(themeModeSettingDef).notifier).set(newThemeStr);
   }
 
   @override
@@ -245,10 +266,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         ),
                         // Theme toggle
                         IconButton(
-                          icon: ref.watch(themeModeProvider) == ThemeMode.dark
+                          icon: _getCurrentThemeMode(ref) == ThemeMode.dark
                               ? const Icon(Icons.light_mode)
                               : const Icon(Icons.dark_mode),
-                          tooltip: ref.watch(themeModeProvider) == ThemeMode.dark
+                          tooltip: _getCurrentThemeMode(ref) == ThemeMode.dark
                               ? 'light'.tr()
                               : 'dark'.tr(),
                           onPressed: () => _toggleTheme(ref),
