@@ -73,6 +73,7 @@ export 'adapters/riverpod_adapter.dart';
 export 'ui/responsive_helpers.dart';
 export 'ui/settings_tile.dart';
 export 'ui/settings_section.dart';
+export 'ui/snackbar_helper.dart';
 
 // Localization
 export 'localization/easy_localization_adapter.dart';
