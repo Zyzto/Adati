@@ -11,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../../core/services/preferences_service.dart';
 import '../../../packages/flutter_settings_framework/flutter_settings_framework.dart';
 import '../settings_definitions.dart';
 import '../providers/settings_framework_providers.dart';
@@ -969,33 +970,60 @@ class _SettingsPageV2State extends ConsumerState<SettingsPageV2> {
   // TILE BUILDERS
   // ==========================================================================
 
+  /// Check if a setting is enabled based on its dependencies.
+  /// This watches the dependency provider reactively so UI updates automatically.
+  bool _isSettingEnabled(
+    SettingsProviders settings,
+    SettingDefinition setting,
+  ) {
+    if (setting.dependsOn == null) return true;
+
+    // Find the dependency setting in the registry
+    final depSetting = settings.registry.get(setting.dependsOn!);
+    if (depSetting == null) return true;
+
+    // Watch the dependency value reactively
+    final depValue = ref.watch(settings.provider(depSetting));
+
+    // Check if the dependency condition is met
+    return depValue == setting.enabledWhen;
+  }
+
   Widget _buildBoolTile(SettingsProviders settings, BoolSetting setting) {
     final value = ref.watch(settings.provider(setting));
+    final enabled = _isSettingEnabled(settings, setting);
     return SwitchSettingsTile.fromSetting(
       setting: setting,
       title: setting.titleKey.tr(),
       subtitle: setting.subtitleKey?.tr(),
       value: value,
-      onChanged: (newValue) {
-        ref.read(settings.provider(setting).notifier).set(newValue);
-      },
+      enabled: enabled,
+      onChanged: enabled
+          ? (newValue) => _updateSetting(settings, setting, newValue)
+          : null,
     );
   }
 
   Widget _buildEnumTile(SettingsProviders settings, EnumSetting setting) {
     final value = ref.watch(settings.provider(setting));
-    return SelectSettingsTile.fromEnumSetting(
+    final enabled = _isSettingEnabled(settings, setting);
+    final isInline = setting.editMode == SettingEditMode.inline;
+    return EnumSettingsTile.fromSetting(
       setting: setting,
       title: setting.titleKey.tr(),
       subtitle: _getEnumLabel(setting, value),
       value: value,
       labelBuilder: (opt) => _getEnumLabel(setting, opt),
       dialogTitle: setting.titleKey.tr(),
-      onChanged: (newValue) {
-        if (newValue != null) {
-          ref.read(settings.provider(setting).notifier).set(newValue);
-        }
-      },
+      enabled: enabled,
+      onChanged: enabled
+          ? (newValue) => _updateSetting(
+              settings,
+              setting,
+              newValue,
+              showSnackBar: !isInline,
+            )
+          : null,
     );
   }
 
@@ -1014,46 +1042,91 @@ class _SettingsPageV2State extends ConsumerState<SettingsPageV2> {
 
   Widget _buildIntTile(SettingsProviders settings, IntSetting setting) {
     final value = ref.watch(settings.provider(setting));
-    return SliderSettingsTile.fromIntSetting(
+    final enabled = _isSettingEnabled(settings, setting);
+    final isInline = setting.editMode == SettingEditMode.inline;
+    return IntSettingsTile.fromSetting(
       setting: setting,
       title: setting.titleKey.tr(),
       value: value,
       dialogTitle: setting.titleKey.tr(),
-      onChanged: (newValue) {
-        ref.read(settings.provider(setting).notifier).set(newValue);
-      },
+      enabled: enabled,
+      onChanged: enabled
+          ? (newValue) => _updateSetting(
+              settings,
+              setting,
+              newValue,
+              showSnackBar: !isInline,
+            )
+          : null,
     );
   }
 
   Widget _buildDoubleTile(SettingsProviders settings, DoubleSetting setting) {
     final value = ref.watch(settings.provider(setting));
+    final enabled = _isSettingEnabled(settings, setting);
     return SliderSettingsTile.fromDoubleSetting(
       setting: setting,
       title: setting.titleKey.tr(),
       value: value,
       dialogTitle: setting.titleKey.tr(),
-      onChanged: (newValue) {
-        ref.read(settings.provider(setting).notifier).set(newValue);
-      },
+      enabled: enabled,
+      onChanged: enabled
+          ? (newValue) => _updateSetting(settings, setting, newValue)
+          : null,
     );
   }
 
   Widget _buildColorTile(SettingsProviders settings, ColorSetting setting) {
     final value = ref.watch(settings.provider(setting));
+    final enabled = _isSettingEnabled(settings, setting);
     return ColorSettingsTile.fromSetting(
       setting: setting,
       title: setting.titleKey.tr(),
       value: value,
       dialogTitle: setting.titleKey.tr(),
-      onChanged: (newValue) {
-        ref.read(settings.provider(setting).notifier).set(newValue);
-      },
+      enabled: enabled,
+      onChanged: enabled
+          ? (newValue) => _updateSetting(settings, setting, newValue)
+          : null,
     );
   }
 
   // ==========================================================================
   // HELPERS
   // ==========================================================================
+
+  /// Show an undo SnackBar after a setting change.
+  void _showUndoSnackBar(SettingsProviders settings, String settingName) {
+    AppSnackbar.undo(
+      context: context,
+      message: '$settingName ${'changed'.tr()}',
+      undoLabel: 'undo'.tr(),
+      onUndo: () async {
+        final success = await settings.undo();
+        if (success && mounted) {
+          AppSnackbar.success(
+            context: context,
+            message: 'change_undone'.tr(),
+            duration: const Duration(seconds: 2),
+          );
+        }
+      },
+    );
+  }
+
+  /// Update a setting value and optionally show undo SnackBar.
+  /// Set [showSnackBar] to false for inline edits to avoid spam.
+  Future<void> _updateSetting<T>(
+    SettingsProviders settings,
+    SettingDefinition<T> setting,
+    T value, {
+    bool showSnackBar = true,
+  }) async {
+    await ref.read(settings.provider(setting).notifier).set(value);
+    if (mounted && showSnackBar) {
+      _showUndoSnackBar(settings, setting.titleKey.tr());
+    }
+  }
 
   Future<void> _showResetConfirmation() async {
     final confirmed = await SettingsDialog.confirm(
@@ -1068,12 +1141,11 @@ class _SettingsPageV2State extends ConsumerState<SettingsPageV2> {
     if (confirmed) {
       final settings = ref.read(adatiSettingsProvider);
       await settings.controller.resetAll();
+      settings.clearUndoHistory();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('settings_reset_success'.tr()),
-            backgroundColor: Colors.green,
-          ),
+        AppSnackbar.success(
+          context: context,
+          message: 'settings_reset_success'.tr(),
         );
       }
     }
@@ -1165,24 +1237,39 @@ class _AutoBackupDirectoryTileState
 }
 
 /// Auto backup last backup display tile
-class _AutoBackupLastBackupTile extends ConsumerWidget {
+class _AutoBackupLastBackupTile extends StatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(adatiSettingsProvider);
-    final lastBackup = ref.watch(
-      settings.provider(autoBackupLastBackupSettingDef),
-    );
+  State<_AutoBackupLastBackupTile> createState() =>
+      _AutoBackupLastBackupTileState();
+}
 
+class _AutoBackupLastBackupTileState extends State<_AutoBackupLastBackupTile> {
+  String? _lastBackup;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastBackup();
+  }
+
+  void _loadLastBackup() {
+    setState(() {
+      _lastBackup = PreferencesService.getAutoBackupLastBackup();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     String displayText;
-    if (lastBackup.isEmpty) {
+    if (_lastBackup == null || _lastBackup!.isEmpty) {
       displayText = 'auto_backup_never'.tr();
     } else {
       try {
-        final date = DateTime.parse(lastBackup);
+        final date = DateTime.parse(_lastBackup!);
         final dateFormat = DateFormat('yyyy-MM-dd HH:mm');
         displayText = dateFormat.format(date);
       } catch (e) {
-        displayText = lastBackup;
+        displayText = _lastBackup!;
       }
     }
 
@@ -1190,6 +1277,11 @@ class _AutoBackupLastBackupTile extends ConsumerWidget {
       leading: const Icon(Icons.schedule),
       title: Text('auto_backup_last_backup'.tr()),
       subtitle: Text(displayText),
+      trailing: IconButton(
+        icon: const Icon(Icons.refresh),
+        onPressed: _loadLastBackup,
+        tooltip: 'refresh'.tr(),
+      ),
     );
   }
 }
