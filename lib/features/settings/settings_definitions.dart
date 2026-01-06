@@ -793,6 +793,8 @@ const habitCardTimelineLinesSettingDef = IntSetting(
   min: 1,
   max: 10,
   editMode: SettingEditMode.inline,
+  dependsOn: 'habit_card_timeline_fill_lines',
+  enabledWhen: true,
   searchTerms: {
     'en': ['habit', 'card', 'timeline', 'lines', 'rows'],
     'ar': ['عادة', 'بطاقة', 'جدول زمني', 'خطوط', 'صفوف'],
@@ -827,6 +829,8 @@ const mainTimelineLinesSettingDef = IntSetting(
   min: 1,
   max: 10,
   editMode: SettingEditMode.inline,
+  dependsOn: 'main_timeline_fill_lines',
+  enabledWhen: true,
   searchTerms: {
     'en': ['main', 'timeline', 'lines', 'rows'],
     'ar': ['رئيسي', 'جدول زمني', 'خطوط', 'صفوف'],

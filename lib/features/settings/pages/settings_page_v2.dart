@@ -436,9 +436,12 @@ class _SettingsPageV2State extends ConsumerState<SettingsPageV2> {
       dialogTitle: languageSettingDef.titleKey.tr(),
       onChanged: (newValue) async {
         if (newValue != null && newValue != value) {
-          await ref
-              .read(settings.provider(languageSettingDef).notifier)
-              .set(newValue);
+          await _updateSetting(
+            settings,
+            languageSettingDef,
+            newValue,
+            showSnackBar: true,
+          );
           if (mounted) {
             context.setLocale(Locale(newValue));
           }
@@ -537,7 +540,7 @@ class _SettingsPageV2State extends ConsumerState<SettingsPageV2> {
   List<Widget> _buildDateTimeChildren(SettingsProviders settings) {
     return [
       _buildEnumTile(settings, dateFormatSettingDef),
-      _buildIntTile(settings, firstDayOfWeekSettingDef),
+      _buildFirstDayOfWeekTile(settings),
     ];
   }
 
@@ -1059,6 +1062,46 @@ class _SettingsPageV2State extends ConsumerState<SettingsPageV2> {
             )
           : null,
     );
+  }
+
+  /// Build first day of week tile with formatted day name.
+  Widget _buildFirstDayOfWeekTile(SettingsProviders settings) {
+    final value = ref.watch(settings.provider(firstDayOfWeekSettingDef));
+    final enabled = _isSettingEnabled(settings, firstDayOfWeekSettingDef);
+
+    // Format day name: 0 = Sunday, 1 = Monday
+    final dayName = value == 0 ? 'sunday'.tr() : 'monday'.tr();
+
+    return ListTile(
+      leading: Icon(firstDayOfWeekSettingDef.icon),
+      title: Text(firstDayOfWeekSettingDef.titleKey.tr()),
+      subtitle: Text(dayName),
+      trailing: const Icon(Icons.chevron_right),
+      enabled: enabled,
+      onTap: enabled ? () => _showFirstDayOfWeekDialog(settings) : null,
+    );
+  }
+
+  /// Show first day of week selection dialog.
+  Future<void> _showFirstDayOfWeekDialog(SettingsProviders settings) async {
+    final currentValue = ref.read(settings.provider(firstDayOfWeekSettingDef));
+
+    final result = await SettingsDialog.select<int>(
+      context: context,
+      title: firstDayOfWeekSettingDef.titleKey.tr(),
+      options: [0, 1],
+      itemBuilder: (day) => Text(day == 0 ? 'sunday'.tr() : 'monday'.tr()),
+      selectedValue: currentValue,
+    );
+
+    if (result != null && result != currentValue) {
+      await _updateSetting(
+        settings,
+        firstDayOfWeekSettingDef,
+        result,
+        showSnackBar: true,
+      );
+    }
   }
 
   Widget _buildDoubleTile(SettingsProviders settings, DoubleSetting setting) {
