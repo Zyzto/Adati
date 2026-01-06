@@ -12,7 +12,8 @@ import '../widgets/cards/habit_timeline.dart';
 import '../widgets/cards/habit_management_menu.dart';
 import '../widgets/forms/note_editor.dart';
 import '../widgets/forms/goal_setting.dart';
-import '../../settings/providers/settings_providers.dart';
+import '../../settings/providers/settings_framework_providers.dart';
+import '../../settings/settings_definitions.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../core/widgets/skeleton_loader.dart';
 import '../../../../core/services/preferences_service.dart';
@@ -47,7 +48,8 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
   Widget build(BuildContext context) {
     final entriesAsync = ref.watch(trackingEntriesProvider(widget.habitId));
     final habitAsync = ref.watch(habitByIdProvider(widget.habitId));
-    final modalTimelineDays = ref.watch(modalTimelineDaysProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final modalTimelineDays = ref.watch(settings.provider(modalTimelineDaysSettingDef));
     final streakAsync = ref.watch(streakProvider(widget.habitId));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -689,7 +691,8 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final firstDayOfWeekSetting = ref.watch(firstDayOfWeekProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final firstDayOfWeekSetting = ref.watch(settings.provider(firstDayOfWeekSettingDef));
 
     final firstDayOfMonth = DateTime(
       _selectedMonth.year,
@@ -905,9 +908,10 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
                             return habitAsync.when(
                               data: (habit) {
                                 final isGoodHabit = habit?.habitType == HabitType.good.value;
+                                final settings = ref.watch(adatiSettingsProvider);
                                 final completionColor = isGoodHabit
-                                    ? ref.watch(calendarCompletionColorProvider)
-                                    : ref.watch(calendarBadHabitCompletionColorProvider);
+                                    ? ref.watch(settings.provider(calendarCompletionColorSettingDef))
+                                    : ref.watch(settings.provider(calendarBadHabitCompletionColorSettingDef));
                                 return _AnimatedCalendarDay(
                                   key: ValueKey('${day.year}-${day.month}-${day.day}'),
                                   isCompleted: isCompleted,
@@ -928,16 +932,18 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
                                   },
                                 );
                               },
-                              loading: () => _AnimatedCalendarDay(
-                                key: ValueKey('${day.year}-${day.month}-${day.day}'),
-                                isCompleted: isCompleted,
-                                isToday: isToday,
-                                isWeekend: isWeekend,
-                                day: day,
-                                entriesMap: entriesMap,
-                                hasNotes: hasNotes,
-                                streakLength: streakLength,
-                                completionColor: ref.watch(calendarCompletionColorProvider),
+                              loading: () {
+                                final settings = ref.watch(adatiSettingsProvider);
+                                return _AnimatedCalendarDay(
+                                  key: ValueKey('${day.year}-${day.month}-${day.day}'),
+                                  isCompleted: isCompleted,
+                                  isToday: isToday,
+                                  isWeekend: isWeekend,
+                                  day: day,
+                                  entriesMap: entriesMap,
+                                  hasNotes: hasNotes,
+                                  streakLength: streakLength,
+                                  completionColor: ref.watch(settings.provider(calendarCompletionColorSettingDef)),
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   _toggleDay(day);
@@ -946,26 +952,30 @@ class _HabitDetailPageState extends ConsumerState<HabitDetailPage> {
                                   HapticFeedback.mediumImpact();
                                   _showNoteEditor(context, day);
                                 },
-                              ),
-                              error: (_, _) => _AnimatedCalendarDay(
-                                key: ValueKey('${day.year}-${day.month}-${day.day}'),
-                                isCompleted: isCompleted,
-                                isToday: isToday,
-                                isWeekend: isWeekend,
-                                day: day,
-                                entriesMap: entriesMap,
-                                hasNotes: hasNotes,
-                                streakLength: streakLength,
-                                completionColor: ref.watch(calendarCompletionColorProvider),
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  _toggleDay(day);
-                                },
-                                onLongPress: () {
-                                  HapticFeedback.mediumImpact();
-                                  _showNoteEditor(context, day);
-                                },
-                              ),
+                              );
+                              },
+                              error: (_, _) {
+                                final settings = ref.watch(adatiSettingsProvider);
+                                return _AnimatedCalendarDay(
+                                  key: ValueKey('${day.year}-${day.month}-${day.day}'),
+                                  isCompleted: isCompleted,
+                                  isToday: isToday,
+                                  isWeekend: isWeekend,
+                                  day: day,
+                                  entriesMap: entriesMap,
+                                  hasNotes: hasNotes,
+                                  streakLength: streakLength,
+                                  completionColor: ref.watch(settings.provider(calendarCompletionColorSettingDef)),
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    _toggleDay(day);
+                                  },
+                                  onLongPress: () {
+                                    HapticFeedback.mediumImpact();
+                                    _showNoteEditor(context, day);
+                                  },
+                                );
+                              },
                             );
                           },
                         ),

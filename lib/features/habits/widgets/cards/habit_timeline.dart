@@ -7,7 +7,8 @@ import '../../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../../../core/database/models/tracking_types.dart';
 import '../../../timeline/widgets/day_square.dart';
 import '../../../../../core/widgets/skeleton_loader.dart';
-import '../../../settings/providers/settings_providers.dart';
+import '../../../settings/providers/settings_framework_providers.dart';
+import '../../../settings/settings_definitions.dart';
 
 class HabitTimeline extends ConsumerStatefulWidget {
   final int habitId;
@@ -133,9 +134,10 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                 app_date_utils.DateUtils.getDateOnly(entry.date): entry.completed
             };
 
-            final timelineSpacing = ref.watch(timelineSpacingProvider);
+            final settings = ref.watch(adatiSettingsProvider);
+            final timelineSpacing = ref.watch(settings.provider(timelineSpacingSettingDef));
             final showWeekMonthHighlights =
-                ref.watch(showWeekMonthHighlightsProvider);
+                ref.watch(settings.provider(showWeekMonthHighlightsSettingDef));
             final spacing = widget.compact ? 4.0 : timelineSpacing;
 
             // For grid view, use fit mode to determine fillLines
@@ -143,11 +145,11 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                 ? true
                 : widget.gridFitMode == 'fixed'
                     ? false
-                    : ref.watch(habitCardTimelineFillLinesProvider);
+                    : ref.watch(settings.provider(habitCardTimelineFillLinesSettingDef));
             // For grid fill mode, calculate lines dynamically based on available height
             final lineCount = widget.gridFitMode == 'fit'
                 ? null
-                : ref.watch(habitCardTimelineLinesProvider);
+                : ref.watch(settings.provider(habitCardTimelineLinesSettingDef));
 
             Widget buildTimelineForDays(List<DateTime> days) {
               final needsScroll = days.length > 100;
@@ -155,7 +157,7 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
               final streakMap =
                   _calculateStreaks(days, entriesMap, isGoodHabit, habit.createdAt);
 
-              final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
+              final badHabitLogicMode = ref.watch(settings.provider(badHabitLogicModeSettingDef));
               final habitCreatedAtOnly = app_date_utils.DateUtils.getDateOnly(habit.createdAt);
               final timelineWidget = Wrap(
                 spacing: spacing,
@@ -178,9 +180,8 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                       showWeekMonthHighlights && _isInCurrentMonth(day);
 
                   final completionColor = isGoodHabit
-                      ? ref.watch(calendarTimelineCompletionColorProvider)
-                      : ref.watch(
-                          calendarTimelineBadHabitCompletionColorProvider);
+                      ? ref.watch(settings.provider(calendarTimelineCompletionColorSettingDef))
+                      : ref.watch(settings.provider(calendarTimelineBadHabitCompletionColorSettingDef));
 
                   // Smoothly animate completion / streak changes for each day.
                   return AnimatedSwitcher(
@@ -283,7 +284,7 @@ class _HabitTimelineState extends ConsumerState<HabitTimeline> {
                   } else if (widget.compact) {
                     squareSize = 12.0;
                   } else {
-                    final sizePreference = ref.watch(daySquareSizeProvider);
+                    final sizePreference = ref.watch(settings.provider(daySquareSizeSettingDef));
                     switch (sizePreference) {
                       case 'small':
                         squareSize = 12.0;

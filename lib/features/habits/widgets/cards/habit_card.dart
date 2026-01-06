@@ -12,7 +12,8 @@ import '../../providers/habit_providers.dart';
 import 'habit_timeline.dart';
 import '../../pages/habit_detail_page.dart';
 import '../components/checkbox_style.dart';
-import '../../../settings/providers/settings_providers.dart';
+import '../../../settings/providers/settings_framework_providers.dart';
+import '../../../settings/settings_definitions.dart';
 import '../../../../../core/widgets/skeleton_loader.dart';
 import '../../../../../core/utils/icon_utils.dart';
 
@@ -53,29 +54,30 @@ class _HabitCardSettings {
     required bool isGoodHabit,
   }) {
     final sessionOptions = ref.watch(sessionViewOptionsProvider);
-    final globalShowDescriptions = ref.watch(showDescriptionsProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final globalShowDescriptions = ref.watch(settings.provider(showDescriptionsSettingDef));
     final showDescriptions =
         sessionOptions.showDescriptions ?? globalShowDescriptions;
 
-    final iconSize = ref.watch(iconSizeProvider);
+    final iconSize = ref.watch(settings.provider(iconSizeSettingDef));
 
-    final globalCompactCards = ref.watch(compactCardsProvider);
+    final globalCompactCards = ref.watch(settings.provider(compactCardsSettingDef));
     final compactCards = sessionOptions.compactCards ?? globalCompactCards;
 
-    final showStreakOnCard = ref.watch(showStreakOnCardProvider);
-    final showStreakBorders = ref.watch(showStreakBordersProvider);
-    final cardSpacing = ref.watch(cardSpacingProvider);
+    final showStreakOnCard = ref.watch(settings.provider(showStreakOnCardSettingDef));
+    final showStreakBorders = ref.watch(settings.provider(showStreakBordersSettingDef));
+    final cardSpacing = ref.watch(settings.provider(cardSpacingSettingDef));
 
-    final timelineCompactMode = ref.watch(timelineCompactModeProvider);
-    final habitCardTimelineDays = ref.watch(habitCardTimelineDaysProvider);
+    final timelineCompactMode = ref.watch(settings.provider(timelineCompactModeSettingDef));
+    final habitCardTimelineDays = ref.watch(settings.provider(habitCardTimelineDaysSettingDef));
 
-    final streakColorScheme = ref.watch(streakColorSchemeProvider);
-    final layoutMode = ref.watch(habitCardLayoutModeProvider);
-    final timelineFillLines = ref.watch(habitCardTimelineFillLinesProvider);
-    final timelineLines = ref.watch(habitCardTimelineLinesProvider);
+    final streakColorScheme = ref.watch(settings.provider(streakColorSchemeSettingDef));
+    final layoutMode = ref.watch(settings.provider(habitCardLayoutModeSettingDef));
+    final timelineFillLines = ref.watch(settings.provider(habitCardTimelineFillLinesSettingDef));
+    final timelineLines = ref.watch(settings.provider(habitCardTimelineLinesSettingDef));
     final completionColor = isGoodHabit
-        ? ref.watch(habitCardCompletionColorProvider)
-        : ref.watch(habitCardBadHabitCompletionColorProvider);
+        ? ref.watch(settings.provider(habitCardCompletionColorSettingDef))
+        : ref.watch(settings.provider(habitCardBadHabitCompletionColorSettingDef));
 
     return _HabitCardSettings(
       showDescriptions: showDescriptions,
@@ -558,13 +560,14 @@ class HabitCard extends ConsumerWidget {
     if (trackingType == TrackingType.completed) {
       // Completed tracking - show checkmark
       final isCompleted = entry?.completed ?? false;
-      final checkboxStyleString = ref.watch(habitCheckboxStyleProvider);
+      final settings = ref.watch(adatiSettingsProvider);
+      final checkboxStyleString = ref.watch(settings.provider(habitCheckboxStyleSettingDef));
       final checkboxStyle = habitCheckboxStyleFromString(checkboxStyleString);
 
       final isGoodHabit = habit.habitType == HabitType.good.value;
       final habitCardCompletionColor = isGoodHabit
-          ? ref.watch(habitCardCompletionColorProvider)
-          : ref.watch(habitCardBadHabitCompletionColorProvider);
+          ? ref.watch(settings.provider(habitCardCompletionColorSettingDef))
+          : ref.watch(settings.provider(habitCardBadHabitCompletionColorSettingDef));
       return IgnorePointer(
         child: buildCheckboxWidget(
           checkboxStyle,
@@ -1541,15 +1544,16 @@ class HabitGridCard extends ConsumerWidget {
     // Watch settings
     final isGoodHabit = habit.habitType == HabitType.good.value;
     final settings = _HabitCardSettings.fromRef(ref, isGoodHabit: isGoodHabit);
-    final cardBorderRadius = ref.watch(cardBorderRadiusProvider);
-    final showIcon = ref.watch(gridShowIconProvider);
-    final showCompletion = ref.watch(gridShowCompletionProvider);
-    final showTimeline = ref.watch(gridShowTimelineProvider);
+    final frameworkSettings = ref.watch(adatiSettingsProvider);
+    final cardBorderRadius = ref.watch(frameworkSettings.provider(cardBorderRadiusSettingDef));
+    final showIcon = ref.watch(frameworkSettings.provider(gridShowIconSettingDef));
+    final showCompletion = ref.watch(frameworkSettings.provider(gridShowCompletionSettingDef));
+    final showTimeline = ref.watch(frameworkSettings.provider(gridShowTimelineSettingDef));
     final completionButtonPlacement = ref.watch(
-      gridCompletionButtonPlacementProvider,
+      frameworkSettings.provider(gridCompletionButtonPlacementSettingDef),
     );
-    final gridTimelineBoxSize = ref.watch(gridTimelineBoxSizeProvider);
-    final gridTimelineFitMode = ref.watch(gridTimelineFitModeProvider);
+    final gridTimelineBoxSize = ref.watch(frameworkSettings.provider(gridTimelineBoxSizeSettingDef));
+    final gridTimelineFitMode = ref.watch(frameworkSettings.provider(gridTimelineFitModeSettingDef));
     final sessionOptions = ref.watch(sessionViewOptionsProvider);
 
     // Only watch tags provider when tags are enabled
