@@ -5,7 +5,9 @@ import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../../core/database/models/tracking_types.dart';
 import '../../habits/providers/habit_providers.dart';
 import '../../habits/providers/tracking_providers.dart';
-import '../../settings/providers/settings_providers.dart';
+import '../../settings/providers/settings_framework_providers.dart';
+import '../../settings/settings_definitions.dart';
+import '../../../../packages/flutter_settings_framework/flutter_settings_framework.dart';
 import 'day_square.dart';
 
 class CalendarGrid extends ConsumerWidget {
@@ -14,9 +16,10 @@ class CalendarGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitsProvider);
-    final daysToShow = ref.watch(timelineDaysProvider);
-    final fillLines = ref.watch(mainTimelineFillLinesProvider);
-    final lineCount = ref.watch(mainTimelineLinesProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final daysToShow = ref.watch(settings.provider(timelineDaysSettingDef));
+    final fillLines = ref.watch(settings.provider(mainTimelineFillLinesSettingDef));
+    final lineCount = ref.watch(settings.provider(mainTimelineLinesSettingDef));
 
     return habitsAsync.when(
       data: (habits) {
@@ -45,6 +48,7 @@ class CalendarGrid extends ConsumerWidget {
                 fillLines,
                 lineCount,
                 habits,
+                settings,
               ),
             ],
           ),
@@ -62,6 +66,7 @@ class CalendarGrid extends ConsumerWidget {
     bool fillLines,
     int lineCount,
     List habits,
+    SettingsProviders settings,
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -72,7 +77,7 @@ class CalendarGrid extends ConsumerWidget {
 
           // Match DaySquare sizing logic (non-compact squares).
           double squareSize;
-          final sizePreference = ref.watch(daySquareSizeProvider);
+          final sizePreference = ref.watch(settings.provider(daySquareSizeSettingDef));
           switch (sizePreference) {
             case 'small':
               squareSize = 12.0;
@@ -123,7 +128,7 @@ class CalendarGrid extends ConsumerWidget {
 
         return dateRangeEntriesAsync.when(
           data: (entriesByDate) {
-            final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
+            final badHabitLogicMode = ref.watch(settings.provider(badHabitLogicModeSettingDef));
             
             // Check if only bad habits exist
             final hasGoodHabits = habits.any(
@@ -136,8 +141,8 @@ class CalendarGrid extends ConsumerWidget {
 
             // Use bad habit color if only bad habits exist, otherwise use good habit color
             final completionColor = onlyBadHabits
-                ? ref.watch(mainTimelineBadHabitCompletionColorProvider)
-                : ref.watch(mainTimelineCompletionColorProvider);
+                ? ref.watch(settings.provider(mainTimelineBadHabitCompletionColorSettingDef))
+                : ref.watch(settings.provider(mainTimelineCompletionColorSettingDef));
 
             return Wrap(
               spacing: 6,
@@ -168,7 +173,7 @@ class CalendarGrid extends ConsumerWidget {
             children: days.map<Widget>((day) => DaySquare(
               date: day,
               completed: false,
-              completionColor: ref.watch(mainTimelineCompletionColorProvider),
+              completionColor: ref.watch(settings.provider(mainTimelineCompletionColorSettingDef)),
             )).toList(),
           ),
           error: (_, _) => Wrap(
@@ -177,7 +182,7 @@ class CalendarGrid extends ConsumerWidget {
             children: days.map<Widget>((day) => DaySquare(
               date: day,
               completed: false,
-              completionColor: ref.watch(mainTimelineCompletionColorProvider),
+              completionColor: ref.watch(settings.provider(mainTimelineCompletionColorSettingDef)),
             )).toList(),
           ),
         );

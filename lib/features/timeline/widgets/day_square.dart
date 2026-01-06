@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
-import '../../settings/providers/settings_providers.dart';
+import '../../settings/providers/settings_framework_providers.dart';
+import '../../settings/settings_definitions.dart';
 
 class DaySquare extends ConsumerWidget {
   final DateTime date;
@@ -29,7 +30,8 @@ class DaySquare extends ConsumerWidget {
   double _getSize(WidgetRef ref) {
     if (size != null) return size!;
     
-    final sizePreference = ref.watch(daySquareSizeProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final sizePreference = ref.watch(settings.provider(daySquareSizeSettingDef));
     switch (sizePreference) {
       case 'small':
         return 12;
@@ -53,11 +55,12 @@ class DaySquare extends ConsumerWidget {
     }
     
     // Check if streak colors should be used for squares
-    final useStreakColors = ref.watch(useStreakColorsForSquaresProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final useStreakColors = ref.watch(settings.provider(useStreakColorsForSquaresSettingDef));
     
     // If enabled and there's a streak, use streak colors based on color scheme
     if (useStreakColors && streakLength != null && streakLength! > 0) {
-      final scheme = ref.watch(streakColorSchemeProvider);
+      final scheme = ref.watch(settings.provider(streakColorSchemeSettingDef));
       return _getStreakColorForLength(streakLength!, scheme);
     }
     
@@ -86,7 +89,8 @@ class DaySquare extends ConsumerWidget {
       return null;
     }
     
-    final scheme = ref.watch(streakColorSchemeProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final scheme = ref.watch(settings.provider(streakColorSchemeSettingDef));
     return _getStreakColorForLength(streakLength!, scheme);
   }
 
@@ -135,7 +139,8 @@ class DaySquare extends ConsumerWidget {
 
 
   Border? _getBorder(WidgetRef ref) {
-    final showStreakBorders = ref.watch(showStreakBordersProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final showStreakBorders = ref.watch(settings.provider(showStreakBordersSettingDef));
     final streakBorderColor = _getStreakBorderColor(ref);
     final isToday = app_date_utils.DateUtils.isToday(date);
     
@@ -157,7 +162,8 @@ class DaySquare extends ConsumerWidget {
   String _getTooltipMessage(WidgetRef ref) {
     final dateStr = app_date_utils.DateUtils.formatDate(date);
     final status = completed ? 'completed'.tr() : 'not_completed'.tr();
-    final showStreakNumbers = ref.watch(showStreakNumbersProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final showStreakNumbers = ref.watch(settings.provider(showStreakNumbersSettingDef));
     final streakInfo = showStreakNumbers && streakLength != null && streakLength! > 0
         ? ' - ${'streak'.tr()}: $streakLength'
         : '';
@@ -167,7 +173,8 @@ class DaySquare extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final squareSize = _getSize(ref);
-    final showStreakNumbers = ref.watch(showStreakNumbersProvider);
+    final settings = ref.watch(adatiSettingsProvider);
+    final showStreakNumbers = ref.watch(settings.provider(showStreakNumbersSettingDef));
     
     Widget square = GestureDetector(
       onLongPress: () {

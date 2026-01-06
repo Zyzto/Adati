@@ -5,7 +5,8 @@ import '../../habits/providers/habit_providers.dart';
 import '../../habits/providers/tracking_providers.dart';
 import '../../../../core/utils/date_utils.dart' as app_date_utils;
 import '../../../../core/database/models/tracking_types.dart';
-import '../../settings/providers/settings_providers.dart';
+import '../../settings/providers/settings_framework_providers.dart';
+import '../../settings/settings_definitions.dart';
 
 class TimelineStats extends ConsumerWidget {
   const TimelineStats({super.key});
@@ -27,7 +28,8 @@ class TimelineStats extends ConsumerWidget {
           data: (entries) {
             return streaksAsync.when(
               data: (streaks) {
-                final badHabitLogicMode = ref.watch(badHabitLogicModeProvider);
+                final settings = ref.watch(adatiSettingsProvider);
+                final badHabitLogicMode = ref.watch(settings.provider(badHabitLogicModeSettingDef));
                 final completionRate = _calculateWeightedCompletionRate(
                   habits,
                   entries,
