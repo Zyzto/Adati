@@ -140,11 +140,9 @@ class SettingsProviders {
   NotifierProvider<SettingNotifier<T>, T> provider<T>(
     SettingDefinition<T> setting,
   ) {
-    return _providers.putIfAbsent(
-          setting.key,
-          () => createSettingProvider(setting, () => controller),
-        )
-        as NotifierProvider<SettingNotifier<T>, T>;
+    // Always create a new provider with the correct type to avoid type mismatches
+    // The provider is lightweight and Riverpod will handle caching internally
+    return createSettingProvider<T>(setting, () => controller);
   }
 
   /// Get a provider by key.

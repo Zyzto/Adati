@@ -268,10 +268,6 @@ class SettingsController {
   /// Stream that emits when undo availability changes.
   Stream<bool> get canUndoStream => _canUndoController.stream;
 
-  /// Get the last change that can be undone.
-  _UndoEntry? get lastUndoEntry =>
-      _undoStack.isNotEmpty ? _undoStack.last : null;
-
   /// Undo the last setting change.
   ///
   /// Returns true if undo was successful, false if there's nothing to undo.
