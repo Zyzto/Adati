@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/database/app_database.dart' as db;
 import '../../../../core/database/models/tracking_types.dart';
 import '../habit_repository.dart';
-import '../../settings/providers/settings_providers.dart';
+import '../../settings/providers/settings_framework_providers.dart';
+import '../../settings/settings_definitions.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/demo_data_service.dart';
 import '../../../../core/services/log_helper.dart';
@@ -110,8 +111,9 @@ final filteredSortedHabitsProvider = StreamProvider<List<db.Habit>>((
   ref,
 ) async* {
   ref.keepAlive();
-  final sortOrder = ref.watch(habitSortOrderProvider);
-  final filterQuery = ref.watch(habitFilterQueryProvider);
+  final settings = ref.watch(adatiSettingsProvider);
+  final sortOrder = ref.watch(settings.provider(habitSortOrderSettingDef));
+  final filterQuery = ref.watch(settings.provider(habitFilterQuerySettingDef));
   final filterByType = ref.watch(habitFilterByTypeProvider);
   final filterByTags = ref.watch(habitFilterByTagsProvider);
   final repository = ref.watch(habitRepositoryProvider);
@@ -120,7 +122,7 @@ final filteredSortedHabitsProvider = StreamProvider<List<db.Habit>>((
     await for (final habits in repository.watchAllHabits()) {
     // Apply text filter
     var filtered = habits;
-    if (filterQuery != null && filterQuery.isNotEmpty) {
+    if (filterQuery.isNotEmpty) {
       final query = filterQuery.toLowerCase();
       final filteredList = <db.Habit>[];
       for (final habit in habits) {
