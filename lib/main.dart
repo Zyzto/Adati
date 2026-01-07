@@ -3,12 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:workmanager/workmanager.dart';
 import 'core/services/preferences_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/reminder_service.dart';
 import 'core/services/logging_service.dart';
 import 'core/services/log_helper.dart';
 import 'core/services/auto_backup_service.dart';
+import 'core/services/workmanager_dispatcher.dart';
+import 'core/services/platform_utils.dart';
 import 'features/habits/habit_repository.dart';
 import 'features/habits/providers/habit_providers.dart';
 import 'features/settings/providers/settings_framework_providers.dart';
@@ -108,6 +111,28 @@ void main() async {
     // Continue without notifications - this is acceptable
   }
 
+  // Initialize WorkManager for background reminder checks (Android/iOS only)
+  // Desktop will use app-level periodic checks instead
+  if (!kIsWeb && !isDesktop) {
+    // Only initialize WorkManager on mobile platforms (Android/iOS)
+    try {
+      await Workmanager().initialize(
+        callbackDispatcher,
+        isInDebugMode: kDebugMode,
+      );
+      Log.debug('WorkManager initialized successfully');
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to initialize WorkManager - background reminders may not work. Error: $e',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Continue - app can function without WorkManager
+    }
+  } else {
+    Log.debug('WorkManager skipped (not available on web/desktop platforms)');
+  }
+
   // Initialize reminder service and reschedule all reminders
   // This ensures reminders are up-to-date after app updates or timezone changes
   HabitRepository? habitRepository;
@@ -118,6 +143,7 @@ void main() async {
     ReminderService.init(habitRepository);
 
     // Reschedule reminders in background to not block app startup
+    // This will register WorkManager task for mobile, or do nothing for desktop
     ReminderService.rescheduleAllReminders().catchError((e, stackTrace) {
       Log.error(
         'Failed to reschedule reminders on startup',
