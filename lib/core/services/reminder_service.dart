@@ -1,14 +1,29 @@
 import 'package:adati/features/habits/habit_repository.dart';
 import 'package:adati/core/services/log_helper.dart';
+import 'package:adati/core/services/platform_utils.dart';
+import 'package:adati/core/services/reminder_data.dart';
 import 'package:adati/core/services/notification_service.dart';
+import 'package:workmanager/workmanager.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:easy_localization/easy_localization.dart';
-import 'dart:convert';
 
 /// Centralized service for managing habit reminders
-/// Handles rescheduling, cancellation, and lifecycle management
+///
+/// **Platform-specific behavior:**
+/// - **Android**: Uses precise scheduled notifications (exact alarms) + WorkManager as fallback
+/// - **iOS**: Uses precise scheduled notifications + Background Fetch (system-scheduled)
+/// - **Desktop**: Uses app-level periodic checks (when app is open)
+///
+/// **Precise Notifications:**
+/// - Notifications are scheduled to show at the exact minute set by the user
+/// - Uses `AndroidScheduleMode.exactAllowWhileIdle` on Android (requires SCHEDULE_EXACT_ALARM permission)
+/// - Uses scheduled notifications on iOS (native support for exact timing)
+/// - WorkManager/Background Fetch acts as a fallback to catch any missed notifications
 class ReminderService {
   static HabitRepository? _habitRepository;
   static bool _isRescheduling = false;
+  static const String _reminderTaskName = 'checkReminders';
+  static const int _maxScheduledDays = 30; // Schedule up to 30 days ahead
 
   /// Initialize the reminder service with a habit repository
   static void init(HabitRepository habitRepository) {
@@ -17,7 +32,11 @@ class ReminderService {
   }
 
   /// Reschedule all active reminders for all habits
-  /// This should be called on app startup to ensure reminders are up-to-date
+  ///
+  /// **Platform behavior:**
+  /// - **Android**: Schedules precise notifications + registers WorkManager periodic task (15 min)
+  /// - **iOS**: Schedules precise notifications + registers Background Fetch task
+  /// - **Desktop**: Does nothing (handled by app-level periodic checks)
   static Future<void> rescheduleAllReminders() async {
     if (_habitRepository == null) {
       Log.warning('ReminderService not initialized, cannot reschedule reminders');
@@ -34,36 +53,120 @@ class ReminderService {
 
     try {
       final habits = await _habitRepository!.getAllHabits();
-      int rescheduledCount = 0;
-      int errorCount = 0;
+      final habitsWithReminders = habits.where((h) {
+        if (!h.reminderEnabled) return false;
+        if (h.reminderTime == null || h.reminderTime!.isEmpty) return false;
+        final reminderData = ReminderDataValidator.parseAndValidate(h.reminderTime);
+        return reminderData != null;
+      }).toList();
 
-      for (final habit in habits) {
-        if (habit.reminderEnabled && habit.reminderTime != null) {
-          try {
-            // Cancel existing reminders first
-            await _cancelRemindersForHabit(habit.id);
-            
-            // Reschedule with new occurrences
-            await _scheduleRemindersForHabit(
-              habit.id,
-              habit.name,
-              habit.reminderTime!,
-            );
-            rescheduledCount++;
-          } catch (e, stackTrace) {
-            Log.error(
-              'Failed to reschedule reminders for habit ${habit.id}',
-              error: e,
-              stackTrace: stackTrace,
-            );
-            errorCount++;
+      if (kIsWeb || isDesktop) {
+        // Desktop: Do nothing - handled by app-level periodic checks
+        Log.info(
+          'Desktop platform: Reminders will be checked by app-level periodic timer (when app is open)',
+        );
+        _isRescheduling = false;
+        return;
+      }
+
+      // Mobile platforms: Schedule precise notifications + register background task
+      if (habitsWithReminders.isEmpty) {
+        Log.info('No habits with reminders enabled, skipping notification scheduling');
+        // Cancel any existing WorkManager task
+        try {
+          await Workmanager().cancelByUniqueName(_reminderTaskName);
+          Log.info('Cancelled existing WorkManager task (no reminders to schedule)');
+        } catch (e) {
+          // Ignore errors when cancelling non-existent tasks
+        }
+        _isRescheduling = false;
+        return;
+      }
+
+      Log.info(
+        'Found ${habitsWithReminders.length} habits with reminders enabled. '
+        'Scheduling precise notifications...',
+      );
+
+      int scheduledCount = 0;
+      int failedCount = 0;
+
+      // Schedule precise notifications for each habit
+      for (final habit in habitsWithReminders) {
+        try {
+          // Cancel existing notifications for this habit
+          await NotificationService.cancelScheduledNotification(habit.id);
+
+          final reminderData = ReminderDataValidator.parseAndValidate(habit.reminderTime!);
+          if (reminderData == null) {
+            Log.warning('Invalid reminder data for habit ${habit.id}, skipping');
+            failedCount++;
+            continue;
           }
+
+          // Get next occurrences
+          final occurrences = reminderData.getNextOccurrences(maxDays: _maxScheduledDays);
+
+          if (occurrences.isEmpty) {
+            Log.warning(
+              'No future occurrences found for habit ${habit.id} (${habit.name}), skipping',
+            );
+            failedCount++;
+            continue;
+          }
+
+          // Schedule notifications for each occurrence
+          int habitScheduledCount = 0;
+          for (int i = 0; i < occurrences.length; i++) {
+            final occurrence = occurrences[i];
+            
+            // Use a unique ID: habitId * 10000 + day offset (0-9999)
+            // This prevents collisions between habits and days
+            final notificationId = habit.id * 10000 + i;
+            
+            final scheduled = await NotificationService.schedulePreciseNotification(
+              id: notificationId,
+              scheduledDate: occurrence,
+              title: 'reminder_title'.tr(namedArgs: {'habit': habit.name}),
+              body: 'reminder_body'.tr(namedArgs: {'habit': habit.name}),
+              payload: habit.id.toString(),
+            );
+
+            if (scheduled) {
+              habitScheduledCount++;
+            }
+          }
+
+          if (habitScheduledCount > 0) {
+            scheduledCount++;
+            Log.info(
+              'Scheduled $habitScheduledCount precise notifications for habit ${habit.id} (${habit.name})',
+            );
+          } else {
+            failedCount++;
+            Log.warning(
+              'Failed to schedule any notifications for habit ${habit.id} (${habit.name})',
+            );
+          }
+        } catch (e, stackTrace) {
+          Log.error(
+            'Failed to schedule notifications for habit ${habit.id}',
+            error: e,
+            stackTrace: stackTrace,
+          );
+          failedCount++;
         }
       }
 
       Log.info(
-        'Rescheduled reminders: $rescheduledCount successful, $errorCount errors',
+        'Precise notification scheduling complete: '
+        '$scheduledCount habits scheduled successfully, $failedCount failed',
       );
+
+      // Register WorkManager/Background Fetch as fallback
+      await _registerBackgroundTask();
+
+      Log.info('Rescheduled reminders successfully');
     } catch (e, stackTrace) {
       Log.error(
         'Failed to reschedule all reminders',
@@ -75,7 +178,63 @@ class ReminderService {
     }
   }
 
+  /// Register background task (WorkManager on Android, Background Fetch on iOS)
+  static Future<void> _registerBackgroundTask() async {
+    try {
+      // Cancel existing task
+      await Workmanager().cancelByUniqueName(_reminderTaskName);
+
+      if (isAndroid) {
+        // Android: Register periodic task (minimum 15 minutes)
+        await Workmanager().registerPeriodicTask(
+          _reminderTaskName,
+          _reminderTaskName,
+          frequency: Duration(minutes: 15),
+          constraints: Constraints(
+            networkType: NetworkType.notRequired,
+            requiresBatteryNotLow: false,
+            requiresCharging: false,
+            requiresDeviceIdle: false,
+            requiresStorageNotLow: false,
+          ),
+        );
+        Log.info(
+          'Android: Registered WorkManager periodic task (every 15 minutes) '
+          'as fallback for missed notifications',
+        );
+      } else if (isIOS) {
+        // iOS: Register one-off task that reschedules itself
+        // Note: iOS doesn't support periodic tasks, but we can register a one-off
+        // that will be executed by the system's Background Fetch (timing is system-controlled)
+        await Workmanager().registerOneOffTask(
+          _reminderTaskName,
+          _reminderTaskName,
+          initialDelay: Duration(minutes: 15),
+          constraints: Constraints(
+            networkType: NetworkType.notRequired,
+            requiresBatteryNotLow: false,
+            requiresCharging: false,
+            requiresDeviceIdle: false,
+            requiresStorageNotLow: false,
+          ),
+        );
+        Log.info(
+          'iOS: Registered Background Fetch task (system-controlled timing, typically every few hours) '
+          'as fallback for missed notifications. '
+          'Note: iOS Background Fetch timing is controlled by the system based on usage patterns.',
+        );
+      }
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to register background task',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   /// Reschedule reminders for a specific habit
+  /// This will reschedule all reminders to ensure consistency
   static Future<void> rescheduleRemindersForHabit(int habitId) async {
     if (_habitRepository == null) {
       Log.warning('ReminderService not initialized, cannot reschedule reminders');
@@ -89,21 +248,14 @@ class ReminderService {
         return;
       }
 
-      if (!habit.reminderEnabled || habit.reminderTime == null) {
-        Log.info('Habit $habitId does not have reminders enabled, cancelling any existing reminders');
-        await _cancelRemindersForHabit(habitId);
+      if (kIsWeb || isDesktop) {
+        Log.info('Desktop platform: Reminders will be checked by app-level periodic timer');
         return;
       }
 
-      // Cancel existing reminders first
-      await _cancelRemindersForHabit(habitId);
-
-      // Reschedule with new occurrences
-      await _scheduleRemindersForHabit(
-        habitId,
-        habit.name,
-        habit.reminderTime!,
-      );
+      // Reschedule all reminders to ensure consistency
+      // This is more reliable than trying to reschedule just one habit
+      await rescheduleAllReminders();
 
       Log.info('Rescheduled reminders for habit $habitId');
     } catch (e, stackTrace) {
@@ -116,33 +268,24 @@ class ReminderService {
   }
 
   /// Cancel all reminders for a specific habit
+  /// Cancels all scheduled notifications for this habit
   static Future<void> cancelRemindersForHabit(int habitId) async {
-    await _cancelRemindersForHabit(habitId);
-  }
+    if (kIsWeb || isDesktop) {
+      Log.info('Desktop platform: Reminders are checked by app-level timer, no cancellation needed');
+      return;
+    }
 
-  /// Internal method to cancel reminders for a habit
-  static Future<void> _cancelRemindersForHabit(int habitId) async {
     try {
-      // Cancel all reminders for this habit
-      // Since we use habitId * 10000 + occurrenceIndex, we need to cancel a range
+      // Cancel all scheduled notifications for this habit
+      // We use a range of IDs: habitId * 10000 + index (0-9999)
       for (int i = 0; i < 10000; i++) {
-        try {
-          await NotificationService.cancelNotification(habitId * 10000 + i);
-        } catch (e) {
-          // Some IDs might not exist, continue
-        }
+        await NotificationService.cancelScheduledNotification(habitId * 10000 + i);
       }
 
-      // Also cancel old format IDs for backward compatibility
-      await NotificationService.cancelNotification(habitId);
-      for (int dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek++) {
-        await NotificationService.cancelNotification(habitId * 100 + dayOfWeek);
-      }
-      for (int dayOfMonth = 1; dayOfMonth <= 31; dayOfMonth++) {
-        await NotificationService.cancelNotification(habitId * 1000 + dayOfMonth);
-      }
+      Log.info('Cancelled all scheduled notifications for habit $habitId');
 
-      Log.info('Cancelled all reminders for habit $habitId');
+      // Reschedule all reminders to update the background task if needed
+      await rescheduleAllReminders();
     } catch (e, stackTrace) {
       Log.error(
         'Failed to cancel reminders for habit $habitId',
@@ -151,163 +294,4 @@ class ReminderService {
       );
     }
   }
-
-  /// Internal method to schedule reminders for a habit
-  /// This mirrors the logic from HabitRepository._scheduleReminders
-  static Future<void> _scheduleRemindersForHabit(
-    int habitId,
-    String habitName,
-    String reminderTimeJson,
-  ) async {
-    try {
-      final reminderData = jsonDecode(reminderTimeJson) as Map<String, dynamic>;
-      final frequency = reminderData['frequency'] as String? ?? 'daily';
-      final days = (reminderData['days'] as List<dynamic>?)?.cast<int>() ?? [];
-      final timeStr = reminderData['time'] as String? ?? '09:00';
-
-      final timeParts = timeStr.split(':');
-      final hour = int.tryParse(timeParts[0]) ?? 9;
-      final minute = int.tryParse(timeParts[1]) ?? 0;
-
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-
-      if (frequency == 'daily') {
-        // Schedule next 90 daily occurrences
-        var scheduledDate = DateTime(today.year, today.month, today.day, hour, minute);
-        if (scheduledDate.isBefore(now)) {
-          scheduledDate = scheduledDate.add(const Duration(days: 1));
-        }
-
-        int scheduledCount = 0;
-        for (int i = 0; i < 90; i++) {
-          final occurrenceDate = scheduledDate.add(Duration(days: i));
-          final notificationId = habitId * 10000 + i;
-
-          try {
-            await NotificationService.scheduleNotification(
-              id: notificationId,
-              title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
-              body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
-              scheduledDate: occurrenceDate,
-              payload: habitId.toString(),
-            );
-            scheduledCount++;
-          } catch (e, stackTrace) {
-            Log.error(
-              'Failed to schedule daily reminder occurrence $i for habit $habitId',
-              error: e,
-              stackTrace: stackTrace,
-            );
-          }
-        }
-        Log.info('Scheduled $scheduledCount daily reminders for habit $habitId');
-      } else if (frequency == 'weekly' && days.isNotEmpty) {
-        // Schedule next 12-13 weekly occurrences
-        int scheduledCount = 0;
-        int occurrenceIndex = 0;
-
-        for (int week = 0; week < 13; week++) {
-          for (final dayOfWeek in days) {
-            final targetDate = today.add(Duration(days: week * 7));
-            final currentWeekday = targetDate.weekday;
-            final daysUntilTarget = (dayOfWeek - currentWeekday) % 7;
-            final scheduledDate = targetDate.add(
-              Duration(
-                days: daysUntilTarget == 0 && week == 0
-                    ? (now.hour * 60 + now.minute >= hour * 60 + minute ? 7 : 0)
-                    : (daysUntilTarget == 0 ? 7 : daysUntilTarget),
-              ),
-            );
-
-            final scheduledDateTime = DateTime(
-              scheduledDate.year,
-              scheduledDate.month,
-              scheduledDate.day,
-              hour,
-              minute,
-            );
-
-            if (scheduledDateTime.isBefore(now)) {
-              continue;
-            }
-
-            final notificationId = habitId * 10000 + occurrenceIndex;
-            occurrenceIndex++;
-
-            try {
-              await NotificationService.scheduleNotification(
-                id: notificationId,
-                title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
-                body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
-                scheduledDate: scheduledDateTime,
-                payload: habitId.toString(),
-              );
-              scheduledCount++;
-            } catch (e, stackTrace) {
-              Log.error(
-                'Failed to schedule weekly reminder occurrence for habit $habitId',
-                error: e,
-                stackTrace: stackTrace,
-              );
-            }
-          }
-        }
-        Log.info('Scheduled $scheduledCount weekly reminders for habit $habitId');
-      } else if (frequency == 'monthly' && days.isNotEmpty) {
-        // Schedule next 12 monthly occurrences
-        int scheduledCount = 0;
-        int occurrenceIndex = 0;
-
-        for (int monthOffset = 0; monthOffset < 12; monthOffset++) {
-          for (final dayOfMonth in days) {
-            try {
-              final targetMonth = now.month + monthOffset;
-              final targetYear = now.year + (targetMonth > 12 ? 1 : 0);
-              final adjustedMonth = targetMonth > 12 ? targetMonth - 12 : targetMonth;
-
-              DateTime scheduledDate;
-              try {
-                scheduledDate = DateTime(targetYear, adjustedMonth, dayOfMonth, hour, minute);
-              } catch (e) {
-                final lastDay = DateTime(targetYear, adjustedMonth + 1, 0).day;
-                scheduledDate = DateTime(targetYear, adjustedMonth, lastDay, hour, minute);
-              }
-
-              if (monthOffset == 0 && scheduledDate.isBefore(now)) {
-                continue;
-              }
-
-              final notificationId = habitId * 10000 + occurrenceIndex;
-              occurrenceIndex++;
-
-              await NotificationService.scheduleNotification(
-                id: notificationId,
-                title: 'reminder_title'.tr(namedArgs: {'habit': habitName}),
-                body: 'reminder_body'.tr(namedArgs: {'habit': habitName}),
-                scheduledDate: scheduledDate,
-                payload: habitId.toString(),
-              );
-              scheduledCount++;
-            } catch (e, stackTrace) {
-              Log.error(
-                'Failed to schedule monthly reminder occurrence for habit $habitId',
-                error: e,
-                stackTrace: stackTrace,
-              );
-            }
-          }
-        }
-        Log.info('Scheduled $scheduledCount monthly reminders for habit $habitId');
-      }
-    } catch (e, stackTrace) {
-      Log.error(
-        'Failed to schedule reminders for habit $habitId',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      rethrow;
-    }
-  }
 }
-
