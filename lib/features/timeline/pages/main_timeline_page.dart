@@ -130,6 +130,9 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
                   case 'test_reminder':
                     await _testReminderSystem(context, ref);
                     break;
+                  case 'test_notification_30s':
+                    await _testNotificationIn30Seconds(context, ref);
+                    break;
                   case 'reschedule_reminders':
                     await _rescheduleAllReminders(context, ref);
                     break;
@@ -224,7 +227,17 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
                     children: [
                       Icon(Icons.notifications_active, size: 20),
                       SizedBox(width: 12),
-                      Text('Test Reminder'),
+                      Text('Test Reminder (Immediate)'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'test_notification_30s',
+                  child: Row(
+                    children: [
+                      Icon(Icons.timer, size: 20),
+                      SizedBox(width: 12),
+                      Text('Test Notification (30s)'),
                     ],
                   ),
                 ),
@@ -524,6 +537,77 @@ class _MainTimelinePageState extends ConsumerState<MainTimelinePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error scheduling test reminder: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _testNotificationIn30Seconds(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      // Check if notifications are available
+      final isAvailable = NotificationService.isAvailable();
+      if (!isAvailable) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Notifications not available on this platform'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Calculate time 30 seconds from now
+      final scheduledTime = DateTime.now().add(const Duration(seconds: 30));
+      
+      Log.info('Scheduling test notification for ${scheduledTime.toString()}');
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Test notification scheduled for 30 seconds (${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}:${scheduledTime.second.toString().padLeft(2, '0')})',
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Use a timer to show the notification after 30 seconds
+      // This works on all platforms including Android
+      Future.delayed(const Duration(seconds: 30), () async {
+        try {
+          await NotificationService.showNotification(
+            id: 999998, // Use a different high ID
+            title: 'Test Notification (30s)',
+            body: 'This is a test notification scheduled 30 seconds ago from the debug menu',
+            payload: 'test_30s',
+          );
+          Log.info('Test notification (30s) shown successfully');
+        } catch (e, stackTrace) {
+          Log.error(
+            'Failed to show test notification (30s)',
+            error: e,
+            stackTrace: stackTrace,
+          );
+        }
+      });
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to schedule test notification (30s)',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error scheduling test notification: $e'),
             backgroundColor: Colors.red,
           ),
         );
