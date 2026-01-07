@@ -2,7 +2,7 @@ name: adati
 description: "A habit tracker app with timeline visualization."
 publish_to: 'none'
 
-version: 0.2.5+1
+version: 0.2.6+1
 
 environment:
   sdk: ^3.9.2
