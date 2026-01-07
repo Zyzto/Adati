@@ -1,12 +1,11 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'log_helper.dart';
 import 'platform_utils.dart';
-import '../../main.dart' show navigatorKey;
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin? _notifications = kIsWeb
@@ -15,6 +14,7 @@ class NotificationService {
 
   static bool _initialized = false;
   static Function(String?)? _onNotificationTapCallback;
+  static GoRouter? _router;
 
   static Future<void> init() async {
     if (kIsWeb) {
@@ -130,14 +130,23 @@ class NotificationService {
       try {
         final habitId = int.tryParse(payload);
         if (habitId != null) {
-          // Navigate to timeline (could be enhanced to navigate to specific habit)
-          final context = navigatorKey.currentContext;
-          if (context != null) {
-            // Navigate to timeline - user can see the habit there
-            context.go('/timeline');
-            Log.info('Navigated to timeline from notification tap');
+          // Try to navigate using GoRouter if available
+          if (_router != null) {
+            // Use post-frame callback to ensure navigation happens after widget tree is built
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              try {
+                _router!.go('/timeline');
+                Log.info('Navigated to timeline from notification tap');
+              } catch (e, stackTrace) {
+                Log.error(
+                  'Failed to navigate using GoRouter',
+                  error: e,
+                  stackTrace: stackTrace,
+                );
+              }
+            });
           } else {
-            Log.warning('Cannot navigate: navigator context is null');
+            Log.warning('Cannot navigate: GoRouter is not set. Call NotificationService.setRouter() during app initialization.');
           }
         }
       } catch (e, stackTrace) {
@@ -156,6 +165,11 @@ class NotificationService {
   /// Set a custom callback for notification taps
   static void setNotificationTapCallback(Function(String?)? callback) {
     _onNotificationTapCallback = callback;
+  }
+
+  /// Set the GoRouter instance for navigation
+  static void setRouter(GoRouter router) {
+    _router = router;
   }
 
   static Future<bool> requestPermissions() async {
@@ -330,230 +344,6 @@ class NotificationService {
     return _initialized && _notifications != null;
   }
 
-  static Future<void> scheduleNotification({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime scheduledDate,
-    String? payload,
-  }) async {
-    if (kIsWeb) {
-      // Web notifications require service worker for scheduled notifications
-      // For now, we can only show immediate notifications
-      // Scheduled notifications on web would need a service worker implementation
-      final now = DateTime.now();
-      if (scheduledDate.isBefore(now) || scheduledDate.difference(now).inSeconds < 1) {
-        // Show immediate notification if time has passed or is very soon
-        await _showWebNotification(title, body, payload);
-      } else {
-        Log.info(
-          'Web scheduled notifications require service worker. Notification for $scheduledDate will not be scheduled.',
-        );
-      }
-      return;
-    }
-
-    if (_notifications == null || !_initialized) {
-      Log.info('Notifications not available on this platform');
-      return;
-    }
-
-    // Platform-specific notification details
-    final androidDetails = AndroidNotificationDetails(
-      'habit_reminders',
-      'habit_reminders'.tr(),
-      channelDescription: 'habit_reminders_description'.tr(),
-      importance: Importance.high,
-      priority: Priority.high,
-      enableVibration: true,
-      enableLights: true,
-      channelShowBadge: true,
-      playSound: true,
-    );
-
-    final iosDetails = const DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    // Desktop notification details
-    final linuxDetails = LinuxNotificationDetails(
-      urgency: LinuxNotificationUrgency.normal,
-    );
-    const macOsDetails = DarwinNotificationDetails();
-    const windowsDetails = WindowsNotificationDetails();
-
-    final notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-      linux: linuxDetails,
-      macOS: macOsDetails,
-      windows: windowsDetails,
-    );
-
-    try {
-      // Desktop platforms may not support zonedSchedule, use show() for immediate notifications
-      // or handle scheduled notifications differently
-      if (isDesktop) {
-        // On desktop, check if notification is in the near future
-        final now = DateTime.now();
-        final timeUntilNotification = scheduledDate.difference(now);
-        
-        if (timeUntilNotification.inSeconds <= 0) {
-          // Show immediately if time has passed
-          await _notifications!.show(
-            id,
-            title,
-            body,
-            notificationDetails,
-            payload: payload,
-          );
-        } else if (timeUntilNotification.inSeconds <= 60) {
-          // For notifications within 60 seconds, show immediately
-          // Desktop platforms typically don't support scheduled notifications
-          await _notifications!.show(
-            id,
-            title,
-            body,
-            notificationDetails,
-            payload: payload,
-          );
-          Log.info(
-            'Desktop platform: Showing notification immediately (scheduled notifications not fully supported)',
-          );
-        } else {
-          // For future notifications on desktop, zonedSchedule is not implemented
-          // Show immediately with a note that scheduled notifications aren't supported
-          Log.warning(
-            'Desktop platform: Scheduled notifications are not fully supported. '
-            'Notification scheduled for $scheduledDate will be shown immediately.',
-          );
-          await _notifications!.show(
-            id,
-            title,
-            body,
-            notificationDetails,
-            payload: payload,
-          );
-        }
-      } else {
-        // Mobile platforms support zonedSchedule
-        // Try exact scheduling first, fall back to inexact if exact alarms aren't permitted
-        try {
-          // Check if exact alarms are permitted (Android 12+)
-          final androidPlugin = _notifications!
-              .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin>();
-          
-          bool canScheduleExact = true;
-          if (androidPlugin != null) {
-            try {
-              canScheduleExact = await androidPlugin.canScheduleExactNotifications() ?? true;
-            } catch (e) {
-              // If check fails, assume we can't schedule exact alarms
-              canScheduleExact = false;
-              Log.warning('Could not check exact alarm permission: $e');
-            }
-          }
-
-          // Use appropriate scheduling mode
-          final scheduleMode = canScheduleExact
-              ? AndroidScheduleMode.exactAllowWhileIdle
-              : AndroidScheduleMode.inexactAllowWhileIdle;
-
-          await _notifications!.zonedSchedule(
-            id,
-            title,
-            body,
-            tz.TZDateTime.from(scheduledDate, tz.local),
-            notificationDetails,
-            androidScheduleMode: scheduleMode,
-            matchDateTimeComponents: DateTimeComponents.time,
-            payload: payload,
-          );
-        } catch (e) {
-          // Handle PlatformException for exact alarms not permitted
-          if (e is PlatformException && 
-              (e.code == 'exact_alarms_not_permitted' || 
-               e.message?.contains('exact') == true)) {
-            Log.warning(
-              'Exact alarms not permitted. Falling back to inexact scheduling.',
-            );
-            try {
-              // Fall back to inexact scheduling
-              await _notifications!.zonedSchedule(
-                id,
-                title,
-                body,
-                tz.TZDateTime.from(scheduledDate, tz.local),
-                notificationDetails,
-                androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-                matchDateTimeComponents: DateTimeComponents.time,
-                payload: payload,
-              );
-            } catch (fallbackError) {
-              // If inexact also fails, show immediately
-              Log.warning(
-                'Inexact scheduling also failed. Showing notification immediately.',
-              );
-              await _notifications!.show(
-                id,
-                title,
-                body,
-                notificationDetails,
-                payload: payload,
-              );
-            }
-          } else if (e is UnimplementedError) {
-            // If zonedSchedule is not implemented (e.g., on some desktop platforms),
-            // fall back to showing immediately
-            Log.warning(
-              'zonedSchedule() not implemented on this platform. '
-              'Showing notification immediately instead.',
-            );
-            await _notifications!.show(
-              id,
-              title,
-              body,
-              notificationDetails,
-              payload: payload,
-            );
-          } else {
-            // Re-throw if it's a different error
-            rethrow;
-          }
-        }
-      }
-    } catch (e, stackTrace) {
-      // Handle any remaining errors
-      if (e is UnimplementedError) {
-        Log.warning(
-          'Scheduled notifications not implemented on this platform. '
-          'Showing notification immediately instead.',
-        );
-        try {
-          // Fallback: show notification immediately
-          await _notifications!.show(
-            id,
-            title,
-            body,
-            notificationDetails,
-            payload: payload,
-          );
-        } catch (showError, showStackTrace) {
-          Log.error(
-            'Failed to show notification as fallback',
-            error: showError,
-            stackTrace: showStackTrace,
-          );
-        }
-      } else {
-        Log.error('Failed to schedule notification', error: e, stackTrace: stackTrace);
-      }
-    }
-  }
-
   static Future<void> cancelNotification(int id) async {
     if (kIsWeb) {
       // Web notifications cancellation will be handled separately
@@ -599,7 +389,9 @@ class NotificationService {
     }
 
     if (_notifications == null || !_initialized) {
-      Log.info('Notifications not available on this platform');
+      Log.warning(
+        'Notifications not available - _notifications: ${_notifications != null}, _initialized: $_initialized',
+      );
       return;
     }
 
@@ -649,6 +441,144 @@ class NotificationService {
     } catch (e, stackTrace) {
       Log.error('Failed to show notification', error: e, stackTrace: stackTrace);
       rethrow;
+    }
+  }
+
+  /// Schedule a precise notification for a specific date and time
+  /// Uses exact alarms on Android (if permission granted) and scheduled notifications on iOS
+  /// Returns true if scheduled successfully, false otherwise
+  static Future<bool> schedulePreciseNotification({
+    required int id,
+    required DateTime scheduledDate,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    if (kIsWeb) {
+      Log.warning('Precise notifications not supported on web');
+      return false;
+    }
+
+    if (_notifications == null || !_initialized) {
+      Log.warning('Notifications not available for scheduling');
+      return false;
+    }
+
+    try {
+      // Convert to timezone-aware datetime
+      final scheduledTz = tz.TZDateTime.from(scheduledDate, tz.local);
+      final nowTz = tz.TZDateTime.now(tz.local);
+
+      // Don't schedule if the time is in the past (with 30 second buffer)
+      if (scheduledTz.isBefore(nowTz.subtract(const Duration(seconds: 30)))) {
+        Log.warning(
+          'Cannot schedule notification in the past: $scheduledTz (now: $nowTz)',
+        );
+        return false;
+      }
+
+      // For very short delays (< 2 minutes), use immediate notification instead
+      // Some platforms don't handle very short scheduled notifications well
+      final delay = scheduledTz.difference(nowTz);
+      if (delay.inSeconds < 120) {
+        Log.info(
+          'Notification scheduled for less than 2 minutes away ($delay), '
+          'using immediate notification with delay instead',
+        );
+        
+        // Use Future.delayed for very short delays
+        Future.delayed(delay, () async {
+          try {
+            await showNotification(
+              id: id,
+              title: title,
+              body: body,
+              payload: payload,
+            );
+            Log.info('Immediate delayed notification shown: $title');
+          } catch (e, stackTrace) {
+            Log.error(
+              'Failed to show immediate delayed notification',
+              error: e,
+              stackTrace: stackTrace,
+            );
+          }
+        });
+        return true;
+      }
+
+      // Platform-specific notification details
+      final androidDetails = AndroidNotificationDetails(
+        'habit_reminders',
+        'habit_reminders'.tr(),
+        channelDescription: 'habit_reminders_description'.tr(),
+        importance: Importance.high,
+        priority: Priority.high,
+        enableVibration: true,
+        enableLights: true,
+        channelShowBadge: true,
+        playSound: true,
+      );
+
+      final iosDetails = const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      final notificationDetails = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      // Schedule the notification
+      await _notifications!.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledTz,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
+      );
+
+      Log.info(
+        'Scheduled precise notification (ID: $id) for ${scheduledTz.toString()} '
+        '(in ${delay.inMinutes} minutes)',
+      );
+      return true;
+    } catch (e, stackTrace) {
+      // On some platforms (like desktop), zonedSchedule may not be supported
+      if (e is UnimplementedError) {
+        Log.info(
+          'Precise scheduling not supported on this platform, notification will not be scheduled',
+        );
+        return false;
+      }
+      Log.error(
+        'Failed to schedule precise notification',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  /// Cancel a scheduled notification by ID
+  static Future<void> cancelScheduledNotification(int id) async {
+    if (kIsWeb || _notifications == null || !_initialized) {
+      return;
+    }
+
+    try {
+      await _notifications!.cancel(id);
+      Log.debug('Cancelled scheduled notification: $id');
+    } catch (e, stackTrace) {
+      Log.error(
+        'Failed to cancel scheduled notification: $id',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 }
