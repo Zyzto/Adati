@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:drift/drift.dart' as drift;
 import '../../../../../core/database/app_database.dart' as db;
 import '../../../../../core/database/models/tracking_types.dart';
+import '../../../../../core/services/reminder_data.dart';
 import '../../providers/habit_providers.dart';
 import 'tag_form_modal.dart';
 import '../components/icon_constants.dart';
@@ -104,21 +105,13 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
         }
         _reminderEnabled = habit.reminderEnabled;
 
-        // Parse reminder data
+        // Parse reminder data using ReminderData model
         if (habit.reminderTime != null && habit.reminderTime!.isNotEmpty) {
-          try {
-            final reminderData = jsonDecode(habit.reminderTime!);
-            _reminderFrequency = reminderData['frequency'] ?? 'daily';
-            _reminderDays = List<int>.from(reminderData['days'] ?? []);
-            final timeStr = reminderData['time'] ?? '09:00';
-            final parts = timeStr.split(':');
-            _reminderTime = TimeOfDay(
-              hour: int.parse(parts[0]),
-              minute: int.parse(parts[1]),
-            );
-          } catch (e) {
-            // Fallback to simple time format
-            final parts = habit.reminderTime!.split(':');
+          final reminderData = ReminderDataValidator.parseAndValidate(habit.reminderTime!);
+          if (reminderData != null) {
+            _reminderFrequency = reminderData.frequency;
+            _reminderDays = List<int>.from(reminderData.days);
+            final parts = reminderData.time.split(':');
             if (parts.length == 2) {
               _reminderTime = TimeOfDay(
                 hour: int.parse(parts[0]),
@@ -165,16 +158,33 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
         ? await repository.getHabitById(widget.habitId!)
         : null;
 
-    // Build reminder data
+    // Build reminder data using ReminderData model
     String? reminderTimeJson;
     if (_reminderEnabled) {
-      final reminderData = {
-        'frequency': _reminderFrequency,
-        'days': _reminderDays,
-        'time':
+      final reminderData = ReminderData(
+        frequency: _reminderFrequency,
+        days: _reminderDays,
+        time:
             '${_reminderTime.hour.toString().padLeft(2, '0')}:${_reminderTime.minute.toString().padLeft(2, '0')}',
-      };
-      reminderTimeJson = jsonEncode(reminderData);
+      );
+      
+      // Validate before saving
+      if (!ReminderData.validate(reminderData)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Invalid reminder configuration'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return; // Don't save invalid data
+      }
+      
+      reminderTimeJson = reminderData.toJson();
+    } else {
+      // Explicitly set to null when disabled to ensure data consistency
+      reminderTimeJson = null;
     }
 
     // Build tracking configuration
@@ -221,9 +231,11 @@ class _HabitFormModalState extends ConsumerState<HabitFormModal> {
           ? const drift.Value.absent()
           : drift.Value(occurrenceNamesJson),
       reminderEnabled: drift.Value(_reminderEnabled),
-      reminderTime: reminderTimeJson == null
-          ? const drift.Value.absent()
-          : drift.Value(reminderTimeJson),
+      // Use Value(null) instead of Value.absent() to explicitly clear the field
+      // This ensures data consistency: if reminderEnabled is false, reminderTime must be null
+      reminderTime: _reminderEnabled
+          ? drift.Value(reminderTimeJson!)
+          : drift.Value(null),
       createdAt: existingHabit?.createdAt == null
           ? drift.Value(now)
           : drift.Value(existingHabit!.createdAt),
