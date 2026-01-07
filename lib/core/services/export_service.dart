@@ -131,6 +131,10 @@ class ExportService {
           'goalValue': h.goalValue,
           'goalPeriod': h.goalPeriod,
           'occurrenceNames': h.occurrenceNames,
+          'createdAt': h.createdAt.toIso8601String(),
+          'updatedAt': h.updatedAt.toIso8601String(),
+          'reminderEnabled': h.reminderEnabled,
+          'reminderTime': h.reminderTime,
         }).toList(),
         'entries': entries.map((e) => {
           'habitId': e.habitId,
@@ -222,6 +226,10 @@ class ExportService {
           'goalValue': h.goalValue,
           'goalPeriod': h.goalPeriod,
           'occurrenceNames': h.occurrenceNames,
+          'createdAt': h.createdAt.toIso8601String(),
+          'updatedAt': h.updatedAt.toIso8601String(),
+          'reminderEnabled': h.reminderEnabled,
+          'reminderTime': h.reminderTime,
         }).toList(),
       };
       

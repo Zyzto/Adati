@@ -689,6 +689,18 @@ class ImportService {
         occurrenceNames: habitData['occurrenceNames'] != null
             ? drift.Value(habitData['occurrenceNames'] as String)
             : const drift.Value.absent(),
+        createdAt: habitData['createdAt'] != null
+            ? drift.Value(_parseDateTimeSafe(habitData['createdAt'] as String))
+            : const drift.Value.absent(),
+        updatedAt: habitData['updatedAt'] != null
+            ? drift.Value(_parseDateTimeSafe(habitData['updatedAt'] as String))
+            : const drift.Value.absent(),
+        reminderEnabled: habitData['reminderEnabled'] != null
+            ? drift.Value(habitData['reminderEnabled'] as bool)
+            : const drift.Value.absent(),
+        reminderTime: habitData['reminderTime'] != null
+            ? drift.Value(habitData['reminderTime'] as String)
+            : const drift.Value.absent(),
       );
 
       return await repository.createHabit(companion);
