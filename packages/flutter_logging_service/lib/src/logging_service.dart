@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:easy_logger/easy_logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'logging_config.dart';
+import 'logging_levels.dart';
 
 /// Represents a log entry for aggregation
 class _LogEntry {
@@ -47,33 +49,22 @@ class _AggregatedLogGroup {
 }
 
 class LoggingService {
-  static final EasyLogger _logger = EasyLogger(name: 'Adati');
+  static EasyLogger? _logger;
+  static LoggingConfig? _config;
 
   static File? _logFile;
   static File? _crashLogFile;
   static bool _initialized = false;
-  static const int _maxLogFileSize = 5 * 1024 * 1024; // 5MB
-  static const int _maxLogFiles = 5;
-  static const int _maxTotalLogSize =
-      50 * 1024 * 1024; // 50MB total across all log files
   static DateTime? _lastCrashTime;
   static String? _lastCrashSummary;
 
   // Log aggregation
   static final List<_LogEntry> _recentLogs = [];
   static Timer? _aggregationTimer;
-  static const Duration _aggregationTimeout = Duration(
-    milliseconds: 100,
-  ); // Reduced to 100ms for faster aggregation
   static bool _aggregationEnabled = true;
 
   // Log level configuration
   static int _minLogLevel = 0; // 0=DEBUG, 1=INFO, 2=WARNING, 3=ERROR, 4=SEVERE
-  static const int _levelDebug = 0;
-  static const int _levelInfo = 1;
-  static const int _levelWarning = 2;
-  static const int _levelError = 3;
-  static const int _levelSevere = 4;
 
   static bool _disableFileLogging = false;
 
@@ -83,21 +74,32 @@ class LoggingService {
   }
 
   /// Initialize logging service with file persistence
-  static Future<void> init() async {
+  static Future<void> init(LoggingConfig config) async {
     if (_initialized) return;
+
+    _config = config;
+    _logger = EasyLogger(name: config.appName);
+    _aggregationEnabled = config.enableAggregation;
 
     try {
       // Set default log level (DEBUG in debug mode, INFO in release mode)
-      _minLogLevel = kReleaseMode ? _levelInfo : _levelDebug;
+      _minLogLevel = kReleaseMode ? LogLevel.info : LogLevel.debug;
 
-      final directory = await getApplicationDocumentsDirectory();
-      final logsDir = Directory(path.join(directory.path, 'logs'));
+      // Determine log directory
+      Directory logsDir;
+      if (config.logDirectory != null) {
+        logsDir = Directory(config.logDirectory!);
+      } else {
+        final directory = await getApplicationDocumentsDirectory();
+        logsDir = Directory(path.join(directory.path, 'logs'));
+      }
+
       if (!await logsDir.exists()) {
         await logsDir.create(recursive: true);
       }
 
-      _logFile = File(path.join(logsDir.path, 'adati.log'));
-      _crashLogFile = File(path.join(logsDir.path, 'adati_crashes.log'));
+      _logFile = File(path.join(logsDir.path, config.logFileName));
+      _crashLogFile = File(path.join(logsDir.path, config.crashLogFileName));
 
       // Check and rotate logs if they're too large on startup
       await _checkAndRotateLogsOnStartup();
@@ -109,7 +111,7 @@ class LoggingService {
       info('LoggingService initialized', component: 'LoggingService');
     } catch (e) {
       // Fallback to console only if file initialization fails
-      _logger.error('[LoggingService] Failed to initialize LoggingService: $e');
+      _logger?.error('[LoggingService] Failed to initialize LoggingService: $e');
       _initialized = false;
     }
   }
@@ -154,8 +156,8 @@ class LoggingService {
     StackTrace? stackTrace,
   ]) async {
     if (_disableFileLogging) return; // Skip file logging in tests
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      return; // Cannot write if not initialized
     }
 
     if (_logFile == null) return;
@@ -241,7 +243,7 @@ class LoggingService {
       if (await _logFile!.exists()) {
         final size = await _logFile!.length();
         // Rotate if file exceeds 80% of max size (rotate before hitting limit)
-        if (size > (_maxLogFileSize * 0.8)) {
+        if (size > (_config!.maxLogFileSize * 0.8)) {
           await _rotateLogs();
         }
       }
@@ -253,7 +255,7 @@ class LoggingService {
       );
     } catch (e) {
       // Silently fail if file writing fails
-      _logger.error('[LoggingService] Failed to write to log file: $e');
+      _logger?.error('[LoggingService] Failed to write to log file: $e');
     }
   }
 
@@ -400,7 +402,7 @@ class LoggingService {
       if (await _logFile!.exists()) {
         final size = await _logFile!.length();
         // Rotate if file exceeds 80% of max size (rotate before hitting limit)
-        if (size > (_maxLogFileSize * 0.8)) {
+        if (size > (_config!.maxLogFileSize * 0.8)) {
           await _rotateLogs();
         }
       }
@@ -419,23 +421,23 @@ class LoggingService {
           '[AGGREGATED] $componentStr2${group.baseMessage} called ${group.count} times $summary';
       switch (group.level) {
         case 'DEBUG':
-          _logger.debug(aggregatedMessage);
+          _logger?.debug(aggregatedMessage);
           break;
         case 'INFO':
-          _logger.info(aggregatedMessage);
+          _logger?.info(aggregatedMessage);
           break;
         case 'WARNING':
-          _logger.warning(aggregatedMessage);
+          _logger?.warning(aggregatedMessage);
           break;
         case 'ERROR':
         case 'SEVERE':
-          _logger.error(aggregatedMessage);
+          _logger?.error(aggregatedMessage);
           break;
         default:
-          _logger.info(aggregatedMessage);
+          _logger?.info(aggregatedMessage);
       }
     } catch (e) {
-      _logger.error('[LoggingService] Failed to write aggregated log: $e');
+      _logger?.error('[LoggingService] Failed to write aggregated log: $e');
     }
   }
 
@@ -513,7 +515,7 @@ class LoggingService {
   /// Schedule aggregation flush
   static void _scheduleAggregationFlush() {
     _aggregationTimer?.cancel();
-    _aggregationTimer = Timer(_aggregationTimeout, () {
+    _aggregationTimer = Timer(_config?.aggregationTimeout ?? const Duration(milliseconds: 100), () {
       _flushAggregatedLogs();
     });
   }
@@ -593,16 +595,16 @@ class LoggingService {
       final message = '$componentStr${entry.message}';
       switch (entry.level) {
         case 'DEBUG':
-          _logger.debug(message);
+          _logger?.debug(message);
           break;
         case 'INFO':
-          _logger.info(message);
+          _logger?.info(message);
           break;
         case 'WARNING':
-          _logger.warning(message);
+          _logger?.warning(message);
           break;
         default:
-          _logger.info(message);
+          _logger?.info(message);
       }
       _writeLogEntry(entry);
     }
@@ -621,12 +623,12 @@ class LoggingService {
       if (await _logFile!.exists()) {
         int size = await _logFile!.length();
         // Rotate if file is larger than max size (even if just slightly over)
-        if (size > _maxLogFileSize) {
+        if (size > _config!.maxLogFileSize) {
           // For very large files, rotate multiple times to reduce size
           int rotationCount = 0;
           const maxStartupRotations = 20; // Allow more rotations on startup
 
-          while (size > _maxLogFileSize && await _logFile!.exists()) {
+          while (size > _config!.maxLogFileSize && await _logFile!.exists()) {
             // Safety: don't rotate more than maxStartupRotations times
             if (++rotationCount > maxStartupRotations) {
               // If we've rotated many times, force cleanup and break
@@ -650,7 +652,7 @@ class LoggingService {
       // Also check total log directory size and clean up if needed
       await _cleanupOldLogs();
     } catch (e) {
-      _logger.error(
+      _logger?.error(
         '[LoggingService] Failed to check/rotate logs on startup: $e',
       );
     }
@@ -670,8 +672,8 @@ class LoggingService {
         logFiles.add(_logFile!);
       }
 
-      for (int i = 1; i <= _maxLogFiles; i++) {
-        final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+      for (int i = 1; i <= _config!.maxLogFiles; i++) {
+        final rotatedFile = File(path.join(logDir.path, '${_config!.logFileName}.$i'));
         if (await rotatedFile.exists()) {
           logFiles.add(rotatedFile);
         }
@@ -684,7 +686,7 @@ class LoggingService {
       }
 
       // If total size exceeds limit, delete oldest files
-      if (totalSize > _maxTotalLogSize) {
+      if (totalSize > _config!.maxTotalLogSize) {
         // Sort by modification time (oldest first)
         final filesWithTime = <MapEntry<File, DateTime>>[];
         for (final file in logFiles) {
@@ -695,7 +697,7 @@ class LoggingService {
 
         // Delete oldest files until we're under the limit
         for (final entry in filesWithTime) {
-          if (totalSize <= _maxTotalLogSize) break;
+          if (totalSize <= _config!.maxTotalLogSize) break;
           final fileSize = await entry.key.length();
           // Use safe delete for cross-platform compatibility
           final deleted = await _safeDelete(entry.key);
@@ -705,7 +707,7 @@ class LoggingService {
         }
       }
     } catch (e) {
-      _logger.error('[LoggingService] Failed to cleanup old logs: $e');
+      _logger?.error('[LoggingService] Failed to cleanup old logs: $e');
     }
   }
 
@@ -784,12 +786,12 @@ class LoggingService {
       final logDir = _logFile!.parent;
 
       // Rotate existing logs (from oldest to newest)
-      for (int i = _maxLogFiles - 1; i >= 1; i--) {
-        final oldFile = File(path.join(logDir.path, 'adati.log.$i'));
-        final newFile = File(path.join(logDir.path, 'adati.log.${i + 1}'));
+      for (int i = _config!.maxLogFiles - 1; i >= 1; i--) {
+        final oldFile = File(path.join(logDir.path, '${_config!.logFileName}.$i'));
+        final newFile = File(path.join(logDir.path, '${_config!.logFileName}.${i + 1}'));
 
         if (await oldFile.exists()) {
-          if (i + 1 >= _maxLogFiles) {
+          if (i + 1 >= _config!.maxLogFiles) {
             // Delete oldest file (beyond max rotation count)
             await _safeDelete(oldFile);
           } else {
@@ -801,7 +803,7 @@ class LoggingService {
 
       // Move current log to .1
       if (await _logFile!.exists()) {
-        final rotatedFile = File(path.join(logDir.path, 'adati.log.1'));
+        final rotatedFile = File(path.join(logDir.path, '${_config!.logFileName}.1'));
 
         // Use safe rename which handles all platform differences
         final success = await _safeRename(_logFile!, rotatedFile);
@@ -812,9 +814,9 @@ class LoggingService {
       }
 
       // Create new log file reference (file will be created on first write)
-      _logFile = File(path.join(logDir.path, 'adati.log'));
+      _logFile = File(path.join(logDir.path, _config!.logFileName));
     } catch (e, stackTrace) {
-      _logger.error('[LoggingService] Failed to rotate logs: $e');
+      _logger?.error('[LoggingService] Failed to rotate logs: $e');
       error(
         'Failed to rotate logs',
         component: 'LoggingService',
@@ -834,7 +836,7 @@ class LoggingService {
     if (kReleaseMode) return;
 
     // Check log level
-    if (!_shouldLog(_levelDebug)) return;
+    if (!_shouldLog(LogLevel.debug)) return;
 
     // Check if this should be aggregated (before logging to console)
     final now = DateTime.now();
@@ -859,9 +861,9 @@ class LoggingService {
 
     // Log to console immediately (not aggregated)
     final componentStr = component != null ? '[$component] ' : '';
-    _logger.debug('$componentStr$message');
+    _logger?.debug('$componentStr$message');
     if (error != null) {
-      _logger.debug('Error: $error');
+      _logger?.debug('Error: $error');
     }
     // Write to file (not aggregated)
     _writeToFile('DEBUG', message, component, error, stackTrace);
@@ -882,7 +884,7 @@ class LoggingService {
     StackTrace? stackTrace,
   }) {
     // Check log level
-    if (!_shouldLog(_levelInfo)) return;
+    if (!_shouldLog(LogLevel.info)) return;
 
     // Check if this should be aggregated (before logging to console)
     final now = DateTime.now();
@@ -906,9 +908,9 @@ class LoggingService {
 
     // Log to console immediately (not aggregated)
     final componentStr = component != null ? '[$component] ' : '';
-    _logger.info('$componentStr$message');
+    _logger?.info('$componentStr$message');
     if (error != null) {
-      _logger.info('Error: $error');
+      _logger?.info('Error: $error');
     }
     // Write to file (not aggregated)
     _writeToFile('INFO', message, component, error, stackTrace);
@@ -921,7 +923,7 @@ class LoggingService {
     StackTrace? stackTrace,
   }) {
     // Check log level
-    if (!_shouldLog(_levelWarning)) return;
+    if (!_shouldLog(LogLevel.warning)) return;
 
     // Check if this should be aggregated (before logging to console)
     final now = DateTime.now();
@@ -945,9 +947,9 @@ class LoggingService {
 
     // Log to console immediately (not aggregated)
     final componentStr = component != null ? '[$component] ' : '';
-    _logger.warning('$componentStr$message');
+    _logger?.warning('$componentStr$message');
     if (error != null) {
-      _logger.warning('Error: $error');
+      _logger?.warning('Error: $error');
     }
     // Write to file (not aggregated)
     _writeToFile('WARNING', message, component, error, stackTrace);
@@ -960,13 +962,13 @@ class LoggingService {
     StackTrace? stackTrace,
   }) {
     // Check log level
-    if (!_shouldLog(_levelError)) return;
+    if (!_shouldLog(LogLevel.error)) return;
 
     // Errors are never aggregated - always log immediately
     final componentStr = component != null ? '[$component] ' : '';
-    _logger.error('$componentStr$message');
+    _logger?.error('$componentStr$message');
     if (error != null) {
-      _logger.error('Error: $error');
+      _logger?.error('Error: $error');
     }
     _writeToFile('ERROR', message, component, error, stackTrace);
   }
@@ -978,13 +980,13 @@ class LoggingService {
     StackTrace? stackTrace,
   }) {
     // Check log level (severe errors are always logged, but we check anyway for consistency)
-    if (!_shouldLog(_levelSevere)) return;
+    if (!_shouldLog(LogLevel.severe)) return;
 
     // Severe errors are never aggregated - always log immediately
     final componentStr = component != null ? '[$component] ' : '';
-    _logger.error('$componentStr$message');
+    _logger?.error('$componentStr$message');
     if (error != null) {
-      _logger.error('Error: $error');
+      _logger?.error('Error: $error');
     }
 
     // Write to crash log file
@@ -1004,8 +1006,8 @@ class LoggingService {
     Object? error,
     StackTrace? stackTrace,
   ) async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      return; // Cannot write if not initialized
     }
 
     if (_crashLogFile == null) return;
@@ -1034,30 +1036,30 @@ class LoggingService {
         flush: true,
       );
     } catch (e) {
-      _logger.error('[LoggingService] Failed to write to crash log file: $e');
+      _logger?.error('[LoggingService] Failed to write to crash log file: $e');
     }
   }
 
   /// Get log file path
   static Future<String?> getLogFilePath() async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
     return _logFile?.path;
   }
 
   /// Get crash log file path
   static Future<String?> getCrashLogFilePath() async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
     return _crashLogFile?.path;
   }
 
   /// Get log file size in bytes
   static Future<int> getLogFileSize() async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
     if (_logFile == null || !await _logFile!.exists()) {
       return 0;
@@ -1067,8 +1069,8 @@ class LoggingService {
 
   /// Get crash log file size in bytes
   static Future<int> getCrashLogFileSize() async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
     if (_crashLogFile == null || !await _crashLogFile!.exists()) {
       return 0;
@@ -1106,8 +1108,8 @@ class LoggingService {
   /// Returns combined main log and crash log
   static Future<String> getLogContent({int maxLines = 1000}) async {
     try {
-      if (!_initialized) {
-        await init();
+      if (!_initialized || _config == null) {
+        throw StateError('LoggingService not initialized. Call init() first.');
       }
 
       final buffer = StringBuffer();
@@ -1215,8 +1217,8 @@ class LoggingService {
 
   /// Export logs to a file for download
   static Future<String?> exportLogs() async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
 
     try {
@@ -1228,11 +1230,11 @@ class LoggingService {
 
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
       final exportFile = File(
-        path.join(exportDir.path, 'adati_logs_$timestamp.txt'),
+        path.join(exportDir.path, '${_config!.appName}_logs_$timestamp.txt'),
       );
 
       final buffer = StringBuffer();
-      buffer.writeln('Adati Logs Export');
+      buffer.writeln('${_config!.appName} Logs Export');
       buffer.writeln('Generated: ${DateTime.now().toIso8601String()}');
       buffer.writeln('=' * 80);
       buffer.writeln('');
@@ -1254,8 +1256,8 @@ class LoggingService {
       // Write rotated logs
       final logDir = _logFile?.parent;
       if (logDir != null) {
-        for (int i = 1; i <= _maxLogFiles; i++) {
-          final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+        for (int i = 1; i <= _config!.maxLogFiles; i++) {
+          final rotatedFile = File(path.join(logDir.path, '${_config!.logFileName}.$i'));
           if (await rotatedFile.exists()) {
             buffer.writeln('=== ROTATED LOG $i ===');
             buffer.writeln(await rotatedFile.readAsString());
@@ -1279,8 +1281,8 @@ class LoggingService {
 
   /// Rotate and cleanup logs manually (can be called from settings)
   static Future<bool> rotateAndCleanupLogs() async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
 
     try {
@@ -1301,7 +1303,7 @@ class LoggingService {
         const maxRotations = 50; // Allow many rotations for very large files
 
         // Rotate until current file is small
-        while (size > _maxLogFileSize && await _logFile!.exists()) {
+        while (size > _config!.maxLogFileSize && await _logFile!.exists()) {
           if (++rotationCount > maxRotations) {
             // If we've rotated many times, delete the large rotated file and break
             info(
@@ -1362,15 +1364,15 @@ class LoggingService {
       if (!await logDir.exists()) return;
 
       // Delete ALL rotated files that are larger than max size
-      for (int i = 1; i <= _maxLogFiles; i++) {
-        final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+      for (int i = 1; i <= _config!.maxLogFiles; i++) {
+        final rotatedFile = File(path.join(logDir.path, '${_config!.logFileName}.$i'));
         if (await rotatedFile.exists()) {
           try {
             final size = await rotatedFile.length();
             // Delete any rotated file larger than max size
-            if (size > _maxLogFileSize) {
+            if (size > _config!.maxLogFileSize) {
               info(
-                'Deleting large rotated file: adati.log.$i (${(size / (1024 * 1024)).toStringAsFixed(2)} MB)',
+                'Deleting large rotated file: ${_config!.logFileName}.$i (${(size / (1024 * 1024)).toStringAsFixed(2)} MB)',
                 component: 'LoggingService',
               );
               // Use safe delete for cross-platform compatibility
@@ -1379,7 +1381,7 @@ class LoggingService {
           } catch (e) {
             // Log deletion errors for debugging on Linux
             warning(
-              'Failed to delete large rotated file adati.log.$i: $e',
+              'Failed to delete large rotated file ${_config!.logFileName}.$i: $e',
               component: 'LoggingService',
               error: e,
             );
@@ -1404,13 +1406,13 @@ class LoggingService {
       if (!await logDir.exists()) return;
 
       // Check all rotated files and delete ones that are too large
-      for (int i = 1; i <= _maxLogFiles; i++) {
-        final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+      for (int i = 1; i <= _config!.maxLogFiles; i++) {
+        final rotatedFile = File(path.join(logDir.path, '${_config!.logFileName}.$i'));
         if (await rotatedFile.exists()) {
           final size = await rotatedFile.length();
           // Delete rotated files larger than max size (they shouldn't exist, but clean up if they do)
           // Use a more lenient threshold for cleanup (2x max) to avoid deleting files that are just slightly over
-          if (size > _maxLogFileSize * 2) {
+          if (size > _config!.maxLogFileSize * 2) {
             // Use safe delete for cross-platform compatibility
             await _safeDelete(rotatedFile);
           }
@@ -1423,8 +1425,8 @@ class LoggingService {
 
   /// Clear all log files
   static Future<bool> clearLogs() async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
 
     try {
@@ -1441,8 +1443,8 @@ class LoggingService {
       // Clear rotated logs
       final logDir = _logFile?.parent;
       if (logDir != null) {
-        for (int i = 1; i <= _maxLogFiles; i++) {
-          final rotatedFile = File(path.join(logDir.path, 'adati.log.$i'));
+        for (int i = 1; i <= _config!.maxLogFiles; i++) {
+          final rotatedFile = File(path.join(logDir.path, '${_config!.logFileName}.$i'));
           if (await rotatedFile.exists()) {
             await rotatedFile.delete();
           }
@@ -1467,8 +1469,8 @@ class LoggingService {
 
   /// Send logs to GitHub as an issue
   static Future<bool> sendLogsToGitHub(String title, String description) async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
 
     try {
@@ -1488,8 +1490,8 @@ class LoggingService {
 
   /// Format logs for GitHub issue body
   static Future<String> formatLogsForGitHub(String userDescription) async {
-    if (!_initialized) {
-      await init();
+    if (!_initialized || _config == null) {
+      throw StateError('LoggingService not initialized. Call init() first.');
     }
 
     final buffer = StringBuffer();

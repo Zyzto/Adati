@@ -6,7 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import '../../packages/flutter_settings_framework/flutter_settings_framework.dart';
+import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 
 // =============================================================================
 // SECTIONS

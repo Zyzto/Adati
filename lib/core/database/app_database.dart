@@ -4,7 +4,7 @@ import 'models/tracking_entries.dart';
 import 'models/streaks.dart';
 import 'models/tags.dart';
 import 'models/habit_tags.dart';
-import '../services/loggable_mixin.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'database_connection.dart';
 
 part 'app_database.g.dart';

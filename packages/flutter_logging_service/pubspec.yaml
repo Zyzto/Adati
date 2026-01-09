@@ -1,0 +1,20 @@
+name: flutter_logging_service
+description: A comprehensive logging service for Flutter apps with file persistence, log aggregation, and crash tracking.
+version: 1.0.0
+homepage: https://github.com/yourusername/flutter_logging_service
+
+environment:
+  sdk: ^3.0.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  easy_logger: ^0.0.2
+  path_provider: ^2.1.2
+  path: ^1.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

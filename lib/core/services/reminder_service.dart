@@ -1,5 +1,5 @@
 import 'package:adati/features/habits/habit_repository.dart';
-import 'package:adati/core/services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'package:adati/core/services/platform_utils.dart';
 import 'package:adati/core/services/reminder_data.dart';
 import 'package:adati/core/services/notification_service.dart';
@@ -185,7 +185,7 @@ class ReminderService {
                 'Exception scheduling notification for ${occurrence.toString()}: $e',
               );
               Log.error(
-                'Failed to schedule notification ${notificationId} for habit ${habit.id}',
+                'Failed to schedule notification $notificationId for habit ${habit.id}',
                 error: e,
                 stackTrace: stackTrace,
               );

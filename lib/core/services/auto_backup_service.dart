@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../database/app_database.dart' as db;
-import 'log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'preferences_service.dart';
 import 'import_service.dart';
 import '../../features/habits/habit_repository.dart';

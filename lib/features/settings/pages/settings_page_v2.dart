@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/services/preferences_service.dart';
-import '../../../packages/flutter_settings_framework/flutter_settings_framework.dart';
+import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 import '../settings_definitions.dart';
 import '../providers/settings_framework_providers.dart';
 import '../widgets/dialogs/about_dialogs.dart';

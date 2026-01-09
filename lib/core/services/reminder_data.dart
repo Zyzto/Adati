@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 /// Reminder data model representing a habit's reminder configuration
 class ReminderData {

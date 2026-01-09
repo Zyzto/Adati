@@ -1,0 +1,20 @@
+name: flutter_settings_framework
+description: A state-management agnostic settings framework for Flutter apps with multi-language search support.
+version: 1.0.0
+homepage: https://github.com/yourusername/flutter_settings_framework
+
+environment:
+  sdk: ^3.0.0
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.3.3
+  flutter_riverpod: ^3.0.1
+  easy_localization: ^3.0.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

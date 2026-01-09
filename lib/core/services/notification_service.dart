@@ -4,7 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'platform_utils.dart';
 
 class NotificationService {

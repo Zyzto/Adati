@@ -47,6 +47,12 @@ dependencies:
   
   # Logging
   easy_logger: ^0.0.2
+  flutter_logging_service:
+    path: packages/flutter_logging_service
+  
+  # Settings Framework
+  flutter_settings_framework:
+    path: packages/flutter_settings_framework
   
   # HTTP client
   http: ^1.2.2

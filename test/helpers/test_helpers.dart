@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:adati/core/services/preferences_service.dart';
 import 'localization_helpers.dart';
-import 'package:adati/core/services/logging_service.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 // Initialize EasyLocalization once for all tests
 bool _easyLocalizationInitialized = false;

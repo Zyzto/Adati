@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 class AppTheme {
   // Helper method to get font family based on locale

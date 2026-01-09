@@ -7,7 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_scroll_behavior.dart';
 import 'core/services/preferences_service.dart';
-import 'core/services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/platform_utils.dart';
 import 'core/services/reminder_checker.dart';
@@ -93,7 +93,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    
+
     // FIXED: Start periodic reminder checks for desktop
     // Check app lifecycle state to ensure timer starts even if app starts in background
     if (isDesktop) {
@@ -118,7 +118,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     // FIXED: Only run reminder checks on desktop when app is in foreground
     // Ensure timer starts reliably when app resumes
     if (isDesktop) {
@@ -136,7 +136,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
 
   void _startReminderChecks() {
     _reminderCheckTimer?.cancel();
-    
+
     // Check reminders immediately, then every minute
     _checkReminders();
     _reminderCheckTimer = Timer.periodic(const Duration(minutes: 1), (_) {
@@ -167,7 +167,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
-    
+
     // Set router in NotificationService for navigation from notification taps
     NotificationService.setRouter(router);
 
@@ -184,11 +184,15 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
       themeMode = _parseThemeMode(themeModeStr);
       themeColor = ref.watch(settings.provider(themeColorSettingDef));
       cardElevation = ref.watch(settings.provider(cardElevationSettingDef));
-      cardBorderRadius = ref.watch(settings.provider(cardBorderRadiusSettingDef));
+      cardBorderRadius = ref.watch(
+        settings.provider(cardBorderRadiusSettingDef),
+      );
       fontSizeScale = ref.watch(settings.provider(fontSizeScaleSettingDef));
     } catch (e) {
       // Framework not initialized, use PreferencesService fallback
-      Log.warning('Settings framework not initialized, using PreferencesService fallback');
+      Log.warning(
+        'Settings framework not initialized, using PreferencesService fallback',
+      );
       themeMode = _getThemeModeFromPrefs();
       themeColor = PreferencesService.getThemeColor();
       cardElevation = PreferencesService.getCardElevation();

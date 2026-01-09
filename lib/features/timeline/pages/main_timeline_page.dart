@@ -14,7 +14,7 @@ import '../../settings/settings_definitions.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/services/demo_data_service.dart';
 import '../../../core/services/preferences_service.dart';
-import '../../../core/services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import '../../../core/services/reminder_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/database/app_database.dart' as db;

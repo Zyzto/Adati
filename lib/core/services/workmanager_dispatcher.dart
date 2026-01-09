@@ -1,6 +1,6 @@
 import 'package:workmanager/workmanager.dart';
 import 'package:adati/core/services/reminder_checker.dart';
-import 'package:adati/core/services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'package:adati/features/habits/habit_repository.dart';
 import 'package:adati/core/database/app_database.dart' as db;
 

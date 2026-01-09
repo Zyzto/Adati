@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import '../services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 /// Opens a database connection using drift_flutter which handles
 /// all platform-specific setup automatically (native, web WASM, etc.)

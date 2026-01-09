@@ -7,7 +7,7 @@ import 'package:adati/core/database/daos/tracking_entry_dao.dart';
 import 'package:adati/core/database/daos/streak_dao.dart';
 import 'package:adati/core/database/models/tracking_types.dart';
 import 'package:adati/core/utils/date_utils.dart' as app_date_utils;
-import 'package:adati/core/services/loggable_mixin.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'package:adati/core/services/reminder_service.dart';
 import 'package:adati/core/services/reminder_data.dart';
 import 'package:drift/drift.dart' as drift;

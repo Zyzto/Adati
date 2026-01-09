@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 class PreferencesService {
   static const String _keyThemeMode = 'theme_mode';

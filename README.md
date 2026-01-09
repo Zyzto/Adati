@@ -17,6 +17,8 @@
 
 ## 📥 Download
 
+**Current Version**: 0.2.7+1
+
 Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/Adati/releases/latest).
 
 ### Android
@@ -172,6 +174,9 @@ Adati is a modern, feature-rich habit tracking application built with Flutter. I
 ### Data Management
 - **Export Data**: Export all data, habits only, or settings only (JSON or CSV format)
 - **Import Data**: Import data from exported files (supports JSON and CSV)
+- **Auto-Backup**: Automatic daily backups with configurable retention (see Settings)
+- **Manual Backup**: Create backups on-demand from Settings
+- **Backup Restoration**: Restore from previous backups
 - **Database Statistics**: View database size and record counts
 - **Reset Habits**: Option to reset all habits and tracking data
 
@@ -225,7 +230,7 @@ The app includes a custom scroll behavior (`AppScrollBehavior`) that enables mou
 
 3. **Generate code** (for Drift database)
    ```bash
-   flutter pub run build_runner build
+   flutter pub run build_runner build --delete-conflicting-outputs
    ```
 
 4. **Run the app**
@@ -275,7 +280,7 @@ The project includes GitHub Actions workflows for automated builds and releases:
 - **Manual Trigger**: Use the "Run workflow" button in GitHub Actions to manually trigger builds
 - **Artifacts**: Built apps are automatically uploaded to GitHub Releases
 
-See `.github/workflows/release.yml` for the complete workflow configuration.
+See `.github/workflows/release-beta.yml` for the complete workflow configuration.
 
 
 ## 🏗️ Project Structure
@@ -293,7 +298,12 @@ lib/
 │   ├── services/            # App-wide services
 │   │   ├── notification_service.dart
 │   │   ├── preferences_service.dart
-│   │   └── logging_service.dart
+│   │   ├── logging_service.dart
+│   │   ├── reminder_service.dart
+│   │   ├── export_service.dart
+│   │   ├── import_service.dart
+│   │   ├── auto_backup_service.dart
+│   │   └── demo_data_service.dart
 │   ├── theme/               # App theming
 │   │   ├── app_theme.dart
 │   │   └── app_scroll_behavior.dart  # Custom scroll behavior for desktop mouse support
@@ -350,6 +360,9 @@ When running the app in **debug mode** (`flutter run` or debug builds), a debug 
 6. **Database Path** - Shows the database file location in a dialog (useful for manual database inspection)
 7. **Force Refresh** - Invalidates all providers to force a refresh of the UI
 8. **Performance Indicator** - Toggles a real-time FPS counter overlay in the top-right corner
+9. **Test Reminder (Immediate)** - Test the reminder system with an immediate notification
+10. **Test Notification (30s)** - Schedule a test notification in 30 seconds
+11. **Reschedule All Reminders** - Manually reschedule all habit reminders
 
 #### Using the Debug Menu
 
@@ -386,7 +399,10 @@ flutter analyze
 
 ### CI/CD
 The project uses GitHub Actions for automated builds and releases:
-- Workflow file: `.github/workflows/release.yml`
+- Workflow files:
+  - `.github/workflows/release-beta.yml` - Beta releases (triggers on v* tags)
+  - `.github/workflows/release-production.yml` - Production releases
+  - `.github/workflows/build.yml` - Build workflow
 - Triggers on version tags (v*) or manual dispatch
 - Builds for Android (APK/AAB), Linux (AppImage), and Windows (ZIP)
 - Automatically creates GitHub releases with artifacts

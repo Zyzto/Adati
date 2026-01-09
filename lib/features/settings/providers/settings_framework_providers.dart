@@ -16,7 +16,7 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
-import '../../../packages/flutter_settings_framework/flutter_settings_framework.dart';
+import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 import '../settings_definitions.dart';
 
 // =============================================================================

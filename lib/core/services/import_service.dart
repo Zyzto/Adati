@@ -5,7 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' as drift;
 import '../database/app_database.dart' as db;
-import 'log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'preferences_service.dart';
 import '../../features/habits/habit_repository.dart';
 

@@ -6,7 +6,7 @@ import '../../settings/providers/settings_framework_providers.dart';
 import '../../settings/settings_definitions.dart';
 import '../../../../core/services/preferences_service.dart';
 import '../../../../core/services/demo_data_service.dart';
-import '../../../../core/services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 /// Singleton database instance to avoid multiple database warnings.
 /// This ensures all parts of the app use the same database connection.

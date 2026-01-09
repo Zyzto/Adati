@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../models/tracking_entries.dart';
 import '../models/habits.dart';
-import '../../services/loggable_mixin.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 part 'tracking_entry_dao.g.dart';
 

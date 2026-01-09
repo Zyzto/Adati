@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:adati/features/habits/habit_repository.dart';
-import 'package:adati/core/services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'package:adati/core/services/notification_service.dart';
 import 'package:adati/core/services/reminder_data.dart';
 import 'package:easy_localization/easy_localization.dart';

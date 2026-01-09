@@ -7,7 +7,7 @@ import '../../habits/providers/habit_providers.dart';
 import '../../habits/providers/tracking_providers.dart';
 import '../../settings/providers/settings_framework_providers.dart';
 import '../../settings/settings_definitions.dart';
-import '../../../../packages/flutter_settings_framework/flutter_settings_framework.dart';
+import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 import 'day_square.dart';
 
 class CalendarGrid extends ConsumerWidget {

@@ -7,15 +7,14 @@ import 'package:workmanager/workmanager.dart';
 import 'core/services/preferences_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/reminder_service.dart';
-import 'core/services/logging_service.dart';
-import 'core/services/log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 import 'core/services/auto_backup_service.dart';
 import 'core/services/workmanager_dispatcher.dart';
 import 'core/services/platform_utils.dart';
 import 'features/habits/habit_repository.dart';
 import 'features/habits/providers/habit_providers.dart';
 import 'features/settings/providers/settings_framework_providers.dart';
-import 'packages/flutter_settings_framework/flutter_settings_framework.dart';
+import 'package:flutter_settings_framework/flutter_settings_framework.dart';
 import 'app.dart';
 
 void main() async {
@@ -47,7 +46,13 @@ void main() async {
 
   // Initialize logging service (critical - needed for all other logging)
   try {
-    await LoggingService.init();
+    await LoggingService.init(
+      LoggingConfig(
+        appName: 'Adati',
+        logFileName: 'adati.log',
+        crashLogFileName: 'adati_crashes.log',
+      ),
+    );
   } catch (e) {
     // If logging service fails, we can't log it, but we should still try to continue
     // The service will fall back to console logging
@@ -116,10 +121,7 @@ void main() async {
   if (!kIsWeb && !isDesktop) {
     // Only initialize WorkManager on mobile platforms (Android/iOS)
     try {
-      await Workmanager().initialize(
-        callbackDispatcher,
-        isInDebugMode: kDebugMode,
-      );
+      await Workmanager().initialize(callbackDispatcher);
       Log.debug('WorkManager initialized successfully');
     } catch (e, stackTrace) {
       Log.error(

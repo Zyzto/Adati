@@ -7,7 +7,7 @@ import '../database/app_database.dart' as db;
 import '../database/models/tracking_types.dart';
 import '../utils/date_utils.dart' as app_date_utils;
 import '../../features/habits/habit_repository.dart';
-import 'log_helper.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 class DemoDataService {
   static String get _demoTagName => 'demo'.tr();

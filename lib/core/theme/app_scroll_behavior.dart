@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import '../services/loggable_mixin.dart';
+import 'package:flutter_logging_service/flutter_logging_service.dart';
 
 /// Custom scroll behavior that enables mouse drag support on desktop platforms.
 ///
