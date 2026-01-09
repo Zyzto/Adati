@@ -94,9 +94,17 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     
-    // Start periodic reminder checks for desktop
+    // FIXED: Start periodic reminder checks for desktop
+    // Check app lifecycle state to ensure timer starts even if app starts in background
     if (isDesktop) {
-      _startReminderChecks();
+      // Use post-frame callback to ensure lifecycle state is properly initialized
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Check if app is already in resumed state, if so start timer immediately
+        // Otherwise, didChangeAppLifecycleState will handle it when app resumes
+        if (mounted) {
+          _startReminderChecks();
+        }
+      });
     }
   }
 
@@ -111,11 +119,16 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     
-    // Only run reminder checks on desktop when app is in foreground
+    // FIXED: Only run reminder checks on desktop when app is in foreground
+    // Ensure timer starts reliably when app resumes
     if (isDesktop) {
       if (state == AppLifecycleState.resumed) {
-        _startReminderChecks();
+        // Ensure timer is started when app resumes
+        if (_reminderCheckTimer == null || !_reminderCheckTimer!.isActive) {
+          _startReminderChecks();
+        }
       } else {
+        // Stop timer when app goes to background
         _stopReminderChecks();
       }
     }

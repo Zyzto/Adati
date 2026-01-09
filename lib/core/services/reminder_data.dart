@@ -125,7 +125,7 @@ class ReminderData {
   /// For daily: returns next maxDays days
   /// For weekly: returns next occurrences on specified weekdays
   /// For monthly: returns next occurrences on specified days of month
-  List<DateTime> getNextOccurrences({int maxDays = 30}) {
+  List<DateTime> getNextOccurrences({int maxDays = 3}) {
     final now = DateTime.now();
     final timeParts = time.split(':');
     final hour = int.tryParse(timeParts[0]) ?? 9;

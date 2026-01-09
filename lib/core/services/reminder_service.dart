@@ -23,7 +23,30 @@ class ReminderService {
   static HabitRepository? _habitRepository;
   static bool _isRescheduling = false;
   static const String _reminderTaskName = 'checkReminders';
-  static const int _maxScheduledDays = 30; // Schedule up to 30 days ahead
+  static const int _maxScheduledDays = 3; // Schedule up to 3 days ahead
+
+  /// Helper method to cancel all notifications for a habit
+  /// Cancels notification IDs that could exist for the given habitId
+  static Future<void> _cancelAllNotificationsForHabit(int habitId) async {
+    // Cancel scheduled notifications for this habit
+    // We use a range of IDs: habitId * 10000 + index
+    // Only cancel IDs that could actually exist (up to _maxScheduledDays + buffer for safety)
+    // Add small buffer (5) to catch any edge cases or old notifications
+    const int buffer = 5;
+    final int maxIndex = _maxScheduledDays + buffer;
+    
+    // Use silent cancellation to reduce log spam when canceling multiple notifications
+    for (int i = 0; i < maxIndex; i++) {
+      await NotificationService.cancelScheduledNotification(
+        habitId * 10000 + i,
+        silent: true,
+      );
+    }
+    
+    Log.debug(
+      'Cancelled up to $maxIndex notifications for habit $habitId (IDs: ${habitId * 10000} to ${habitId * 10000 + maxIndex - 1})',
+    );
+  }
 
   /// Initialize the reminder service with a habit repository
   static void init(HabitRepository habitRepository) {
@@ -43,12 +66,13 @@ class ReminderService {
       return;
     }
 
+    // Use atomic check-and-set to prevent race conditions
     if (_isRescheduling) {
       Log.info('Reminder rescheduling already in progress, skipping');
       return;
     }
-
     _isRescheduling = true;
+
     Log.info('Starting to reschedule all reminders');
 
     try {
@@ -88,6 +112,16 @@ class ReminderService {
         'Scheduling precise notifications...',
       );
 
+      // FIXED: Check permissions before scheduling
+      // If permissions are not granted, log warning but continue (WorkManager fallback will still work)
+      final hasPermissions = await NotificationService.checkPermissions();
+      if (!hasPermissions) {
+        Log.warning(
+          'Notification permissions not granted. Precise notifications may not work, '
+          'but WorkManager fallback will still attempt to show reminders.',
+        );
+      }
+
       int scheduledCount = 0;
       int failedCount = 0;
 
@@ -95,7 +129,8 @@ class ReminderService {
       for (final habit in habitsWithReminders) {
         try {
           // Cancel existing notifications for this habit
-          await NotificationService.cancelScheduledNotification(habit.id);
+          // FIXED: Use helper method to cancel ALL notification IDs, not just habit.id
+          await _cancelAllNotificationsForHabit(habit.id);
 
           final reminderData = ReminderDataValidator.parseAndValidate(habit.reminderTime!);
           if (reminderData == null) {
@@ -117,6 +152,9 @@ class ReminderService {
 
           // Schedule notifications for each occurrence
           int habitScheduledCount = 0;
+          int habitFailedCount = 0;
+          final List<String> schedulingErrors = [];
+
           for (int i = 0; i < occurrences.length; i++) {
             final occurrence = occurrences[i];
             
@@ -124,16 +162,33 @@ class ReminderService {
             // This prevents collisions between habits and days
             final notificationId = habit.id * 10000 + i;
             
-            final scheduled = await NotificationService.schedulePreciseNotification(
-              id: notificationId,
-              scheduledDate: occurrence,
-              title: 'reminder_title'.tr(namedArgs: {'habit': habit.name}),
-              body: 'reminder_body'.tr(namedArgs: {'habit': habit.name}),
-              payload: habit.id.toString(),
-            );
+            try {
+              final scheduled = await NotificationService.schedulePreciseNotification(
+                id: notificationId,
+                scheduledDate: occurrence,
+                title: 'reminder_title'.tr(namedArgs: {'habit': habit.name}),
+                body: 'reminder_body'.tr(namedArgs: {'habit': habit.name}),
+                payload: habit.id.toString(),
+              );
 
-            if (scheduled) {
-              habitScheduledCount++;
+              if (scheduled) {
+                habitScheduledCount++;
+              } else {
+                habitFailedCount++;
+                schedulingErrors.add(
+                  'Failed to schedule notification for ${occurrence.toString()} (ID: $notificationId)',
+                );
+              }
+            } catch (e, stackTrace) {
+              habitFailedCount++;
+              schedulingErrors.add(
+                'Exception scheduling notification for ${occurrence.toString()}: $e',
+              );
+              Log.error(
+                'Failed to schedule notification ${notificationId} for habit ${habit.id}',
+                error: e,
+                stackTrace: stackTrace,
+              );
             }
           }
 
@@ -142,10 +197,17 @@ class ReminderService {
             Log.info(
               'Scheduled $habitScheduledCount precise notifications for habit ${habit.id} (${habit.name})',
             );
+            if (habitFailedCount > 0) {
+              Log.warning(
+                'Failed to schedule $habitFailedCount notifications for habit ${habit.id} (${habit.name}). '
+                'Errors: ${schedulingErrors.join("; ")}',
+              );
+            }
           } else {
             failedCount++;
-            Log.warning(
-              'Failed to schedule any notifications for habit ${habit.id} (${habit.name})',
+            Log.error(
+              'Failed to schedule any notifications for habit ${habit.id} (${habit.name}). '
+              'All $habitFailedCount attempts failed. Errors: ${schedulingErrors.join("; ")}',
             );
           }
         } catch (e, stackTrace) {
@@ -164,7 +226,13 @@ class ReminderService {
       );
 
       // Register WorkManager/Background Fetch as fallback
-      await _registerBackgroundTask();
+      // FIXED: Always register WorkManager task if there are ANY habits with reminders,
+      // even if precise scheduling failed for some/all of them
+      // This ensures fallback mechanism is always available
+      if (habitsWithReminders.isNotEmpty) {
+        await _registerBackgroundTask();
+        Log.info('WorkManager task registered as fallback');
+      }
 
       Log.info('Rescheduled reminders successfully');
     } catch (e, stackTrace) {
@@ -277,10 +345,8 @@ class ReminderService {
 
     try {
       // Cancel all scheduled notifications for this habit
-      // We use a range of IDs: habitId * 10000 + index (0-9999)
-      for (int i = 0; i < 10000; i++) {
-        await NotificationService.cancelScheduledNotification(habitId * 10000 + i);
-      }
+      // Use helper method for consistency
+      await _cancelAllNotificationsForHabit(habitId);
 
       Log.info('Cancelled all scheduled notifications for habit $habitId');
 

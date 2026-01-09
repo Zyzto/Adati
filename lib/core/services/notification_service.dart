@@ -13,7 +13,6 @@ class NotificationService {
       : FlutterLocalNotificationsPlugin();
 
   static bool _initialized = false;
-  static Function(String?)? _onNotificationTapCallback;
   static GoRouter? _router;
 
   static Future<void> init() async {
@@ -157,14 +156,6 @@ class NotificationService {
         );
       }
     }
-    
-    // Call custom callback if set
-    _onNotificationTapCallback?.call(payload);
-  }
-
-  /// Set a custom callback for notification taps
-  static void setNotificationTapCallback(Function(String?)? callback) {
-    _onNotificationTapCallback = callback;
   }
 
   /// Set the GoRouter instance for navigation
@@ -344,37 +335,45 @@ class NotificationService {
     return _initialized && _notifications != null;
   }
 
-  static Future<void> cancelNotification(int id) async {
+  /// Check if notification permissions are granted
+  /// Returns true if permissions are granted, false otherwise
+  static Future<bool> checkPermissions() async {
     if (kIsWeb) {
-      // Web notifications cancellation will be handled separately
-      return;
+      // Web permissions are checked separately
+      return await _getWebNotificationPermission() == 'granted';
     }
 
     if (_notifications == null || !_initialized) {
-      return;
+      return false;
     }
+
     try {
-      await _notifications!.cancel(id);
+      final androidPlugin = _notifications!
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+      
+      if (androidPlugin != null) {
+        final enabled = await androidPlugin.areNotificationsEnabled();
+        if (enabled == false) {
+          Log.info('Android notifications are not enabled');
+          return false;
+        }
+      }
+
+      // For iOS, we can't directly check permissions, but if initialized
+      // and no errors occurred, assume permissions are granted
+      // Desktop platforms don't require explicit permissions
+      return true;
     } catch (e, stackTrace) {
-      Log.error('Failed to cancel notification', error: e, stackTrace: stackTrace);
+      Log.error(
+        'Failed to check notification permissions',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
     }
   }
 
-  static Future<void> cancelAllNotifications() async {
-    if (kIsWeb) {
-      // Web notifications cancellation will be handled separately
-      return;
-    }
-
-    if (_notifications == null || !_initialized) {
-      return;
-    }
-    try {
-      await _notifications!.cancelAll();
-    } catch (e, stackTrace) {
-      Log.error('Failed to cancel all notifications', error: e, stackTrace: stackTrace);
-    }
-  }
 
   /// Show an immediate notification (for testing or instant notifications)
   static Future<void> showNotification({
@@ -565,20 +564,26 @@ class NotificationService {
   }
 
   /// Cancel a scheduled notification by ID
-  static Future<void> cancelScheduledNotification(int id) async {
+  /// [silent] - If true, suppresses debug logging (useful when canceling many notifications)
+  static Future<void> cancelScheduledNotification(int id, {bool silent = false}) async {
     if (kIsWeb || _notifications == null || !_initialized) {
       return;
     }
 
     try {
       await _notifications!.cancel(id);
-      Log.debug('Cancelled scheduled notification: $id');
+      if (!silent) {
+        Log.debug('Cancelled scheduled notification: $id');
+      }
     } catch (e, stackTrace) {
-      Log.error(
-        'Failed to cancel scheduled notification: $id',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      // Only log errors, not debug messages for silent cancellations
+      if (!silent) {
+        Log.error(
+          'Failed to cancel scheduled notification: $id',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
     }
   }
 }

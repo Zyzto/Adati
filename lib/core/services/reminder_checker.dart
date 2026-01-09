@@ -13,7 +13,7 @@ class ReminderChecker {
   /// This method:
   /// 1. Loads all habits with reminders enabled
   /// 2. Parses reminder time configuration
-  /// 3. Checks if current time matches reminder time (within ±5 minute window)
+  /// 3. Checks if current time matches reminder time (within ±15 minute window)
   /// 4. Shows notifications for matching reminders
   ///
   /// [forceShow] - If true, shows notifications for all habits with reminders enabled
@@ -96,8 +96,9 @@ class ReminderChecker {
             'ReminderChecker: Habit ${habit.id} (${habit.name}) - reminder time: ${reminderTime.hour}:${reminderTime.minute.toString().padLeft(2, '0')}, frequency: $frequency, days: $days',
           );
 
-          // Check if reminder time matches current time (within ±5 minute window)
-          // Expanded window to account for WorkManager's 15-minute interval and timing variations
+          // Check if reminder time matches current time (within ±15 minute window)
+          // FIXED: Increased window from ±5 to ±15 minutes to match WorkManager's 15-minute interval
+          // This ensures we catch reminders even if WorkManager runs at the edge of its interval
           final currentMinutes = currentTime.hour * 60 + currentTime.minute;
           final reminderMinutes = reminderTime.hour * 60 + reminderTime.minute;
           final timeDifference = currentMinutes - reminderMinutes;
@@ -106,13 +107,13 @@ class ReminderChecker {
             'ReminderChecker: Habit ${habit.id} - current: ${currentTime.hour}:${currentTime.minute.toString().padLeft(2, '0')}, reminder: ${reminderTime.hour}:${reminderTime.minute.toString().padLeft(2, '0')}, difference: $timeDifference minutes',
           );
 
-          // Allow ±5 minute window to account for WorkManager's 15-minute interval
-          // This ensures we catch reminders even if WorkManager runs slightly off schedule
+          // Allow ±15 minute window to match WorkManager's 15-minute interval
+          // This ensures we catch reminders even if WorkManager runs at minute 14 before or after
           // Skip time check if forceShow is true (for testing)
-          if (!forceShow && timeDifference.abs() > 5) {
-            // Not within the 5-minute window
+          if (!forceShow && timeDifference.abs() > 15) {
+            // Not within the 15-minute window
             Log.debug(
-              'ReminderChecker: Habit ${habit.id} - not within time window (diff: $timeDifference, window: ±5 min)',
+              'ReminderChecker: Habit ${habit.id} - not within time window (diff: $timeDifference, window: ±15 min)',
             );
             continue;
           }
