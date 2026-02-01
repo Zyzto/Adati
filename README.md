@@ -25,7 +25,9 @@ Pre-built releases are available on [GitHub Releases](https://github.com/Zyzto/A
 
 **Option 1: Obtainium (Recommended) - Automatic Updates**
 
-[![Add to Obtainium](https://img.shields.io/badge/Add_to-Obtainium-purple)](obtainium://add/https://github.com/Zyzto/Adati)
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/Zyzto/Adati">
+<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/refs/heads/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="60"/>
+</a>
 
 - **Manual Setup**: Install [Obtainium](https://github.com/ImranR98/Obtainium) from [F-Droid](https://f-droid.org/packages/com.imranr98.obtainium/) or [GitHub Releases](https://github.com/ImranR98/Obtainium/releases), then:
   - Open Obtainium and tap the "+" button
